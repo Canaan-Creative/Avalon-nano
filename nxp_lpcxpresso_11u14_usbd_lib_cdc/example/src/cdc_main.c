@@ -154,6 +154,13 @@ static void Init_CLKOUT_PinMux(void)
 #endif
 }
 
+static void CLKOUT_Cfg(bool On){
+	if(On == true)
+		Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 2);
+	else
+		Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 0);
+}
+
 unsigned int gen_test_a3233(unsigned int *buf, unsigned int cpm_cfg){
 
    buf[0] = 0x11111111;
@@ -215,9 +222,14 @@ static void Init_POWER(){
 	*(unsigned int *) 0x4004402c = 0x81;
 
 	POWER_Enable(false);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 22, false);//VID0
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 7, false);//VID1
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 22, true);//VID0
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 7, true);//VID1
 }
+
+#define VCORE_0P9   0x0
+#define VCORE_0P8   0x1
+#define VCORE_0P725 0x2
+#define VCORE_0P675 0x3
 
 static void POWER_Cfg(unsigned char VID){
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 22, (bool)(VID&1));//VID0
@@ -229,7 +241,7 @@ static void Init_Rstn(){
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, true);
 }
 
-static void Sent_Rstn(){
+static void Rstn_A3233(){
 	delay(2000);
 	delay(2000);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, true);
@@ -406,7 +418,7 @@ static void ADC_Guard(){
 #define WORD0_BASE 0x7
 #endif
 
-unsigned int a3233_pll(unsigned int freq){
+unsigned int Gen_A3233_Pll_Cfg(unsigned int freq){
 	unsigned int NOx[4] , i=0;
 	unsigned int NO =0;//1 2 4 8
 	unsigned int Fin = 25 ;
@@ -440,17 +452,11 @@ unsigned int a3233_pll(unsigned int freq){
 					if(NO == 4) OD = 2 ;
 					if(NO == 8) OD = 3 ;
 
-					//NR=1; NF=48; OD = 1;
-					//printf("NR=%x, NF=%x, OD=%x", NR, NF, OD);
-
-					tmp =   WORD0_BASE         |
+					tmp =   WORD0_BASE     |
 						((NR-1)&0x1f)<<16  |
 						((NF/2-1)&0x7f)<<21|
 						(OD<<28) ;
-					/*
-					printf("	$display(\"[Fout=%dMHz]\");",Fout) ;
-					printf(" loc_work(32'h%08x);  ",tmp);
-					printf(" loc_work(32'h1);\n") ; */
+
 					return tmp;
 				}
 		}
@@ -487,6 +493,22 @@ void Init_Pwm(){
 	*(unsigned int *)0x4000c020 = 0xffff/4;
 }
 
+void Init_Gpio(){
+	Chip_GPIO_Init(LPC_GPIO);
+}
+
+static void Init_Led(void)
+{
+	/* Set the PIO_7 as output */
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 17);
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 1, 15);
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 1, 19);
+}
+
+void Init_Counter(){
+	Chip_Clock_EnablePeriphClock(SYSCTL_CLOCK_CT32B0);
+}
+
 /**
  * @brief	main routine for blinky example
  * @return	Function should not exit.
@@ -509,12 +531,16 @@ int main(void)
 	unsigned char rxc;
 	unsigned int pll_cfg0 = 0x1;
 	unsigned char tmp_flg=0;
-	gen_test_a3233((unsigned int *)work_buf, 0x1);
+	unsigned char nonce_buf[128];
+	unsigned int nonce_cnt;
+	unsigned int nonce_i;
+	unsigned int nonce_wd;
+	unsigned int tmp;
 
 	SystemCoreClockUpdate();
-	/* Initialize board and chip */
-	Board_Init();
-	Init_Rstn();
+	Init_Gpio();
+	Init_Led();
+	Init_Rstn();//low active
 	Init_CLKOUT_PinMux();
 	Init_UART_PinMux();
 	Init_POWER();
@@ -522,11 +548,10 @@ int main(void)
 	Init_ADC_PinMux();
 	Chip_ADC_Init(LPC_ADC, &ADCSetup);
 
-	POWER_Cfg(0x3);//0.675v
+	POWER_Cfg(VCORE_0P675);
+	CLKOUT_Cfg(true);
 	POWER_Enable(false);
-	Sent_Rstn();
-
-	Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 2);
+	Rstn_A3233();
 
 	led_rgb(2);
 
@@ -586,12 +611,14 @@ int main(void)
 
 	DEBUGSTR("USB CDC class based virtual Comm port example!\r\n");
 
-	pll_cfg0 = a3233_pll(300);
-	Init_Pwm();
+	pll_cfg0 = Gen_A3233_Pll_Cfg(300);
+
+	POWER_Enable(true);
+	Rstn_A3233();
+
 	while (1) {
 		/* Check if host has connected and opened the VCOM port */
 		if ((vcom_connected() != 0) && (prompt == 0)) {
-			//vcom_write("Hello World!!\r\n", 15);
 			prompt = 1;
 		}
 		/* If VCOM port is opened echo whatever we receive back to host. */
@@ -601,42 +628,53 @@ int main(void)
 				rdCnt += vcom_bread(&g_rxBuff[rdCnt], IN_BUF_LEN-rdCnt);
 				if(rdCnt >= IN_BUF_LEN) break;
 			}
-			/*
-			vcom_write(&g_rxBuff[0], IN_BUF_LEN/2);//debug
-			delay(20000);
-			vcom_write(&g_rxBuff[IN_BUF_LEN/2], IN_BUF_LEN/2);//debug
-			delay(20000);
-			*/
+
 			unsigned char test_buf[64];
-			//= {0x17, 0x8a, 0xb1, 0x9c, 0x1e, 0x0d, 0xc9, 0x65, 0x1d, 0x37, 0x41, 0x8f, 0xbb, 0xf4, 0x4b, 0x97, 0x6d, 0xfd, 0x45, 0x71, 0xc0, 0x92, 0x41, 0xc4, 0x95, 0x64, 0x14, 0x12, 0x67, 0xef, 0xf8, 0xd8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0xd0, 0xc1, 0x4a, 0x50, 0x70, 0x51, 0x88, 0x1a, 0x05, 0x7e, 0x08};
 
 			data_pkg(&g_rxBuff[0], &work_buf[0]);
 			((unsigned int *)work_buf)[1] = pll_cfg0;
 
 			if (rdCnt) {
-					Sent_Rstn();
 					unsigned int cpm_cfg = 0x1;
-					//gen_test_a3233((unsigned int *)work_buf, cpm_cfg);
 
 					/*Buffer to A3233*/
 					led_rgb(4);//close all led
 					Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 | UART_FCR_RX_RS));
-					delay(2000);
 					Chip_UART_Send(LPC_USART, work_buf, 22*4);
 					delay(1800000);
 					led_rgb(tmp_flg);
 
 					/*A3233 to Buffer*/
+					nonce_cnt = 0;
 					while(((*(unsigned int *)0x40008014) & 0x1) == 0x1){
-						rxc = *(unsigned int *)0x40008000;
-						vcom_write(&rxc, 1);
-						delay(2000);
+						nonce_buf[nonce_cnt] = *(unsigned int *)0x40008000;
+						nonce_cnt++;
+					}
+
+					for(nonce_i = 0; nonce_i < nonce_cnt/4; nonce_i++){
+						Board_LED_Set(0, true);//green
+						Board_LED_Set(1, false);//red
+						Board_LED_Set(2, true);//green
+						if(1){
+						nonce_wd = nonce_buf[nonce_i*4+0]      |
+								   (nonce_buf[nonce_i*4+1]<<8 )|
+								   (nonce_buf[nonce_i*4+2]<<16)|
+								   (nonce_buf[nonce_i*4+3]<<24);
+						nonce_wd = nonce_wd - 0x1000;
+						nonce_buf[nonce_i*4+0] = nonce_wd&0xff;
+						nonce_buf[nonce_i*4+1] = (nonce_wd&0xff00    )>>8 ;
+						nonce_buf[nonce_i*4+2] = (nonce_wd&0xff0000  )>>16;
+						nonce_buf[nonce_i*4+3] = (nonce_wd&0xff000000)>>24;
+						}
+						vcom_write(&nonce_buf[nonce_i*4], 4);
+						/*if(nonce_i > 0)*/ delay(200000);
 					}
 
 					tmp102 = tmp102_rd();
 					if(tmp102 >= TMP_MAX){
 						POWER_Enable(false);
 						delay(200);
+						Rstn_A3233();
 						tmp_flg = 1;
 						led_rgb(tmp_flg);//red
 					} else if(tmp102 >= TMP_MAX*0.8){
@@ -646,7 +684,7 @@ int main(void)
 						else {
 							tmp_flg = 0;
 							led_rgb(tmp_flg);//green
-							pll_cfg0 = a3233_pll(300);
+							pll_cfg0 = Gen_A3233_Pll_Cfg(300);
 						}
 					} else if(tmp102 < TMP_MAX*0.8){
 						POWER_Enable(true);
@@ -655,9 +693,10 @@ int main(void)
 						else {
 							tmp_flg = 2;
 							led_rgb(tmp_flg);//blue
-							pll_cfg0 = a3233_pll(400);
+							pll_cfg0 = Gen_A3233_Pll_Cfg(400);
 						}
 					}
+					led_rgb(tmp_flg);
 
 /*
 					ADC_Rd(ADC_CH1, &dataADC);

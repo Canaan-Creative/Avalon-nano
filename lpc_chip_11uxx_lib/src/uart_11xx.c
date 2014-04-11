@@ -79,10 +79,11 @@ int Chip_UART_Send(LPC_USART_T *pUART, const void *data, int numBytes)
 	uint8_t *p8 = (uint8_t *) data;
 
 	/* Send until the transmit FIFO is full or out of bytes */
-	while ((sent < numBytes) &&
-		   ((Chip_UART_ReadLineStatus(pUART) & UART_LSR_THRE) != 0)) {
+	while ((sent < numBytes)){// &&
+		  // ((Chip_UART_ReadLineStatus(pUART) & UART_LSR_THRE) != 0)) {
 		Chip_UART_SendByte(pUART, *p8);
-		delay(1000);
+		//delay(1000);
+		while((*(unsigned int *)0x40008014 & 0x40) == 0x0);
 		p8++;
 		sent++;
 	}
