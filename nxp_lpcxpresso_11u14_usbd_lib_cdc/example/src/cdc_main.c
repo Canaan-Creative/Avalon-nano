@@ -463,27 +463,33 @@ unsigned int Gen_A3233_Pll_Cfg(unsigned int freq){
 	}
 }
 
-void led_rgb(unsigned int rgb){
-	if(rgb == 0){
+#define LED_GREEN 	0
+#define LED_RED		1
+#define LED_BLUE	2
+#define LED_OFF		3
+void led_rgb(unsigned int rgb)
+{
+	if (rgb == LED_GREEN) {
 		Board_LED_Set(0, false);//green
 		Board_LED_Set(1, true);//red
 		Board_LED_Set(2, true);//blue
-	}else if(rgb == 1){
+	} else if (rgb == LED_RED) {
 		Board_LED_Set(0, true);//green
 		Board_LED_Set(1, false);//red
 		Board_LED_Set(2, true);//blue
-	}else if(rgb == 2){
+	} else if (rgb == LED_BLUE) {
 		Board_LED_Set(0, true);//green
 		Board_LED_Set(1, true);//red
 		Board_LED_Set(2, false);//blue
-	}else {
+	} else {
 		Board_LED_Set(0, true);//green
 		Board_LED_Set(1, true);//red
 		Board_LED_Set(2, true);//blue
 	}
 }
 
-void Init_Pwm(){
+void Init_Pwm()
+{
 	Chip_Clock_EnablePeriphClock(SYSCTL_CLOCK_CT16B0);
 	Chip_IOCON_PinMuxSet(LPC_IOCON, 1, 15, IOCON_FUNC2 | IOCON_MODE_INACT);//red
 	*(unsigned int *)0x4000c004 = 0x1;//enable tcr, ct16b0
@@ -523,19 +529,13 @@ int main(void)
 	USB_CORE_DESCS_T desc;
 	ErrorCode_t ret = LPC_OK;
 	uint32_t prompt = 0, rdCnt = 0;
+
 	unsigned char work_buf[22*4];
-	unsigned int tmp102=0;
-	uint8_t key;
-	int bytes;
-	uint16_t dataADC;
-	unsigned char rxc;
 	unsigned int pll_cfg0 = 0x1;
-	unsigned char tmp_flg=0;
 	unsigned char nonce_buf[128];
 	unsigned int nonce_cnt;
 	unsigned int nonce_i;
 	unsigned int nonce_wd;
-	unsigned int tmp;
 
 	SystemCoreClockUpdate();
 	Init_Gpio();
@@ -553,7 +553,7 @@ int main(void)
 	POWER_Enable(false);
 	Rstn_A3233();
 
-	led_rgb(2);
+	led_rgb(LED_BLUE);
 
 	/* enable clocks and pinmux */
 	usb_pin_clk_init();
@@ -621,101 +621,59 @@ int main(void)
 		if ((vcom_connected() != 0) && (prompt == 0)) {
 			prompt = 1;
 		}
-		/* If VCOM port is opened echo whatever we receive back to host. */
+
 		if (prompt) {
 			rdCnt = 0;
-			while(1){
-				rdCnt += vcom_bread(&g_rxBuff[rdCnt], IN_BUF_LEN-rdCnt);
-				if(rdCnt >= IN_BUF_LEN) break;
+			while (1) {
+				rdCnt += vcom_bread(&g_rxBuff[rdCnt], IN_BUF_LEN - rdCnt);
+				if (rdCnt >= IN_BUF_LEN)
+					break;
 			}
-
-			unsigned char test_buf[64];
 
 			data_pkg(&g_rxBuff[0], &work_buf[0]);
 			((unsigned int *)work_buf)[1] = pll_cfg0;
 
 			if (rdCnt) {
-					unsigned int cpm_cfg = 0x1;
-
 					/*Buffer to A3233*/
-					led_rgb(4);//close all led
+					led_rgb(LED_OFF);
+
+					Chip_UART_Send(LPC_USART, work_buf, 22 * 4);
 					Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 | UART_FCR_RX_RS));
-					Chip_UART_Send(LPC_USART, work_buf, 22*4);
-					delay(1800000);
-					led_rgb(tmp_flg);
 
-					/*A3233 to Buffer*/
+					led_rgb(LED_GREEN);
 					nonce_cnt = 0;
-					while(((*(unsigned int *)0x40008014) & 0x1) == 0x1){
-						nonce_buf[nonce_cnt] = *(unsigned int *)0x40008000;
-						nonce_cnt++;
-					}
+					nonce_i = 0;
 
-					for(nonce_i = 0; nonce_i < nonce_cnt/4; nonce_i++){
-						Board_LED_Set(0, true);//green
-						Board_LED_Set(1, false);//red
-						Board_LED_Set(2, true);//green
-						if(1){
-						nonce_wd = nonce_buf[nonce_i*4+0]      |
-								   (nonce_buf[nonce_i*4+1]<<8 )|
-								   (nonce_buf[nonce_i*4+2]<<16)|
-								   (nonce_buf[nonce_i*4+3]<<24);
-						nonce_wd = nonce_wd - 0x1000;
-						nonce_buf[nonce_i*4+0] = nonce_wd&0xff;
-						nonce_buf[nonce_i*4+1] = (nonce_wd&0xff00    )>>8 ;
-						nonce_buf[nonce_i*4+2] = (nonce_wd&0xff0000  )>>16;
-						nonce_buf[nonce_i*4+3] = (nonce_wd&0xff000000)>>24;
+					while (1) {
+						if (((*(unsigned int *)0x40008014) & 0x1) == 0x1) {
+							nonce_buf[nonce_cnt] = *(unsigned int *)0x40008000;
+							nonce_cnt++;
+							if (vcom_rx_cnt())
+								break;
 						}
-						vcom_write(&nonce_buf[nonce_i*4], 4);
-						/*if(nonce_i > 0)*/ delay(200000);
-					}
 
-					tmp102 = tmp102_rd();
-					if(tmp102 >= TMP_MAX){
-						POWER_Enable(false);
-						delay(200);
-						Rstn_A3233();
-						tmp_flg = 1;
-						led_rgb(tmp_flg);//red
-					} else if(tmp102 >= TMP_MAX*0.8){
-						POWER_Enable(true);
-						if(tmp_flg == 0)
-							pll_cfg0 = 0x1;
-						else {
-							tmp_flg = 0;
-							led_rgb(tmp_flg);//green
-							pll_cfg0 = Gen_A3233_Pll_Cfg(300);
-						}
-					} else if(tmp102 < TMP_MAX*0.8){
-						POWER_Enable(true);
-						if(tmp_flg == 2)
-							pll_cfg0 = 0x1;
-						else {
-							tmp_flg = 2;
-							led_rgb(tmp_flg);//blue
-							pll_cfg0 = Gen_A3233_Pll_Cfg(400);
+						if (vcom_rx_cnt())
+							break;
+
+						if (nonce_cnt >= 4) {
+							led_rgb(LED_RED);
+
+							nonce_wd = nonce_buf[nonce_i*4+0]   |
+									(nonce_buf[nonce_i*4+1]<<8 )|
+									(nonce_buf[nonce_i*4+2]<<16)|
+									(nonce_buf[nonce_i*4+3]<<24);
+							nonce_wd = nonce_wd - 0x1000;
+							nonce_buf[nonce_i*4+0] = nonce_wd&0xff;
+							nonce_buf[nonce_i*4+1] = (nonce_wd&0xff00    )>>8 ;
+							nonce_buf[nonce_i*4+2] = (nonce_wd&0xff0000  )>>16;
+							nonce_buf[nonce_i*4+3] = (nonce_wd&0xff000000)>>24;
+
+							vcom_write(&nonce_buf[nonce_i*4], 4);
+							nonce_cnt = 0;
+							break;
 						}
 					}
-					led_rgb(tmp_flg);
-
-/*
-					ADC_Rd(ADC_CH1, &dataADC);
-					//dataADC = (dataADC/1024) * 3.3;
-					rxc = dataADC>>8  ;vcom_write(&rxc, 1);delay(2000);
-					rxc = dataADC&0xff;vcom_write(&rxc, 1);delay(2000);
-					ADC_Rd(ADC_CH3, &dataADC);
-					//dataADC = (dataADC/1024) * 3.3;
-					rxc = dataADC>>8  ;vcom_write(&rxc, 1);delay(2000);
-					rxc = dataADC&0xff;vcom_write(&rxc, 1);delay(2000);
-					ADC_Rd(ADC_CH5, &dataADC);
-					//dataADC = (dataADC/1024) * 3.3;
-					rxc = dataADC>>8  ;vcom_write(&rxc, 1);delay(2000);
-					rxc = dataADC&0xff;vcom_write(&rxc, 1);delay(2000);
-					ADC_Rd(ADC_CH7, &dataADC);
-					//dataADC = (dataADC/1024) * 3.3;
-					rxc = dataADC>>8  ;vcom_write(&rxc, 1);delay(2000);
-					rxc = dataADC&0xff;vcom_write(&rxc, 1);delay(2000);
-*/
+					led_rgb(LED_BLUE);
 			}
 		}
 		/* Sleep until next IRQ happens */

@@ -210,18 +210,11 @@ uint32_t vcom_read_cnt(void)
 	return ret;
 }
 
-/* Gets current read count. */
-uint32_t vcom_cnt(void)
+uint32_t vcom_rx_cnt(void)
 {
 	VCOM_DATA_T *pVcom = &g_vCOM;
-	uint32_t ret = 0;
 
-	if (pVcom->rx_flags & VCOM_RX_DONE) {
-		ret = pVcom->rx_count;
-		//pVcom->rx_count = 0;
-	}
-
-	return ret;
+	return pVcom->rx_count;
 }
 
 /* Virtual com port write routine*/

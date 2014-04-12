@@ -48,13 +48,8 @@
 #define SHA256_F3(x) (ROTR(x,  7) ^ ROTR(x, 18) ^ SHFR(x,  3))
 #define SHA256_F4(x) (ROTR(x, 17) ^ ROTR(x, 19) ^ SHFR(x, 10))
 
-typedef struct {
-    unsigned int tot_len;
-    unsigned int len;
-    unsigned char block[2 * SHA256_BLOCK_SIZE];
-    uint32_t h[8];
-} sha256_ctx;
-
 extern uint32_t sha256_k[64];
+
+void data_pkg(const uint8_t *data, uint8_t *out);
 
 #endif /* !SHA2_H */
