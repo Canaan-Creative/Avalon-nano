@@ -113,7 +113,7 @@ int Chip_UART_Read(LPC_USART_T *pUART, void *data, int numBytes)
 
 	/* Send until the transmit FIFO is full or out of bytes */
 	while ((readBytes < numBytes) &&
-		   ((Chip_UART_ReadLineStatus(pUART) & UART_LSR_RDR) != 0)) {
+			((Chip_UART_ReadLineStatus(pUART) & UART_LSR_RDR) != 0)) {
 		*p8 = Chip_UART_ReadByte(pUART);
 		p8++;
 		readBytes++;
