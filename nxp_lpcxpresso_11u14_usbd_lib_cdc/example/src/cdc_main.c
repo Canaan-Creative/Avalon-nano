@@ -62,7 +62,7 @@ const char inst2[] = "Press a key to echo it back or ESC to quit\r\n";
  ****************************************************************************/
 
 static USBD_HANDLE_T g_hUsb;
-static uint8_t g_rxBuff[256];
+static uint8_t g_rxBuff[512];
 
 extern const  USBD_HW_API_T hw_api;
 extern const  USBD_CORE_API_T core_api;
@@ -536,6 +536,7 @@ int main(void)
 	unsigned int nonce_cnt;
 	unsigned int nonce_i;
 	unsigned int nonce_wd;
+	int one_task;
 
 	SystemCoreClockUpdate();
 	Init_Gpio();
@@ -624,45 +625,37 @@ int main(void)
 
 		if (prompt) {
 			rdCnt = 0;
+			one_task = 0;
 			while (1) {
+				led_rgb(LED_GREEN);
 				rdCnt += vcom_bread(&g_rxBuff[rdCnt], IN_BUF_LEN - rdCnt);
-				if (rdCnt >= IN_BUF_LEN)
+				if (rdCnt >= IN_BUF_LEN) {
+					one_task = 1;
 					break;
+				}
 			}
 
 			data_pkg(&g_rxBuff[0], &work_buf[0]);
 			((unsigned int *)work_buf)[1] = pll_cfg0;
 
 			if (rdCnt) {
-					/*Buffer to A3233*/
-					led_rgb(LED_OFF);
+					Chip_UART_SendBlocking(LPC_USART, work_buf, 22 * 4);
+					Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV1 | UART_FCR_RX_RS));
 
-					Chip_UART_Send(LPC_USART, work_buf, 22 * 4);
-					Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 | UART_FCR_RX_RS));
-
-					led_rgb(LED_GREEN);
 					nonce_cnt = 0;
 					nonce_i = 0;
 
-					while (1) {
-						if (((*(unsigned int *)0x40008014) & 0x1) == 0x1) {
-							nonce_buf[nonce_cnt] = *(unsigned int *)0x40008000;
+					led_rgb(LED_OFF);
+					while (one_task) {
+						if (Chip_UART_Read(LPC_USART, nonce_buf + nonce_cnt, 1))
 							nonce_cnt++;
-							if (vcom_rx_cnt())
-								break;
-						}
 
-						if (vcom_rx_cnt())
-							break;
-
-						if (nonce_cnt >= 4) {
-							led_rgb(LED_RED);
-
+						if (nonce_cnt == 4) {
 							nonce_wd = nonce_buf[nonce_i*4+0]   |
 									(nonce_buf[nonce_i*4+1]<<8 )|
 									(nonce_buf[nonce_i*4+2]<<16)|
 									(nonce_buf[nonce_i*4+3]<<24);
-							nonce_wd = nonce_wd - 0x1000;
+							nonce_wd -= 0x1000;
 							nonce_buf[nonce_i*4+0] = nonce_wd&0xff;
 							nonce_buf[nonce_i*4+1] = (nonce_wd&0xff00    )>>8 ;
 							nonce_buf[nonce_i*4+2] = (nonce_wd&0xff0000  )>>16;
@@ -670,10 +663,17 @@ int main(void)
 
 							vcom_write(&nonce_buf[nonce_i*4], 4);
 							nonce_cnt = 0;
-							break;
+							one_task = 0;
+
 						}
+						if (!nonce_cnt)
+							led_rgb(LED_BLUE);
+
+						if (vcom_rx_cnt())
+							one_task = 0;
+						else
+							led_rgb(LED_RED);
 					}
-					led_rgb(LED_BLUE);
 			}
 		}
 		/* Sleep until next IRQ happens */
