@@ -37,6 +37,16 @@
 #include "sha2.h"
 #include <NXP/crp.h>
 
+#define A3233_TASK_LEN 88
+#define A3233_NONCE_LEN	4
+#define ICA_TASK_LEN 64
+
+static ADC_CLOCK_SETUP_T ADCSetup;
+unsigned char rx_buf[A3233_TASK_LEN];
+
+#define bswap_16(value)  \
+    ((((value) & 0xff) << 8) | ((value) >> 8))
+
 __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 /*****************************************************************************
  * Private types/enumerations/variables
@@ -167,32 +177,31 @@ static void CLKOUT_Cfg(bool On)
 		Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 0);
 }
 
-unsigned int gen_test_a3233(unsigned int *buf, unsigned int cpm_cfg)
+unsigned int gen_test_a3233(uint32_t *buf, unsigned int cpm_cfg)
 {
-
-   buf[0] = 0x11111111;
-   buf[1] = cpm_cfg;
-   buf[2] = 0x00000000;
-   buf[3] = 0x4ac1d001;
-   buf[4] = 0x89517050;
-   buf[5] = 0x087e051a;
-   buf[6] = 0x06b168ae;
-   buf[7] = 0x62a5f25c;
-   buf[8] = 0x00639107;
-   buf[9] = 0x13cdfd7b;
-   buf[10] = 0xfa77fe7d;
-   buf[11] = 0x9cb18a17;
-   buf[12] = 0x65c90d1e;
-   buf[13] = 0x8f41371d;
-   buf[14] = 0x974bf4bb;
-   buf[15] = 0x7145fd6d;
-   buf[16] = 0xc44192c0;
-   buf[17] = 0x12146495;
-   buf[18] = 0xd8f8ef67;
-   buf[19] = 0xa2cb45c1;
-   buf[20] = 0x1bee2ba0;
-   buf[21] = 0xaaaaaaaa;
-   return buf[20] + 0x6000;
+	   buf[0] = 0x11111111;
+	   buf[1] = cpm_cfg;
+	   buf[2] = 0x00000000;
+	   buf[3] = 0x4ac1d001;
+	   buf[4] = 0x89517050;
+	   buf[5] = 0x087e051a;
+	   buf[6] = 0x06b168ae;
+	   buf[7] = 0x62a5f25c;
+	   buf[8] = 0x00639107;
+	   buf[9] = 0x13cdfd7b;
+	   buf[10] = 0xfa77fe7d;
+	   buf[11] = 0x9cb18a17;
+	   buf[12] = 0x65c90d1e;
+	   buf[13] = 0x8f41371d;
+	   buf[14] = 0x974bf4bb;
+	   buf[15] = 0x7145fd6d;
+	   buf[16] = 0xc44192c0;
+	   buf[17] = 0x12146495;
+	   buf[18] = 0xd8f8ef67;
+	   buf[19] = 0xa2cb45c1;
+	   buf[20] = 0x1bee2ba0;
+	   buf[21] = 0xaaaaaaaa;
+	   return buf[20] + 0x6000;
 }
 
 static void Init_UART_PinMux(void)
@@ -533,12 +542,6 @@ void Init_Counter(){
  * @brief	main routine for blinky example
  * @return	Function should not exit.
  */
-#define A3233_TASK_LEN 88
-#define A3233_NONCE_LEN	4
-#define ICA_TASK_LEN 64
-
-static ADC_CLOCK_SETUP_T ADCSetup;
-unsigned char rx_buf[A3233_TASK_LEN];
 
 int main(void)
 {
@@ -547,12 +550,12 @@ int main(void)
 	ErrorCode_t ret = LPC_OK;
 	uint32_t prompt = 0, rdCnt = 0;
 
-	unsigned char work_buf[A3233_TASK_LEN];
-	unsigned char nonce_buf[A3233_NONCE_LEN];
-	unsigned int nonce_cnt;
-	unsigned int nonce_value;
+	uint8_t work_buf[A3233_TASK_LEN];
+	uint8_t nonce_buf[A3233_NONCE_LEN * 4];
+	uint32_t nonce_cnt;
+	uint32_t nonce_value;
 
-	unsigned int pll_cfg0 = 0x1;
+	uint32_t pll_cfg0 = 0x1;
 
 	SystemCoreClockUpdate();
 	Init_Gpio();
@@ -579,7 +582,7 @@ int main(void)
 	Chip_UART_Init(LPC_USART);
 	Chip_UART_SetBaud(LPC_USART, 111111);	//115200
 	Chip_UART_ConfigData(LPC_USART, (UART_LCR_WLEN8 | UART_LCR_SBS_1BIT));
-	Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV0));
+	Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2));
 	Chip_UART_TXEnable(LPC_USART);
 
 	/* Before using the ring buffers, initialize them using the ring
@@ -588,11 +591,11 @@ int main(void)
 	RingBuffer_Init(&txring, txbuff, 1, UART_SRB_SIZE);
 
 	/* Enable receive data and line status interrupt */
-	Chip_UART_IntDisable(LPC_USART, (UART_IER_RBRINT | UART_IER_RLSINT | UART_IER_THREINT));
+	//Chip_UART_IntDisable(LPC_USART, (UART_IER_RBRINT | UART_IER_RLSINT | UART_IER_THREINT));
 
 	/* preemption = 1, sub-priority = 1 */
-	NVIC_SetPriority(UART0_IRQn, 1);
-	NVIC_EnableIRQ(UART0_IRQn);
+	//NVIC_SetPriority(UART0_IRQn, 1);
+	//NVIC_EnableIRQ(UART0_IRQn);
 
 	/* initilize call back structures */
 	memset((void *) &usb_param, 0, sizeof(USBD_API_INIT_PARAM_T));
@@ -626,7 +629,7 @@ int main(void)
 
 	DEBUGSTR("USB CDC class based virtual Comm port example!\r\n");
 
-	pll_cfg0 = Gen_A3233_Pll_Cfg(200);
+	pll_cfg0 = Gen_A3233_Pll_Cfg(300);
 
 	POWER_Enable(true);
 	Rstn_A3233();
@@ -641,7 +644,7 @@ int main(void)
 			while (1) {
 				led_rgb(LED_GREEN);
 
-				rdCnt += vcom_bread(g_rxBuff + rdCnt, 1);
+				rdCnt += vcom_bread(g_rxBuff + rdCnt, ICA_TASK_LEN - rdCnt);
 				if (rdCnt == ICA_TASK_LEN)
 					break;
 				else
@@ -653,9 +656,13 @@ int main(void)
 
 			memset(work_buf, 0, A3233_TASK_LEN);
 			data_pkg(g_rxBuff, work_buf);
+			((unsigned int *)work_buf)[1] = pll_cfg0;
 
 			if (rdCnt) {
+				//gen_test_a3233(work_buf, 1);
+
 				Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV1 | UART_FCR_RX_RS));
+				delay(100);
 				Chip_UART_SendBlocking(LPC_USART, work_buf, A3233_TASK_LEN);
 
 				nonce_cnt = 0;
@@ -663,11 +670,11 @@ int main(void)
 				while (1) {
 					led_rgb(LED_RED);
 
-					nonce_cnt += Chip_UART_Read(LPC_USART, nonce_buf + nonce_cnt, 1);
+					nonce_cnt += Chip_UART_Read(LPC_USART, nonce_buf + nonce_cnt, A3233_NONCE_LEN - nonce_cnt);
 
-					if (nonce_cnt == A3233_NONCE_LEN) {
+					if (nonce_cnt >= A3233_NONCE_LEN) {
 						PACK32(nonce_buf, &nonce_value);
-						nonce_value -= 0x1000;
+						nonce_value -= 0x100000; /* FIXME */
 						UNPACK32(nonce_value, nonce_buf);
 
 						vcom_write(nonce_buf, A3233_NONCE_LEN);
