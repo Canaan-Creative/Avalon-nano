@@ -659,11 +659,11 @@ int main(void)
 			((unsigned int *)work_buf)[1] = pll_cfg0;
 
 			if (rdCnt) {
-				//gen_test_a3233(work_buf, 1);
-
-				Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV1 | UART_FCR_RX_RS));
-				delay(100);
+#ifdef TASK_DEBUG
+				gen_test_a3233(work_buf, 1);
+#endif
 				Chip_UART_SendBlocking(LPC_USART, work_buf, A3233_TASK_LEN);
+				Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV1 | UART_FCR_RX_RS));
 
 				nonce_cnt = 0;
 				memset(nonce_buf, 0, A3233_NONCE_LEN);
@@ -682,8 +682,10 @@ int main(void)
 						break;
 					}
 
-					if (vcom_rx_cnt())
+					if (vcom_rx_cnt()) {
+						Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV1 | UART_FCR_RX_RS | UART_FCR_TX_RS));
 						break;
+					}
 				}
 				led_rgb(LED_OFF);
 			}
