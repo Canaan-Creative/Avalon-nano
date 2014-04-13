@@ -37,8 +37,6 @@
 #include "sha2.h"
 #include <NXP/crp.h>
 
-#define TMP_MAX 50
-
 __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 /*****************************************************************************
  * Private types/enumerations/variables
@@ -84,6 +82,13 @@ const  USBD_API_T *g_pUsbApi = &g_usbApi;
 /*****************************************************************************
  * Private functions
  ****************************************************************************/
+
+static void delay(unsigned int max)
+{
+	volatile unsigned int i;
+	for(i = 0; i < max; i++)
+		;
+}
 
 /* Initialize pin and clocks for USB0/USB1 port */
 static void usb_pin_clk_init(void)
@@ -154,14 +159,16 @@ static void Init_CLKOUT_PinMux(void)
 #endif
 }
 
-static void CLKOUT_Cfg(bool On){
+static void CLKOUT_Cfg(bool On)
+{
 	if(On == true)
 		Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 2);
 	else
 		Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 0);
 }
 
-unsigned int gen_test_a3233(unsigned int *buf, unsigned int cpm_cfg){
+unsigned int gen_test_a3233(unsigned int *buf, unsigned int cpm_cfg)
+{
 
    buf[0] = 0x11111111;
    buf[1] = cpm_cfg;
@@ -185,7 +192,6 @@ unsigned int gen_test_a3233(unsigned int *buf, unsigned int cpm_cfg){
    buf[19] = 0xa2cb45c1;
    buf[20] = 0x1bee2ba0;
    buf[21] = 0xaaaaaaaa;
-   //Chip_UART_Send(LPC_USART, (unsigned char *)buf, 22*4);
    return buf[20] + 0x6000;
 }
 
@@ -202,20 +208,13 @@ static void Init_UART_PinMux(void)
 #endif
 }
 
-void UART_IRQHandler(void)
+static void POWER_Enable(bool On)
 {
-	/* Want to handle any errors? Do it here. */
-
-	/* Use default ring buffer handler. Override this with your own
-	   code if you need more capability. */
-	Chip_UART_IRQRBHandler(LPC_USART, &rxring, &txring);
-}
-
-static void POWER_Enable(bool On){
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 11, On);//VCore Enable
 }
 
-static void Init_POWER(){
+static void Init_POWER()
+{
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 22);//VID0
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 7);//VID1
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 11);//VCore Enable
@@ -236,13 +235,14 @@ static void POWER_Cfg(unsigned char VID){
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 7, (bool)(VID>>1));//VID1
 }
 
-static void Init_Rstn(){
+static void Init_Rstn()
+{
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 20);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, true);
 }
 
-static void Rstn_A3233(){
-	delay(2000);
+static void Rstn_A3233()
+{
 	delay(2000);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, true);
 	delay(2000);
@@ -372,7 +372,6 @@ static void Init_ADC_PinMux(void)
 }
 
 static void ADC_Rd(uint8_t channel, uint16_t *data){
-	unsigned char rxc;
 	Chip_ADC_EnableChannel(LPC_ADC, channel, ENABLE);
 	/* Start A/D conversion */
 	Chip_ADC_SetStartMode(LPC_ADC, ADC_START_NOW, ADC_TRIGGERMODE_RISING);
@@ -383,21 +382,34 @@ static void ADC_Rd(uint8_t channel, uint16_t *data){
 	Chip_ADC_EnableChannel(LPC_ADC, channel, DISABLE);
 }
 
-static void ADC_Guard(){
+#define V_25	0
+#define V_18	1
+#define V_CORE	2
+#define V_09	3
+static float ADC_Guard(int type)
+{
 	uint16_t dataADC;
-	float vol = 0;
+	float vol;
+	switch (type) {
+	case V_25:
+		ADC_Rd(ADC_CH1, &dataADC);
+		vol = (dataADC/1024) * 3.3;
+		break;
+	case V_18:
+		ADC_Rd(ADC_CH3, &dataADC);
+		vol = (dataADC/1024) * 3.3;
+		break;
+	case V_CORE:
+		ADC_Rd(ADC_CH5, &dataADC);
+		vol = (dataADC/1024) * 3.3;
+		break;
+	case V_09:
+		ADC_Rd(ADC_CH7, &dataADC);
+		vol = (dataADC/1024) * 3.3;
+		break;
+	}
 
-	ADC_Rd(ADC_CH1, &dataADC);
-	vol = (dataADC/1024) * 3.3;//5/2 = 2.5V
-
-	ADC_Rd(ADC_CH3, &dataADC);
-	vol = (dataADC/1024) * 3.3;//1.8V
-
-	ADC_Rd(ADC_CH5, &dataADC);
-	vol = (dataADC/1024) * 3.3;//VCore
-
-	ADC_Rd(ADC_CH7, &dataADC);
-	vol = (dataADC/1024) * 3.3;//0.9V
+	return vol;
 }
 
 #ifdef HIGH_BAND
@@ -445,7 +457,7 @@ unsigned int Gen_A3233_Pll_Cfg(unsigned int freq){
 				((Fout) == ((Fin*NF/(NR*NO))) ) &&
 				(FREF_MIN<=Fref&&Fref<=FREF_MAX) &&
 				(FVCO_MIN<=Fvco&&Fvco<=FVCO_MAX) &&
-				(FOUT_MIN<=Fout      <=FOUT_MAX)
+				(FOUT_MIN<=Fout&&Fout<=FOUT_MAX)
 				){
 					if(NO == 1) OD = 0 ;
 					if(NO == 2) OD = 1 ;
@@ -461,6 +473,8 @@ unsigned int Gen_A3233_Pll_Cfg(unsigned int freq){
 				}
 		}
 	}
+
+	return 0;
 }
 
 #define LED_GREEN 	0
@@ -519,9 +533,12 @@ void Init_Counter(){
  * @brief	main routine for blinky example
  * @return	Function should not exit.
  */
-unsigned char rx_buf[22*4];
+#define A3233_TASK_LEN 88
+#define A3233_NONCE_LEN	4
+#define ICA_TASK_LEN 64
+
 static ADC_CLOCK_SETUP_T ADCSetup;
-#define IN_BUF_LEN 64
+unsigned char rx_buf[A3233_TASK_LEN];
 
 int main(void)
 {
@@ -530,13 +547,12 @@ int main(void)
 	ErrorCode_t ret = LPC_OK;
 	uint32_t prompt = 0, rdCnt = 0;
 
-	unsigned char work_buf[22*4];
-	unsigned int pll_cfg0 = 0x1;
-	unsigned char nonce_buf[128];
+	unsigned char work_buf[A3233_TASK_LEN];
+	unsigned char nonce_buf[A3233_NONCE_LEN];
 	unsigned int nonce_cnt;
-	unsigned int nonce_i;
-	unsigned int nonce_wd;
-	int one_task;
+	unsigned int nonce_value;
+
+	unsigned int pll_cfg0 = 0x1;
 
 	SystemCoreClockUpdate();
 	Init_Gpio();
@@ -561,9 +577,9 @@ int main(void)
 
 	/* Setup UART for 115.2K8N1 */
 	Chip_UART_Init(LPC_USART);
-	Chip_UART_SetBaud(LPC_USART, 111111);//115200);
+	Chip_UART_SetBaud(LPC_USART, 111111);	//115200
 	Chip_UART_ConfigData(LPC_USART, (UART_LCR_WLEN8 | UART_LCR_SBS_1BIT));
-	Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2));
+	Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV0));
 	Chip_UART_TXEnable(LPC_USART);
 
 	/* Before using the ring buffers, initialize them using the ring
@@ -572,7 +588,7 @@ int main(void)
 	RingBuffer_Init(&txring, txbuff, 1, UART_SRB_SIZE);
 
 	/* Enable receive data and line status interrupt */
-	//Chip_UART_IntEnable(LPC_USART, (UART_IER_RBRINT | UART_IER_RLSINT));
+	Chip_UART_IntDisable(LPC_USART, (UART_IER_RBRINT | UART_IER_RLSINT | UART_IER_THREINT));
 
 	/* preemption = 1, sub-priority = 1 */
 	NVIC_SetPriority(UART0_IRQn, 1);
@@ -598,7 +614,6 @@ int main(void)
 	/* USB Initialization */
 	ret = USBD_API->hw->Init(&g_hUsb, &desc, &usb_param);
 	if (ret == LPC_OK) {
-
 		/* Init VCOM interface */
 		ret = vcom_init(g_hUsb, &desc, &usb_param);
 		if (ret == LPC_OK) {
@@ -607,73 +622,63 @@ int main(void)
 			/* now connect */
 			USBD_API->hw->Connect(g_hUsb, 1);
 		}
-
 	}
 
 	DEBUGSTR("USB CDC class based virtual Comm port example!\r\n");
 
-	pll_cfg0 = Gen_A3233_Pll_Cfg(300);
+	pll_cfg0 = Gen_A3233_Pll_Cfg(200);
 
 	POWER_Enable(true);
 	Rstn_A3233();
 
 	while (1) {
 		/* Check if host has connected and opened the VCOM port */
-		if ((vcom_connected() != 0) && (prompt == 0)) {
+		if (vcom_connected() && !prompt)
 			prompt = 1;
-		}
 
 		if (prompt) {
 			rdCnt = 0;
-			one_task = 0;
 			while (1) {
 				led_rgb(LED_GREEN);
-				rdCnt += vcom_bread(&g_rxBuff[rdCnt], IN_BUF_LEN - rdCnt);
-				if (rdCnt >= IN_BUF_LEN) {
-					one_task = 1;
+
+				rdCnt += vcom_bread(g_rxBuff + rdCnt, 1);
+				if (rdCnt == ICA_TASK_LEN)
 					break;
-				}
+				else
+					led_rgb(LED_GREEN);
+
+				if (rdCnt == 0)
+					led_rgb(LED_BLUE);
 			}
 
-			data_pkg(&g_rxBuff[0], &work_buf[0]);
-			((unsigned int *)work_buf)[1] = pll_cfg0;
+			memset(work_buf, 0, A3233_TASK_LEN);
+			data_pkg(g_rxBuff, work_buf);
 
 			if (rdCnt) {
-					Chip_UART_SendBlocking(LPC_USART, work_buf, 22 * 4);
-					Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV1 | UART_FCR_RX_RS));
+				Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV1 | UART_FCR_RX_RS));
+				Chip_UART_SendBlocking(LPC_USART, work_buf, A3233_TASK_LEN);
 
-					nonce_cnt = 0;
-					nonce_i = 0;
+				nonce_cnt = 0;
+				memset(nonce_buf, 0, A3233_NONCE_LEN);
+				while (1) {
+					led_rgb(LED_RED);
 
-					led_rgb(LED_OFF);
-					while (one_task) {
-						if (Chip_UART_Read(LPC_USART, nonce_buf + nonce_cnt, 1))
-							nonce_cnt++;
+					nonce_cnt += Chip_UART_Read(LPC_USART, nonce_buf + nonce_cnt, 1);
 
-						if (nonce_cnt == 4) {
-							nonce_wd = nonce_buf[nonce_i*4+0]   |
-									(nonce_buf[nonce_i*4+1]<<8 )|
-									(nonce_buf[nonce_i*4+2]<<16)|
-									(nonce_buf[nonce_i*4+3]<<24);
-							nonce_wd -= 0x1000;
-							nonce_buf[nonce_i*4+0] = nonce_wd&0xff;
-							nonce_buf[nonce_i*4+1] = (nonce_wd&0xff00    )>>8 ;
-							nonce_buf[nonce_i*4+2] = (nonce_wd&0xff0000  )>>16;
-							nonce_buf[nonce_i*4+3] = (nonce_wd&0xff000000)>>24;
+					if (nonce_cnt == A3233_NONCE_LEN) {
+						PACK32(nonce_buf, &nonce_value);
+						nonce_value -= 0x1000;
+						UNPACK32(nonce_value, nonce_buf);
 
-							vcom_write(&nonce_buf[nonce_i*4], 4);
-							nonce_cnt = 0;
-							one_task = 0;
+						vcom_write(nonce_buf, A3233_NONCE_LEN);
 
-						}
-						if (!nonce_cnt)
-							led_rgb(LED_BLUE);
-
-						if (vcom_rx_cnt())
-							one_task = 0;
-						else
-							led_rgb(LED_RED);
+						break;
 					}
+
+					if (vcom_rx_cnt())
+						break;
+				}
+				led_rgb(LED_OFF);
 			}
 		}
 		/* Sleep until next IRQ happens */

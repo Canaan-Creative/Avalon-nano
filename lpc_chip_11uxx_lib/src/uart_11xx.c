@@ -68,10 +68,7 @@ void Chip_UART_DeInit(LPC_USART_T *pUART)
 {
 	Chip_Clock_DisablePeriphClock(SYSCTL_CLOCK_UART0);
 }
-delay(unsigned int max){
-	volatile unsigned int i;
-	for(i=0;i<max;i++);
-}
+
 /* Transmit a byte array through the UART peripheral (non-blocking) */
 int Chip_UART_Send(LPC_USART_T *pUART, const void *data, int numBytes)
 {

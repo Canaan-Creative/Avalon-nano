@@ -46,7 +46,7 @@ extern "C" {
 
 #if defined(CHIP_LPC11AXX) || defined(CHIP_LPC11CXX) || defined(CHIP_LPC11EXX) || defined(CHIP_LPC11UXX) || defined(CHIP_LPC1125)
 #if defined(CHIP_LPC1125)
-#error "LPC1125 support for the PMU driver is not ready
+#error "LPC1125 support for the PMU driver is not ready"
 #endif
  
 /**
