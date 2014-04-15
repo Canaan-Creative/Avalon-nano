@@ -439,6 +439,10 @@ static float ADC_Guard(int type)
 #define WORD0_BASE 0x7
 #endif
 
+/*
+ * @brief	gen pll cfg val (freq 200-400 )
+ * @return	pll cfg val
+ * */
 unsigned int Gen_A3233_Pll_Cfg(unsigned int freq){
 	unsigned int NOx[4] , i=0;
 	unsigned int NO =0;//1 2 4 8
@@ -556,6 +560,7 @@ int main(void)
 	uint32_t nonce_value;
 
 	uint32_t pll_cfg0 = 0x1;
+	uint8_t a3323pll_needset = 0;
 
 	SystemCoreClockUpdate();
 	Init_Gpio();
@@ -629,7 +634,16 @@ int main(void)
 
 	DEBUGSTR("USB CDC class based virtual Comm port example!\r\n");
 
-	pll_cfg0 = Gen_A3233_Pll_Cfg(300);
+	pll_cfg0 = Gen_A3233_Pll_Cfg(400);
+
+	/*
+	 * a3233 pll set tip
+	 * 1st circle:change pll to desire val
+	 * 2nd cirecle: set 0x1
+	 * change a3323pll_needset to 1 if need
+	 * set the a3323 pll
+	 * */
+	a3323pll_needset = 1;
 
 	POWER_Enable(true);
 	Rstn_A3233();
@@ -656,7 +670,18 @@ int main(void)
 
 			memset(work_buf, 0, A3233_TASK_LEN);
 			data_pkg(g_rxBuff, work_buf);
-			((unsigned int *)work_buf)[1] = pll_cfg0;
+			if( a3323pll_needset )
+			{
+				((unsigned int *)work_buf)[1] = pll_cfg0;
+				a3323pll_needset = 0;
+			}
+			else
+			{
+				if( 1 != ((unsigned int *)work_buf)[1] )
+				{
+					((unsigned int *)work_buf)[1] = 0x1;
+				}
+			}
 
 			if (rdCnt) {
 #ifdef TASK_DEBUG
