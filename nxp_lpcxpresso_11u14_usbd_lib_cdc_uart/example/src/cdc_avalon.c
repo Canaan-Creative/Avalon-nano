@@ -1,8 +1,8 @@
 /*
- * @brief Vitual communication port example
+ * @brief avalon routines
  *
  * @note
- * Copyright(C) NXP Semiconductors, 2013
+ * Copyright(C) 0xf8, 2014
  * All rights reserved.
  *
  * @par
@@ -28,154 +28,7 @@
  * copyright, permission, and disclaimer notice must appear in all copies of
  * this code.
  */
-
-#include "board.h"
-#include <stdio.h>
-#include <string.h>
-#include "app_usbd_cfg.h"
-#include "cdc_vcom.h"
-#include "sha2.h"
-#include <NXP/crp.h>
-
-#define A3233_TASK_LEN 88
-#define A3233_NONCE_LEN	4
-#define ICA_TASK_LEN 64
-
-static ADC_CLOCK_SETUP_T ADCSetup;
-unsigned char rx_buf[A3233_TASK_LEN];
-
-#define bswap_16(value)  \
-    ((((value) & 0xff) << 8) | ((value) >> 8))
-
-__CRP unsigned int CRP_WORD = CRP_NO_ISP;
-/*****************************************************************************
- * Private types/enumerations/variables
- ****************************************************************************/
-/* Transmit and receive ring buffers */
-STATIC RINGBUFF_T txring, rxring;
-
-/* Transmit and receive ring buffer sizes */
-#define UART_SRB_SIZE 128	/* Send */
-#define UART_RRB_SIZE 32	/* Receive */
-
-#define UART_DELAY
-
-/* Transmit and receive buffers */
-static uint8_t rxbuff[UART_RRB_SIZE], txbuff[UART_SRB_SIZE];
-
-const char inst1[] = "LPC11xx UART example using ring buffers\r\n";
-const char inst2[] = "Press a key to echo it back or ESC to quit\r\n";
-/*****************************************************************************
- * Public types/enumerations/variables
- ****************************************************************************/
-
-static USBD_HANDLE_T g_hUsb;
-static uint8_t g_rxBuff[512];
-
-extern const  USBD_HW_API_T hw_api;
-extern const  USBD_CORE_API_T core_api;
-extern const  USBD_CDC_API_T cdc_api;
-/* Since this example only uses CDC class link functions for that clas only */
-static const  USBD_API_T g_usbApi = {
-	&hw_api,
-	&core_api,
-	0,
-	0,
-	0,
-	&cdc_api,
-	0,
-	0x02221101,
-};
-
-const  USBD_API_T *g_pUsbApi = &g_usbApi;
-
-/*****************************************************************************
- * Private functions
- ****************************************************************************/
-
-static void delay(unsigned int max)
-{
-	volatile unsigned int i;
-	for(i = 0; i < max; i++)
-		;
-}
-
-/* Initialize pin and clocks for USB0/USB1 port */
-static void usb_pin_clk_init(void)
-{
-	/* enable USB main clock */
-	Chip_Clock_SetUSBClockSource(SYSCTL_USBCLKSRC_PLLOUT, 1);
-	/* Enable AHB clock to the USB block and USB RAM. */
-	Chip_Clock_EnablePeriphClock(SYSCTL_CLOCK_USB);
-	Chip_Clock_EnablePeriphClock(SYSCTL_CLOCK_USBRAM);
-	/* power UP USB Phy */
-	Chip_SYSCTL_PowerUp(SYSCTL_POWERDOWN_USBPAD_PD);
-}
-
-/*****************************************************************************
- * Public functions
- ****************************************************************************/
-
-/**
- * @brief	Handle interrupt from USB0
- * @return	Nothing
- */
-void USB_IRQHandler(void)
-{
-	USBD_API->hw->ISR(g_hUsb);
-}
-
-/* Find the address of interface descriptor for given class type. */
-USB_INTERFACE_DESCRIPTOR *find_IntfDesc(const uint8_t *pDesc, uint32_t intfClass)
-{
-	USB_COMMON_DESCRIPTOR *pD;
-	USB_INTERFACE_DESCRIPTOR *pIntfDesc = 0;
-	uint32_t next_desc_adr;
-
-	pD = (USB_COMMON_DESCRIPTOR *) pDesc;
-	next_desc_adr = (uint32_t) pDesc;
-
-	while (pD->bLength) {
-		/* is it interface descriptor */
-		if (pD->bDescriptorType == USB_INTERFACE_DESCRIPTOR_TYPE) {
-
-			pIntfDesc = (USB_INTERFACE_DESCRIPTOR *) pD;
-			/* did we find the right interface descriptor */
-			if (pIntfDesc->bInterfaceClass == intfClass) {
-				break;
-			}
-		}
-		pIntfDesc = 0;
-		next_desc_adr = (uint32_t) pD + pD->bLength;
-		pD = (USB_COMMON_DESCRIPTOR *) next_desc_adr;
-	}
-
-	return pIntfDesc;
-}
-
-static void Init_CLKOUT_PinMux(void)
-{
-#if (defined(BOARD_NXP_XPRESSO_11U14) || defined(BOARD_NGX_BLUEBOARD_11U24))
-	/* LPC11U14 Xpresso board has CLKOUT on pin PIO0_1 on J6-38 */
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 1, (IOCON_FUNC1 | IOCON_MODE_INACT));
-#elif defined(BOARD_NXP_XPRESSO_11C24)
-	/* LPC11C24 Xpresso board has CLKOUT on pin PIO0_1 on J6-38 */
-	Chip_IOCON_PinMuxSet(LPC_IOCON, IOCON_PIO0_1, (IOCON_FUNC1 | IOCON_MODE_INACT));
-#elif defined(BOARD_MCORE48_1125)
-	/* LPC1125 MCore48 board has CLKOUT on pin PIO0_1 */
-	Chip_IOCON_PinMuxSet(LPC_IOCON, IOCON_PIO0_1, (IOCON_FUNC1 | IOCON_MODE_INACT));
-#else
-	#error "Pin MUX for CLKOUT not configured"
-#endif
-}
-
-static void CLKOUT_Cfg(bool On)
-{
-	if(On == true)
-		Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 2);
-	else
-		Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 0);
-}
+#include "cdc_avalon.h"
 
 unsigned int gen_test_a3233(uint32_t *buf, unsigned int cpm_cfg)
 {
@@ -202,19 +55,6 @@ unsigned int gen_test_a3233(uint32_t *buf, unsigned int cpm_cfg)
 	   buf[20] = 0x1bee2ba0;
 	   buf[21] = 0xaaaaaaaa;
 	   return buf[20] + 0x6000;
-}
-
-static void Init_UART_PinMux(void)
-{
-#if (defined(BOARD_NXP_XPRESSO_11U14) || defined(BOARD_NGX_BLUEBOARD_11U24))
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 18, IOCON_FUNC1 | IOCON_MODE_INACT | IOCON_MODE_PULLUP);	/* PIO0_18 used for RXD */
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 19, IOCON_FUNC1 | IOCON_MODE_INACT);	/* PIO0_19 used for TXD */
-#elif (defined(BOARD_NXP_XPRESSO_11C24) || defined(BOARD_MCORE48_1125))
-	Chip_IOCON_PinMuxSet(LPC_IOCON, IOCON_PIO1_6, (IOCON_FUNC1 | IOCON_MODE_INACT));/* RXD */
-	Chip_IOCON_PinMuxSet(LPC_IOCON, IOCON_PIO1_7, (IOCON_FUNC1 | IOCON_MODE_INACT));/* TXD */
-#else
-#error "No Pin muxing defined for UART operation"
-#endif
 }
 
 static void POWER_Enable(bool On)
@@ -248,6 +88,12 @@ static void Init_Rstn()
 {
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 20);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, true);
+}
+
+static void delay(unsigned int max)
+{
+	volatile unsigned int i;
+	for(i = 0; i < max; i++);
 }
 
 static void Rstn_A3233()
@@ -490,21 +336,17 @@ unsigned int Gen_A3233_Pll_Cfg(unsigned int freq){
 	return 0;
 }
 
-#define LED_GREEN 	0
-#define LED_RED		1
-#define LED_BLUE	2
-#define LED_OFF		3
-void led_rgb(unsigned int rgb)
+void AVALON_led_rgb(unsigned int rgb)
 {
-	if (rgb == LED_GREEN) {
+	if (rgb == AVALON_LED_GREEN) {
 		Board_LED_Set(0, false);//green
 		Board_LED_Set(1, true);//red
 		Board_LED_Set(2, true);//blue
-	} else if (rgb == LED_RED) {
+	} else if (rgb == AVALON_LED_RED) {
 		Board_LED_Set(0, true);//green
 		Board_LED_Set(1, false);//red
 		Board_LED_Set(2, true);//blue
-	} else if (rgb == LED_BLUE) {
+	} else if (rgb == AVALON_LED_BLUE) {
 		Board_LED_Set(0, true);//green
 		Board_LED_Set(1, true);//red
 		Board_LED_Set(2, false);//blue
@@ -538,36 +380,42 @@ static void Init_Led(void)
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 1, 19);
 }
 
+static void Init_CLKOUT_PinMux(void)
+{
+#if (defined(BOARD_NXP_XPRESSO_11U14) || defined(BOARD_NGX_BLUEBOARD_11U24))
+	/* LPC11U14 Xpresso board has CLKOUT on pin PIO0_1 on J6-38 */
+	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 1, (IOCON_FUNC1 | IOCON_MODE_INACT));
+#elif defined(BOARD_NXP_XPRESSO_11C24)
+	/* LPC11C24 Xpresso board has CLKOUT on pin PIO0_1 on J6-38 */
+	Chip_IOCON_PinMuxSet(LPC_IOCON, IOCON_PIO0_1, (IOCON_FUNC1 | IOCON_MODE_INACT));
+#elif defined(BOARD_MCORE48_1125)
+	/* LPC1125 MCore48 board has CLKOUT on pin PIO0_1 */
+	Chip_IOCON_PinMuxSet(LPC_IOCON, IOCON_PIO0_1, (IOCON_FUNC1 | IOCON_MODE_INACT));
+#else
+	#error "Pin MUX for CLKOUT not configured"
+#endif
+}
+
+static void CLKOUT_Cfg(bool On)
+{
+	if(On == true)
+		Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 2);
+	else
+		Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 0);
+}
+
 void Init_Counter(){
 	Chip_Clock_EnablePeriphClock(SYSCTL_CLOCK_CT32B0);
 }
 
-/**
- * @brief	main routine for blinky example
- * @return	Function should not exit.
- */
-
-int main(void)
-{
-	USBD_API_INIT_PARAM_T usb_param;
-	USB_CORE_DESCS_T desc;
+ErrorCode_t AVALON_init (void){
 	ErrorCode_t ret = LPC_OK;
-	uint32_t prompt = 0, rdCnt = 0;
+	ADC_CLOCK_SETUP_T ADCSetup;
 
-	uint8_t work_buf[A3233_TASK_LEN];
-	uint8_t nonce_buf[A3233_NONCE_LEN * 4];
-	uint32_t nonce_cnt;
-	uint32_t nonce_value;
-
-	uint32_t pll_cfg0 = 0x1;
-	uint8_t a3323pll_needset = 0;
-
-	SystemCoreClockUpdate();
 	Init_Gpio();
 	Init_Led();
 	Init_Rstn();//low active
 	Init_CLKOUT_PinMux();
-	Init_UART_PinMux();
 	Init_POWER();
 	Init_I2c();
 	Init_ADC_PinMux();
@@ -578,63 +426,9 @@ int main(void)
 	POWER_Enable(false);
 	Rstn_A3233();
 
-	led_rgb(LED_BLUE);
-
-	/* enable clocks and pinmux */
-	usb_pin_clk_init();
-
-	/* Setup UART for 115.2K8N1 */
-	Chip_UART_Init(LPC_USART);
-	Chip_UART_SetBaud(LPC_USART, 111111);	//115200
-	Chip_UART_ConfigData(LPC_USART, (UART_LCR_WLEN8 | UART_LCR_SBS_1BIT));
-	Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2));
-	Chip_UART_TXEnable(LPC_USART);
-
-	/* Before using the ring buffers, initialize them using the ring
-	   buffer init function */
-	RingBuffer_Init(&rxring, rxbuff, 1, UART_RRB_SIZE);
-	RingBuffer_Init(&txring, txbuff, 1, UART_SRB_SIZE);
-
-	/* Enable receive data and line status interrupt */
-	//Chip_UART_IntDisable(LPC_USART, (UART_IER_RBRINT | UART_IER_RLSINT | UART_IER_THREINT));
-
-	/* preemption = 1, sub-priority = 1 */
-	//NVIC_SetPriority(UART0_IRQn, 1);
-	//NVIC_EnableIRQ(UART0_IRQn);
-
-	/* initilize call back structures */
-	memset((void *) &usb_param, 0, sizeof(USBD_API_INIT_PARAM_T));
-	usb_param.usb_reg_base = LPC_USB0_BASE;
-	usb_param.max_num_ep = 3;
-	usb_param.mem_base = USB_STACK_MEM_BASE;
-	usb_param.mem_size = USB_STACK_MEM_SIZE;
-
-	/* Set the USB descriptors */
-	desc.device_desc = (uint8_t *) &USB_DeviceDescriptor[0];
-	desc.string_desc = (uint8_t *) &USB_StringDescriptor[0];
-	/* Note, to pass USBCV test full-speed only devices should have both
-	   descriptor arrays point to same location and device_qualifier set to 0.
-	 */
-	desc.high_speed_desc = (uint8_t *) &USB_FsConfigDescriptor[0];
-	desc.full_speed_desc = (uint8_t *) &USB_FsConfigDescriptor[0];
-	desc.device_qualifier = 0;
-
-	/* USB Initialization */
-	ret = USBD_API->hw->Init(&g_hUsb, &desc, &usb_param);
-	if (ret == LPC_OK) {
-		/* Init VCOM interface */
-		ret = vcom_init(g_hUsb, &desc, &usb_param);
-		if (ret == LPC_OK) {
-			/*  enable USB interrrupts */
-			NVIC_EnableIRQ(USB0_IRQn);
-			/* now connect */
-			USBD_API->hw->Connect(g_hUsb, 1);
-		}
-	}
-
-	DEBUGSTR("USB CDC class based virtual Comm port example!\r\n");
-
-	pll_cfg0 = Gen_A3233_Pll_Cfg(400);
+	AVALON_led_rgb(AVALON_LED_RED);
+	delay(2000000);
+	AVALON_led_rgb(AVALON_LED_BLUE);
 
 	/*
 	 * a3233 pll set tip
@@ -643,79 +437,8 @@ int main(void)
 	 * change a3323pll_needset to 1 if need
 	 * set the a3323 pll
 	 * */
-	a3323pll_needset = 1;
-
 	POWER_Enable(true);
 	Rstn_A3233();
 
-	while (1) {
-		/* Check if host has connected and opened the VCOM port */
-		if (vcom_connected() && !prompt)
-			prompt = 1;
-
-		if (prompt) {
-			rdCnt = 0;
-			while (1) {
-				led_rgb(LED_GREEN);
-
-				rdCnt += vcom_bread(g_rxBuff + rdCnt, ICA_TASK_LEN - rdCnt);
-				if (rdCnt == ICA_TASK_LEN)
-					break;
-				else
-					led_rgb(LED_GREEN);
-
-				if (rdCnt == 0)
-					led_rgb(LED_BLUE);
-			}
-
-			memset(work_buf, 0, A3233_TASK_LEN);
-			data_pkg(g_rxBuff, work_buf);
-			if( a3323pll_needset )
-			{
-				((unsigned int *)work_buf)[1] = pll_cfg0;
-				a3323pll_needset = 0;
-			}
-			else
-			{
-				if( 1 != ((unsigned int *)work_buf)[1] )
-				{
-					((unsigned int *)work_buf)[1] = 0x1;
-				}
-			}
-
-			if (rdCnt) {
-#ifdef TASK_DEBUG
-				gen_test_a3233(work_buf, 1);
-#endif
-				Chip_UART_SendBlocking(LPC_USART, work_buf, A3233_TASK_LEN);
-				Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV1 | UART_FCR_RX_RS));
-
-				nonce_cnt = 0;
-				memset(nonce_buf, 0, A3233_NONCE_LEN);
-				while (1) {
-					led_rgb(LED_RED);
-
-					nonce_cnt += Chip_UART_Read(LPC_USART, nonce_buf + nonce_cnt, A3233_NONCE_LEN - nonce_cnt);
-
-					if (nonce_cnt >= A3233_NONCE_LEN) {
-						PACK32(nonce_buf, &nonce_value);
-						nonce_value -= 0x100000; /* FIXME */
-						UNPACK32(nonce_value, nonce_buf);
-
-						vcom_write(nonce_buf, A3233_NONCE_LEN);
-
-						break;
-					}
-
-					if (vcom_rx_cnt()) {
-						Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV1 | UART_FCR_RX_RS | UART_FCR_TX_RS));
-						break;
-					}
-				}
-				led_rgb(LED_OFF);
-			}
-		}
-		/* Sleep until next IRQ happens */
-		__WFI();
-	}
+	return ret;
 }

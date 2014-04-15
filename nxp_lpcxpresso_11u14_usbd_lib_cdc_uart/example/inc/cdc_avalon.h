@@ -1,8 +1,8 @@
 /*
- * @brief Common SystemInit function for LPC11xx chips
+ * @brief Programming API used with avalon
  *
  * @note
- * Copyright(C) NXP Semiconductors, 2012
+ * Copyright(C) 0xf8, 2014
  * All rights reserved.
  *
  * @par
@@ -28,33 +28,44 @@
  * copyright, permission, and disclaimer notice must appear in all copies of
  * this code.
  */
+#ifndef __CDC_AVALON_H_
+#define __CDC_AVALON_H_
 
- #include "board.h"
+#include <stdio.h>
+#include "board.h"
 
-/*****************************************************************************
- * Private types/enumerations/variables
- ****************************************************************************/
-
-/*****************************************************************************
- * Public types/enumerations/variables
- ****************************************************************************/
-
-/*****************************************************************************
- * Private functions
- ****************************************************************************/
-
-/*****************************************************************************
- * Public functions
- ****************************************************************************/
-
-/* Set up and initialize hardware prior to call to main */
-void SystemInit(void)
+#ifdef __cplusplus
+extern "C"
 {
-#if defined(NO_BOARD_LIB)
-	/* Chip specific SystemInit */
-	Chip_SystemInit();
-#else
-	/* Board specific SystemInit */
-	Board_SystemInit();
 #endif
+
+#define AVALON_LED_GREEN 	0
+#define AVALON_LED_RED		1
+#define AVALON_LED_BLUE		2
+#define AVALON_LED_OFF		3
+
+/** @ingroup EXAMPLES_USBDLIB_11XX_CDC_UART
+ * @{
+ */
+
+/**
+ * @brief	USB to UART bridge port init routine
+ * @param	pDesc		: Pointer to configuration descriptor
+ * @param	pUsbParam	: Pointer USB param structure returned by previous init call
+ * @return	Always returns LPC_OK.
+ */
+ErrorCode_t AVALON_init (void);
+
+/*
+ * */
+void AVALON_led_rgb(unsigned int rgb);
+
+/**
+ * @}
+ */
+
+#ifdef __cplusplus
 }
+#endif
+
+#endif /* __CDC_AVALON_H_ */
