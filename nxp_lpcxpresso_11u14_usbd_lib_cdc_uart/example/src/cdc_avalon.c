@@ -30,34 +30,7 @@
  */
 #include "cdc_avalon.h"
 
-unsigned int gen_test_a3233(uint32_t *buf, unsigned int cpm_cfg)
-{
-	   buf[0] = 0x11111111;
-	   buf[1] = cpm_cfg;
-	   buf[2] = 0x00000000;
-	   buf[3] = 0x4ac1d001;
-	   buf[4] = 0x89517050;
-	   buf[5] = 0x087e051a;
-	   buf[6] = 0x06b168ae;
-	   buf[7] = 0x62a5f25c;
-	   buf[8] = 0x00639107;
-	   buf[9] = 0x13cdfd7b;
-	   buf[10] = 0xfa77fe7d;
-	   buf[11] = 0x9cb18a17;
-	   buf[12] = 0x65c90d1e;
-	   buf[13] = 0x8f41371d;
-	   buf[14] = 0x974bf4bb;
-	   buf[15] = 0x7145fd6d;
-	   buf[16] = 0xc44192c0;
-	   buf[17] = 0x12146495;
-	   buf[18] = 0xd8f8ef67;
-	   buf[19] = 0xa2cb45c1;
-	   buf[20] = 0x1bee2ba0;
-	   buf[21] = 0xaaaaaaaa;
-	   return buf[20] + 0x6000;
-}
-
-static void POWER_Enable(bool On)
+void AVALON_POWER_Enable(bool On)
 {
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 11, On);//VCore Enable
 }
@@ -69,7 +42,7 @@ static void Init_POWER()
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 11);//VCore Enable
 	*(unsigned int *) 0x4004402c = 0x81;
 
-	POWER_Enable(false);
+	AVALON_POWER_Enable(false);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 22, true);//VID0
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 7, true);//VID1
 }
@@ -96,7 +69,7 @@ static void delay(unsigned int max)
 	for(i = 0; i < max; i++);
 }
 
-static void Rstn_A3233()
+void AVALON_Rstn_A3233()
 {
 	delay(2000);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, true);
@@ -289,7 +262,7 @@ static float ADC_Guard(int type)
  * @brief	gen pll cfg val (freq 200-400 )
  * @return	pll cfg val
  * */
-unsigned int Gen_A3233_Pll_Cfg(unsigned int freq){
+unsigned int AVALON_Gen_A3233_Pll_Cfg(unsigned int freq){
 	unsigned int NOx[4] , i=0;
 	unsigned int NO =0;//1 2 4 8
 	unsigned int Fin = 25 ;
@@ -423,22 +396,9 @@ ErrorCode_t AVALON_init (void){
 
 	POWER_Cfg(VCORE_0P675);
 	CLKOUT_Cfg(true);
-	POWER_Enable(false);
-	Rstn_A3233();
+	AVALON_POWER_Enable(false);
 
 	AVALON_led_rgb(AVALON_LED_RED);
-	delay(2000000);
-	AVALON_led_rgb(AVALON_LED_BLUE);
-
-	/*
-	 * a3233 pll set tip
-	 * 1st circle:change pll to desire val
-	 * 2nd cirecle: set 0x1
-	 * change a3323pll_needset to 1 if need
-	 * set the a3323 pll
-	 * */
-	POWER_Enable(true);
-	Rstn_A3233();
 
 	return ret;
 }

@@ -60,6 +60,12 @@ ErrorCode_t AVALON_init (void);
  * */
 void AVALON_led_rgb(unsigned int rgb);
 
+void AVALON_POWER_Enable(bool On);
+
+void AVALON_Rstn_A3233();
+
+unsigned int AVALON_Gen_A3233_Pll_Cfg(unsigned int freq);
+
 /**
  * @}
  */

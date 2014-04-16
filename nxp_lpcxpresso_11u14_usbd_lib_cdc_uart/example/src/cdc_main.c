@@ -133,8 +133,6 @@ int main(void)
 	ErrorCode_t ret = LPC_OK;
 
 	SystemCoreClockUpdate();
-	/* Initialize avalon chip */
-	AVALON_init();
 
 	/* enable clocks and pinmux */
 	usb_pin_clk_init();
@@ -171,6 +169,9 @@ int main(void)
 			USBD_API->hw->Connect(g_hUsb, 1);
 		}
 	}
+
+	/* Initialize avalon chip */
+	AVALON_init();
 
 	while (1) {
 		/* Sleep until next IRQ happens */

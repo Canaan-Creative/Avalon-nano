@@ -72,7 +72,8 @@ typedef struct UCOM_DATA {
 } UCOM_DATA_T;
 
 /** Virtual Comm port control data instance. */
-static UCOM_DATA_T g_uCOM;
+static UCOM_DATA_T 	g_uCOM;
+static bool			a3233_enable = false;
 
 /*****************************************************************************
  * Public types/enumerations/variables
@@ -85,7 +86,7 @@ static UCOM_DATA_T g_uCOM;
 static void Init_UART_PinMux(void)
 {
 #if (defined(BOARD_NXP_XPRESSO_11U14) || defined(BOARD_NGX_BLUEBOARD_11U24))
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 18, IOCON_FUNC1 | IOCON_MODE_INACT);	/* PIO0_18 used for RXD */
+	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 18, IOCON_FUNC1 | IOCON_MODE_INACT | IOCON_MODE_PULLUP);	/* PIO0_18 used for RXD */
 	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 19, IOCON_FUNC1 | IOCON_MODE_INACT);	/* PIO0_19 used for TXD */
 #else
 #error "No Pin muxing defined for UART operation"
@@ -99,7 +100,7 @@ static void UCOM_UartInit(void)
 	Init_UART_PinMux();
 
 	Chip_UART_Init(LPC_USART);
-	Chip_UART_SetBaud(LPC_USART, 115200);
+	Chip_UART_SetBaud(LPC_USART, 111111);
 	Chip_UART_ConfigData(LPC_USART, (UART_LCR_WLEN8 | UART_LCR_SBS_1BIT));
 	Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2));
 	Chip_UART_TXEnable(LPC_USART);
@@ -114,18 +115,58 @@ static void UCOM_UartInit(void)
 	NVIC_EnableIRQ(UART0_IRQn);
 }
 
+unsigned int gen_test_a3233(uint32_t *buf)
+{
+	   buf[0] = 0x11111111;
+	   buf[2] = 0x00000000;
+	   buf[3] = 0x4ac1d001;
+	   buf[4] = 0x89517050;
+	   buf[5] = 0x087e051a;
+	   buf[6] = 0x06b168ae;
+	   buf[7] = 0x62a5f25c;
+	   buf[8] = 0x00639107;
+	   buf[9] = 0x13cdfd7b;
+	   buf[10] = 0xfa77fe7d;
+	   buf[11] = 0x9cb18a17;
+	   buf[12] = 0x65c90d1e;
+	   buf[13] = 0x8f41371d;
+	   buf[14] = 0x974bf4bb;
+	   buf[15] = 0x7145fd6d;
+	   buf[16] = 0xc44192c0;
+	   buf[17] = 0x12146495;
+	   buf[18] = 0xd8f8ef67;
+	   buf[19] = 0xa2cb45c1;
+	   buf[20] = 0x00000000;//0x1bee2ba0;
+	   buf[21] = 0xaaaaaaaa;
+	   return buf[20] + 0x6000;
+}
+
 /* UCOM bulk EP_IN and EP_OUT endpoints handler */
 static ErrorCode_t UCOM_bulk_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event)
 {
 	UCOM_DATA_T *pUcom = (UCOM_DATA_T *) data;
-	uint32_t count = 0;
 	uint8_t work_buf[A3233_TASK_LEN];
-
+	uint32_t count = 0;
+	
 	switch (event) {
 	/* A transfer from us to the USB host that we queued has completed.
 	 */
 	case USB_EVT_IN:
-		pUcom->usbTxBusy = 0;
+		/* check if UART had more data to send */
+		if (pUcom->rxBuf_uartIndex < pUcom->rxBuf_usbIndex) {
+			count = UCOM_BUF_SZ - pUcom->rxBuf_usbIndex;
+		}
+		else {
+			count = pUcom->rxBuf_uartIndex - pUcom->rxBuf_usbIndex;
+		}
+		if (count) {
+			pUcom->usbTxBusy = 1;
+			count = USBD_API->hw->WriteEP(pUcom->hUsb, USB_CDC_IN_EP, &pUcom->rxBuf[g_uCOM.rxBuf_usbIndex], count);
+			g_uCOM.rxBuf_usbIndex = (g_uCOM.rxBuf_usbIndex + count) & (UCOM_BUF_SZ - 1);
+		}
+		else {
+			pUcom->usbTxBusy = 0;
+		}
 		break;
 
 	/* We received a transfer from the USB host .
@@ -138,11 +179,21 @@ static ErrorCode_t UCOM_bulk_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event
 		{
 			pUcom->txBuf_uartIndex = 0;
 			/* kick start UART tranmission */
-			pUcom->txBuf_uartIndex = Chip_UART_SendBlocking(LPC_USART,
-													&pUcom->txBuf[g_uCOM.txBuf_uartIndex],
-													pUcom->txBuf_count);
+			memset(work_buf, 0, A3233_TASK_LEN);
+			data_pkg(&pUcom->txBuf[g_uCOM.txBuf_uartIndex], work_buf);
 
-			pUcom->txBuf_count -= pUcom->txBuf_uartIndex;
+			if ( false == a3233_enable )
+			{
+				a3233_enable = true;
+				AVALON_POWER_Enable(true);
+				AVALON_Rstn_A3233();
+				((unsigned int*)work_buf)[1] = AVALON_Gen_A3233_Pll_Cfg(400);
+			}
+#ifdef AVALON_TEST
+			gen_test_a3233((unsigned int*)work_buf);
+#endif
+			Chip_UART_SendBlocking(LPC_USART, work_buf, A3233_TASK_LEN);
+			pUcom->txBuf_count = 0;
 		}
 
 		if( pUcom->txBuf_count == 0 ){
@@ -256,37 +307,21 @@ static ErrorCode_t UCOM_SetLineCode(USBD_HANDLE_T hCDC, CDC_LINE_CODING *line_co
  */
 void UART_IRQHandler(void)
 {
-	static volatile uint32_t nonce_cnt = 0;
 	uint32_t count = 0;
-	uint32_t nonce_value;
 
 	/* Handle receive interrupt
 	 * receive data from a3233
 	 * */
-	AVALON_led_rgb(AVALON_LED_RED);
 	count = Chip_UART_Read(LPC_USART, &g_uCOM.rxBuf[g_uCOM.rxBuf_uartIndex], UCOM_BUF_SZ - g_uCOM.rxBuf_uartIndex);
-	nonce_cnt += count;
 
 	if (count) {
 		/* Note, following logic works if UCOM_BUF_SZ is 2^n size only. */
 		g_uCOM.rxBuf_uartIndex = (g_uCOM.rxBuf_uartIndex + count) & (UCOM_BUF_SZ - 1);
-	}
-	if( nonce_cnt >= A3233_NONCE_LEN )
-	{
 		if (g_uCOM.usbTxBusy == 0) {
 			g_uCOM.usbTxBusy = 1;
-
-			PACK32(&(g_uCOM.rxBuf[g_uCOM.rxBuf_usbIndex]), &nonce_value);
-			nonce_value -= 0x100000; /* FIXME */
-			UNPACK32(nonce_value, &(g_uCOM.rxBuf[g_uCOM.rxBuf_usbIndex]));
-
-			count = USBD_API->hw->WriteEP(g_uCOM.hUsb, USB_CDC_IN_EP, &g_uCOM.rxBuf[g_uCOM.rxBuf_usbIndex], A3233_NONCE_LEN);
-
+			count = USBD_API->hw->WriteEP(g_uCOM.hUsb, USB_CDC_IN_EP, &g_uCOM.rxBuf[g_uCOM.rxBuf_usbIndex], count);
 			g_uCOM.rxBuf_usbIndex = (g_uCOM.rxBuf_usbIndex + count) & (UCOM_BUF_SZ - 1);
-
-			AVALON_led_rgb(AVALON_LED_OFF);
 		}
-		nonce_cnt -= A3233_NONCE_LEN;
 	}
 }
 
