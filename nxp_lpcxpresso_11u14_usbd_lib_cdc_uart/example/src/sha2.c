@@ -125,10 +125,10 @@ void data_pkg(const uint8_t *data, uint8_t *out)
 	out[10] = 0x0;
 	out[11] = 0x0;		/* PLL CFG1 */
 
-	out[80] = 0xa0;
-	out[81] = 0x2b;
-	out[82] = 0xee;
-	out[83] = 0x1b;		/* Nonce */
+	out[80] = 0x0;
+	out[81] = 0x0;
+	out[82] = 0x0;
+	out[83] = 0x0;		/* Nonce */
 
 	out[84] = 0xaa;
 	out[85] = 0xaa;
