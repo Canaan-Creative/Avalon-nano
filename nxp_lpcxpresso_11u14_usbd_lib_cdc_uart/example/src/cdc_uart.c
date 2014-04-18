@@ -100,7 +100,7 @@ static void UCOM_UartInit(void)
 	Init_UART_PinMux();
 
 	Chip_UART_Init(LPC_USART);
-	Chip_UART_SetBaud(LPC_USART, 111111);
+	Chip_UART_SetBaud(LPC_USART, 57600);
 	Chip_UART_ConfigData(LPC_USART, (UART_LCR_WLEN8 | UART_LCR_SBS_1BIT));
 	Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2));
 	Chip_UART_TXEnable(LPC_USART);
@@ -193,6 +193,7 @@ static ErrorCode_t UCOM_bulk_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event
 			gen_test_a3233((unsigned int*)work_buf);
 #endif
 			Chip_UART_SendBlocking(LPC_USART, work_buf, A3233_TASK_LEN);
+			Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 | UART_FCR_RX_RS));
 			pUcom->txBuf_count = 0;
 		}
 
