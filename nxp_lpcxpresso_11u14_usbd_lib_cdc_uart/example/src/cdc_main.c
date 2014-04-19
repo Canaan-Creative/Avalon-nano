@@ -28,10 +28,7 @@
  * copyright, permission, and disclaimer notice must appear in all copies of
  * this code.
  */
-
 #include "board.h"
-#include <stdio.h>
-#include <string.h>
 #include "app_usbd_cfg.h"
 #include "cdc_uart.h"
 #include "cdc_avalon.h"

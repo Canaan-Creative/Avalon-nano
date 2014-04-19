@@ -28,7 +28,6 @@
  * copyright, permission, and disclaimer notice must appear in all copies of
  * this code.
  */
-#include <string.h>
 #include "board.h"
 #include "app_usbd_cfg.h"
 #include "cdc_uart.h"
@@ -314,7 +313,7 @@ void UART_IRQHandler(void)
 			g_uCOM.usbTxBusy = 1;
 
 			PACK32(&(g_uCOM.rxBuf[g_uCOM.rxBuf_usbIndex]), &nonce_value);
-			nonce_value -= 0x100000; /* FIXME */
+			nonce_value -= 0x100000;
 			nonce_value = ((nonce_value >> 24) | (nonce_value << 24) | ((nonce_value >> 8) & 0xff00) | ((nonce_value << 8) & 0xff0000));
 			UNPACK32(nonce_value, &(g_uCOM.rxBuf[g_uCOM.rxBuf_usbIndex]));
 

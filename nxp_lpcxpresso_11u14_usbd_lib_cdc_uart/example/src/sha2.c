@@ -31,10 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
 #include <stdint.h>
-#include <string.h>
-
 #include "sha2.h"
 
 uint32_t sha256_k[64] =
@@ -81,8 +78,8 @@ void sha256_loc(const unsigned char *buf, unsigned int *per_a, unsigned int *per
         wv[2] = wv[1];
         wv[1] = wv[0];
         wv[0] = t1 + t2;
-	per_a[j] = wv[0];
-	per_b[j] = wv[4];
+		per_a[j] = wv[0];
+		per_b[j] = wv[4];
         if (j == 2) {
     	    break;
         }
