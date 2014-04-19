@@ -100,7 +100,7 @@ static void UCOM_UartInit(void)
 	Init_UART_PinMux();
 
 	Chip_UART_Init(LPC_USART);
-	Chip_UART_SetBaud(LPC_USART, 57600);
+	Chip_UART_SetBaudFDR(LPC_USART, 57600);
 	Chip_UART_ConfigData(LPC_USART, (UART_LCR_WLEN8 | UART_LCR_SBS_1BIT));
 	Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2));
 	Chip_UART_TXEnable(LPC_USART);
@@ -146,27 +146,12 @@ static ErrorCode_t UCOM_bulk_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event
 {
 	UCOM_DATA_T *pUcom = (UCOM_DATA_T *) data;
 	uint8_t work_buf[A3233_TASK_LEN];
-	uint32_t count = 0;
 	
 	switch (event) {
 	/* A transfer from us to the USB host that we queued has completed.
 	 */
 	case USB_EVT_IN:
-		/* check if UART had more data to send */
-		if (pUcom->rxBuf_uartIndex < pUcom->rxBuf_usbIndex) {
-			count = UCOM_BUF_SZ - pUcom->rxBuf_usbIndex;
-		}
-		else {
-			count = pUcom->rxBuf_uartIndex - pUcom->rxBuf_usbIndex;
-		}
-		if (count) {
-			pUcom->usbTxBusy = 1;
-			count = USBD_API->hw->WriteEP(pUcom->hUsb, USB_CDC_IN_EP, &pUcom->rxBuf[g_uCOM.rxBuf_usbIndex], count);
-			g_uCOM.rxBuf_usbIndex = (g_uCOM.rxBuf_usbIndex + count) & (UCOM_BUF_SZ - 1);
-		}
-		else {
-			pUcom->usbTxBusy = 0;
-		}
+		pUcom->usbTxBusy = 0;
 		break;
 
 	/* We received a transfer from the USB host .
@@ -308,20 +293,34 @@ static ErrorCode_t UCOM_SetLineCode(USBD_HANDLE_T hCDC, CDC_LINE_CODING *line_co
  */
 void UART_IRQHandler(void)
 {
+	static volatile uint32_t nonce_cnt = 0;
+	uint32_t nonce_value;
 	uint32_t count = 0;
 
 	/* Handle receive interrupt
 	 * receive data from a3233
 	 * */
 	count = Chip_UART_Read(LPC_USART, &g_uCOM.rxBuf[g_uCOM.rxBuf_uartIndex], UCOM_BUF_SZ - g_uCOM.rxBuf_uartIndex);
+	nonce_cnt += count;
 
 	if (count) {
 		/* Note, following logic works if UCOM_BUF_SZ is 2^n size only. */
 		g_uCOM.rxBuf_uartIndex = (g_uCOM.rxBuf_uartIndex + count) & (UCOM_BUF_SZ - 1);
+	}
+
+	if( nonce_cnt >= A3233_NONCE_LEN ){
 		if (g_uCOM.usbTxBusy == 0) {
+			nonce_cnt = 0;
 			g_uCOM.usbTxBusy = 1;
+
+			PACK32(&(g_uCOM.rxBuf[g_uCOM.rxBuf_usbIndex]), &nonce_value);
+			nonce_value -= 0x100000; /* FIXME */
+			nonce_value = ((nonce_value >> 24) | (nonce_value << 24) | ((nonce_value >> 8) & 0xff00) | ((nonce_value << 8) & 0xff0000));
+			UNPACK32(nonce_value, &(g_uCOM.rxBuf[g_uCOM.rxBuf_usbIndex]));
+
 			count = USBD_API->hw->WriteEP(g_uCOM.hUsb, USB_CDC_IN_EP, &g_uCOM.rxBuf[g_uCOM.rxBuf_usbIndex], count);
-			g_uCOM.rxBuf_usbIndex = (g_uCOM.rxBuf_usbIndex + count) & (UCOM_BUF_SZ - 1);
+			g_uCOM.rxBuf_usbIndex = 0;
+			g_uCOM.rxBuf_uartIndex = 0;
 		}
 	}
 }
