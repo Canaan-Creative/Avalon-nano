@@ -86,6 +86,22 @@ void sha256_loc(const unsigned char *buf, unsigned int *per_a, unsigned int *per
     }
 }
 
+void data_convert(uint8_t *data){
+	uint8_t tmpval,index=0;
+
+	for(index = 0; index < 16; index++){
+		tmpval = data[index];
+		data[index] = data[31-index];
+		data[31-index] = tmpval;
+	}
+
+	for(index = 0; index < 6; index++){
+		tmpval = data[52+index];
+		data[52+index] = data[52+11-index];
+		data[52+11-index] = tmpval;
+	}
+}
+
 void data_pkg(const uint8_t *data, uint8_t *out)
 {
 	uint8_t work[44];

@@ -28,6 +28,7 @@
  * copyright, permission, and disclaimer notice must appear in all copies of
  * this code.
  */
+#include <string.h>
 #include "board.h"
 #include "app_usbd_cfg.h"
 #include "cdc_uart.h"
@@ -100,7 +101,7 @@ static void UCOM_UartInit(void)
 
 	Chip_UART_Init(LPC_USART);
 	Chip_UART_SetBaudFDR(LPC_USART, 57600);
-	Chip_UART_ConfigData(LPC_USART, (UART_LCR_WLEN8 | UART_LCR_SBS_1BIT));
+	Chip_UART_ConfigData(LPC_USART, (UART_LCR_WLEN8 | UART_LCR_SBS_1BIT | UART_LCR_PARITY_DIS));
 	Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2));
 	Chip_UART_TXEnable(LPC_USART);
 
@@ -164,6 +165,7 @@ static ErrorCode_t UCOM_bulk_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event
 			pUcom->txBuf_uartIndex = 0;
 			/* kick start UART tranmission */
 			memset(work_buf, 0, A3233_TASK_LEN);
+			data_convert(&pUcom->txBuf[g_uCOM.txBuf_uartIndex]);
 			data_pkg(&pUcom->txBuf[g_uCOM.txBuf_uartIndex], work_buf);
 
 			if ( false == a3233_enable )
@@ -172,6 +174,10 @@ static ErrorCode_t UCOM_bulk_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event
 				AVALON_POWER_Enable(true);
 				AVALON_Rstn_A3233();
 				((unsigned int*)work_buf)[1] = AVALON_Gen_A3233_Pll_Cfg(400);
+
+				work_buf[81] = 0x1;
+				work_buf[82] = 0x73;
+				work_buf[83] = 0xa2;		/* Nonce */
 			}
 #ifdef AVALON_TEST
 			gen_test_a3233((unsigned int*)work_buf);

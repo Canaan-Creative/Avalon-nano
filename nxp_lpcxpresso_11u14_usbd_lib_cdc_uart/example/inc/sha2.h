@@ -67,5 +67,5 @@
 extern uint32_t sha256_k[64];
 
 void data_pkg(const uint8_t *data, uint8_t *out);
-
+void data_convert(uint8_t *data);
 #endif /* !SHA2_H */
