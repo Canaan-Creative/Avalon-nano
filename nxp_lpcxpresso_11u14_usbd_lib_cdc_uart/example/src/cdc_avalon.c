@@ -63,7 +63,7 @@ static void Init_Rstn()
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, true);
 }
 
-static void delay(unsigned int max)
+void AVALON_Delay(unsigned int max)
 {
 	volatile unsigned int i;
 	for(i = 0; i < max; i++);
@@ -71,13 +71,13 @@ static void delay(unsigned int max)
 
 void AVALON_Rstn_A3233()
 {
-	delay(2000);
+	AVALON_Delay(2000);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, true);
-	delay(2000);
+	AVALON_Delay(2000);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, false);
-	delay(2000);
+	AVALON_Delay(2000);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, true);
-	delay(2000);
+	AVALON_Delay(2000);
 }
 
 /*i2c*/
@@ -97,49 +97,49 @@ static void Init_I2c(){
 static void I2c_Start(){
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, true);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, true);
-	delay(I2C_NOP);
+	AVALON_Delay(I2C_NOP);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, false);
-	delay(I2C_NOP);
+	AVALON_Delay(I2C_NOP);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, false);
-	delay(I2C_NOP);
+	AVALON_Delay(I2C_NOP);
 }
 
 static void I2c_Stop(){
-	delay(I2C_NOP);
+	AVALON_Delay(I2C_NOP);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, true);
-	delay(I2C_NOP);
+	AVALON_Delay(I2C_NOP);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, true);
-	delay(I2C_NOP);
+	AVALON_Delay(I2C_NOP);
 }
 
 static void I2c_w_byte(unsigned char data){
 	unsigned int i;
 	unsigned char data_buf = data;
-	delay(I2C_NOP);
+	AVALON_Delay(I2C_NOP);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, false);
-	delay(I2C_NOP);
+	AVALON_Delay(I2C_NOP);
 
 	for(i=0; i<8; i++){
 		if((data_buf&0x80) == 0x80)
 			Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, true);
 		else
 			Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, false);
-		delay(I2C_NOP);
+		AVALON_Delay(I2C_NOP);
 		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, true);
-		delay(I2C_NOP);
+		AVALON_Delay(I2C_NOP);
 		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, false);
 		data_buf = data_buf << 1;
-		delay(I2C_NOP);
+		AVALON_Delay(I2C_NOP);
 	}
 	//master wait ACK
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, true);
-	delay(I2C_NOP);
+	AVALON_Delay(I2C_NOP);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, true);
-	delay(I2C_NOP);
+	AVALON_Delay(I2C_NOP);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, false);
-	delay(I2C_NOP);
+	AVALON_Delay(I2C_NOP);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, false);
-	delay(I2C_NOP);
+	AVALON_Delay(I2C_NOP);
 }
 
 unsigned char I2c_r_byte(){
@@ -151,25 +151,25 @@ unsigned char I2c_r_byte(){
 	Chip_GPIO_SetPinDIRInput(LPC_GPIO, 0, 5);
 
 	for(i=0; i<8; i++){
-		delay(I2C_NOP);
+		AVALON_Delay(I2C_NOP);
 		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, true);
-		delay(I2C_NOP/2);
+		AVALON_Delay(I2C_NOP/2);
 		data_buf = data_buf << 1;
 		data_buf = data_buf | (Chip_GPIO_ReadPortBit(LPC_GPIO, 0, 5)&0x1);
-		delay(I2C_NOP/2);
+		AVALON_Delay(I2C_NOP/2);
 		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, false);
-		delay(I2C_NOP);
+		AVALON_Delay(I2C_NOP);
 	}
 
 	//master sent ACK
-	delay(I2C_NOP);
+	AVALON_Delay(I2C_NOP);
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 5);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, false);
-	delay(I2C_NOP);
+	AVALON_Delay(I2C_NOP);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, true);
-	delay(I2C_NOP);
+	AVALON_Delay(I2C_NOP);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, false);
-	delay(I2C_NOP);
+	AVALON_Delay(I2C_NOP);
 
 	return data_buf;
 }
@@ -398,7 +398,7 @@ ErrorCode_t AVALON_init (void){
 	CLKOUT_Cfg(true);
 	AVALON_POWER_Enable(false);
 
-	AVALON_led_rgb(AVALON_LED_RED);
+	AVALON_led_rgb(AVALON_LED_OFF);
 
 	return ret;
 }

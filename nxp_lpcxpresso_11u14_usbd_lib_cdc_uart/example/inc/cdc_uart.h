@@ -51,6 +51,12 @@ extern "C"
  */
 ErrorCode_t UCOM_init (USBD_HANDLE_T hUsb, USB_CORE_DESCS_T *pDesc, USBD_API_INIT_PARAM_T *pUsbParam);
 
+uint32_t UCOM_Read_Cnt(void);
+uint32_t UCOM_Read(uint8_t *pBuf, uint32_t buf_len);
+uint32_t UCOM_Write(uint8_t *pBuf, uint32_t len);
+uint32_t UART_Read_Cnt(void);
+uint32_t UART_Read(uint8_t *pBuf, uint32_t buf_len);
+uint32_t UART_Write(uint8_t *pBuf, uint32_t len);
 /**
  * @}
  */

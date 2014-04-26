@@ -66,6 +66,7 @@ void AVALON_Rstn_A3233();
 
 unsigned int AVALON_Gen_A3233_Pll_Cfg(unsigned int freq);
 
+void AVALON_Delay(unsigned int max);
 /**
  * @}
  */

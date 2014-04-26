@@ -28,11 +28,19 @@
  * copyright, permission, and disclaimer notice must appear in all copies of
  * this code.
  */
+#include <string.h>
 #include "board.h"
 #include "app_usbd_cfg.h"
 #include "cdc_uart.h"
 #include "cdc_avalon.h"
 #include <NXP/crp.h>
+#include "sha2.h"
+#include "cdc_avalon.h"
+
+#define A3233_TASK_LEN 88
+#define A3233_NONCE_LEN	4
+#define ICA_TASK_LEN 64
+#define TICKRATE_HZ2 (1)
 
 __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 /*****************************************************************************
@@ -61,6 +69,7 @@ static const  USBD_API_T g_usbApi = {
 };
 
 const  USBD_API_T *g_pUsbApi = &g_usbApi;
+static unsigned char golden_ob[] = "\x46\x79\xba\x4e\xc9\x98\x76\xbf\x4b\xfe\x08\x60\x82\xb4\x00\x25\x4d\xf6\xc3\x56\x45\x14\x71\x13\x9a\x3a\xfa\x71\xe4\x8f\x54\x4a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x87\x32\x0b\x1a\x14\x26\x67\x4f\x2f\xa7\x22\xce";
 
 /*****************************************************************************
  * Private functions
@@ -77,6 +86,9 @@ static void usb_pin_clk_init(void)
 	/* power UP USB Phy */
 	Chip_SYSCTL_PowerUp(SYSCTL_POWERDOWN_USBPAD_PD);
 }
+
+static Bool				a3233_enable = FALSE;
+static volatile Bool	invalid_icarusdat = FALSE;
 
 /*****************************************************************************
  * Public functions
@@ -119,6 +131,44 @@ USB_INTERFACE_DESCRIPTOR *find_IntfDesc(const uint8_t *pDesc, uint32_t intfClass
 	return pIntfDesc;
 }
 
+unsigned int gen_test_a3233(uint32_t *buf)
+{
+	   buf[0] = 0x11111111;
+	   buf[2] = 0x00000000;
+	   buf[3] = 0x4ac1d001;
+	   buf[4] = 0x89517050;
+	   buf[5] = 0x087e051a;
+	   buf[6] = 0x06b168ae;
+	   buf[7] = 0x62a5f25c;
+	   buf[8] = 0x00639107;
+	   buf[9] = 0x13cdfd7b;
+	   buf[10] = 0xfa77fe7d;
+	   buf[11] = 0x9cb18a17;
+	   buf[12] = 0x65c90d1e;
+	   buf[13] = 0x8f41371d;
+	   buf[14] = 0x974bf4bb;
+	   buf[15] = 0x7145fd6d;
+	   buf[16] = 0xc44192c0;
+	   buf[17] = 0x12146495;
+	   buf[18] = 0xd8f8ef67;
+	   buf[19] = 0xa2cb45c1;
+	   buf[20] = 0x00000000;//0x1bee2ba0;
+	   buf[21] = 0xaaaaaaaa;
+	   return buf[20] + 0x6000;
+}
+
+/**
+ * @brief	Handle interrupt from 32-bit timer
+ * @return	Nothing
+ */
+void TIMER32_0_IRQHandler(void)
+{
+	if (Chip_TIMER_MatchPending(LPC_TIMER32_0, 1)) {
+		Chip_TIMER_ClearMatch(LPC_TIMER32_0, 1);
+		invalid_icarusdat = TRUE;
+	}
+}
+
 /**
  * @brief	main routine for blinky example
  * @return	Function should not exit.
@@ -128,6 +178,16 @@ int main(void)
 	USBD_API_INIT_PARAM_T usb_param;
 	USB_CORE_DESCS_T desc;
 	ErrorCode_t ret = LPC_OK;
+	uint8_t 		icarus_buf[ICA_TASK_LEN];
+	unsigned int	icarus_buflen = 0;
+	unsigned char 	work_buf[A3233_TASK_LEN];
+	unsigned char	nonce_buf[A3233_NONCE_LEN];
+	unsigned int	nonce_buflen = 0;
+	uint32_t 		nonce_value = 0;
+	Bool			isgoldenob = FALSE;
+	Bool			timestart = FALSE;
+	Bool			findnonce = FALSE;
+	uint32_t 		timerFreq;
 
 	SystemCoreClockUpdate();
 
@@ -170,7 +230,149 @@ int main(void)
 	/* Initialize avalon chip */
 	AVALON_init();
 
+	/* Enable timer 1 clock */
+	Chip_TIMER_Init(LPC_TIMER32_0);
+
+	/* Timer rate is system clock rate */
+	timerFreq = Chip_Clock_GetSystemClockRate();
+
+	/* Timer setup for match and interrupt at TICKRATE_HZ */
+	Chip_TIMER_Reset(LPC_TIMER32_0);
+	Chip_TIMER_MatchEnableInt(LPC_TIMER32_0, 1);
+	Chip_TIMER_SetMatch(LPC_TIMER32_0, 1, (timerFreq * TICKRATE_HZ2));
+	Chip_TIMER_ResetOnMatchEnable(LPC_TIMER32_0, 1);
+
+	/* Enable timer interrupt */
+	NVIC_ClearPendingIRQ(TIMER_32_0_IRQn);
+	NVIC_EnableIRQ(TIMER_32_0_IRQn);
+	invalid_icarusdat = FALSE;
+
 	while (1) {
+		while(1){
+			icarus_buflen = UCOM_Read_Cnt();
+			if(icarus_buflen > 0){
+				if(!timestart){
+					invalid_icarusdat = FALSE;
+					Chip_TIMER_Reset(LPC_TIMER32_0);
+					Chip_TIMER_Enable(LPC_TIMER32_0);
+					timestart = TRUE;
+					continue;
+				}
+
+				/* len timeout */
+				if(TRUE == invalid_icarusdat){
+					timestart = FALSE;
+					/* clear usb rx ring buffer */
+					while(UCOM_Read(icarus_buf, ICA_TASK_LEN));
+					AVALON_led_rgb(AVALON_LED_OFF);
+					AVALON_Delay(100000);
+					AVALON_led_rgb(AVALON_LED_GREEN);
+
+					/* clear uart rx ring buffer*/
+					Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 | UART_FCR_RX_RS));
+					while(UART_Read(nonce_buf,A3233_NONCE_LEN));
+					continue;
+				}
+
+				if(icarus_buflen >= ICA_TASK_LEN){
+					Chip_TIMER_Disable(LPC_TIMER32_0);
+					timestart = FALSE;
+				}
+				else{
+					/* clear uart rx ring buffer*/
+					Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 | UART_FCR_RX_RS));
+					while(UART_Read(nonce_buf,A3233_NONCE_LEN));
+					continue;
+				}
+			}
+			else{
+				continue;
+			}
+
+			AVALON_led_rgb(AVALON_LED_OFF);
+			AVALON_Delay(100000);
+			AVALON_led_rgb(AVALON_LED_RED);
+
+			memset(icarus_buf, 0, ICA_TASK_LEN);
+			UCOM_Read(icarus_buf, ICA_TASK_LEN);
+			memset(work_buf, 0, A3233_TASK_LEN);
+
+			if(0 == memcmp(golden_ob, icarus_buf, ICA_TASK_LEN)){
+				isgoldenob = TRUE;
+			}
+			else{
+				isgoldenob = FALSE;
+			}
+
+			if(isgoldenob){
+				data_convert(icarus_buf);
+			}
+
+			data_pkg(icarus_buf, work_buf);
+			if ( FALSE == a3233_enable )
+			{
+				a3233_enable = TRUE;
+				AVALON_POWER_Enable(TRUE);
+				AVALON_Rstn_A3233();
+				((unsigned int*)work_buf)[1] = AVALON_Gen_A3233_Pll_Cfg(400);
+			}
+
+			if(isgoldenob){
+				work_buf[81] = 0x1;
+				work_buf[82] = 0x73;
+				work_buf[83] = 0xa2;
+			}
+
+			UART_Write(work_buf, A3233_TASK_LEN);
+			/* clear uart rx ring buffer*/
+			Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 | UART_FCR_RX_RS));
+			while(UART_Read(nonce_buf,A3233_NONCE_LEN));
+
+			if(UCOM_Read_Cnt() > 0){
+				continue;
+			}else{
+				/* find valid icarus data */
+				break;
+			}
+		}
+
+		findnonce = FALSE;
+		while(1)
+		{
+			nonce_buflen = UART_Read_Cnt();
+			if(nonce_buflen >= A3233_NONCE_LEN){
+				/* clear usb rx ring buffer */
+				while(UCOM_Read(icarus_buf, ICA_TASK_LEN));
+
+				AVALON_led_rgb(AVALON_LED_OFF);
+				AVALON_Delay(100000);
+				AVALON_led_rgb(AVALON_LED_BLUE);
+
+				memset(nonce_buf, 0, A3233_NONCE_LEN);
+				UART_Read(nonce_buf,A3233_NONCE_LEN);
+
+				PACK32(nonce_buf, &nonce_value);
+				nonce_value -= 0x100000; /* FIXME */
+				nonce_value = ((nonce_value >> 24) | (nonce_value << 24) | ((nonce_value >> 8) & 0xff00) | ((nonce_value << 8) & 0xff0000));
+				UNPACK32(nonce_value, nonce_buf);
+
+				UCOM_Write(nonce_buf,A3233_NONCE_LEN);
+				findnonce = TRUE;
+				break;
+			}
+
+			if(UCOM_Read_Cnt()){
+				Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 | UART_FCR_RX_RS));
+				while(UART_Read(nonce_buf,A3233_NONCE_LEN));
+				break;
+			}
+
+			if(findnonce){
+				Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 | UART_FCR_RX_RS));
+				while(UART_Read(nonce_buf,A3233_NONCE_LEN));
+			}
+		}
+
 		/* Sleep until next IRQ happens */
 		__WFI();
 	}

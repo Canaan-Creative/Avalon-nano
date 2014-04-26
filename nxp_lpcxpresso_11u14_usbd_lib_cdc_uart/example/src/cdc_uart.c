@@ -32,27 +32,31 @@
 #include "board.h"
 #include "app_usbd_cfg.h"
 #include "cdc_uart.h"
-#include "sha2.h"
 #include "cdc_avalon.h"
-
 
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
 
 /* Ring buffer size */
-#define UCOM_BUF_SZ         64			/* The size should always be 2^n type.*/
+#define UCOM_RX_BUF_SZ      1024
+#define UART_RX_BUF_SZ		128
+#define UART_TX_BUF_SZ		1024
 #define UCOM_TX_CONNECTED   _BIT(8)		/* connection state is for both RX/Tx */
 #define UCOM_TX_BUSY        _BIT(0)
-
-#define UCOM_RX_UART_DIS    _BIT(0)
 #define UCOM_RX_BUF_FULL    _BIT(1)
 #define UCOM_RX_BUF_QUEUED  _BIT(2)
 #define UCOM_RX_DB_QUEUED   _BIT(3)
 
-#define A3233_TASK_LEN 88
-#define A3233_NONCE_LEN	4
-#define ICA_TASK_LEN 64
+/*
+ * uart only use rx ringbuf, tx use send block
+ * usb only use rx ringbuf, tx use write ep
+ * */
+STATIC RINGBUFF_T uart_rxrb, uart_txrb;
+STATIC RINGBUFF_T usb_rxrb;
+
+static uint8_t uart_rxbuff[UART_RX_BUF_SZ], uart_txbuff[UART_TX_BUF_SZ];
+static uint8_t usb_rxbuff[UCOM_RX_BUF_SZ];
 
 /**
  * Structure containing Virtual Comm port control data
@@ -61,19 +65,14 @@ typedef struct UCOM_DATA {
 	USBD_HANDLE_T hUsb;		/*!< Handle to USB stack */
 	USBD_HANDLE_T hCdc;		/*!< Handle to CDC class controller */
 
-	uint8_t *rxBuf;			/*!< UART Rx buffer */
-	uint8_t *txBuf;			/*!< UART Tx buffer */
-	uint8_t txBuf_uartIndex;/*!< UART index in Tx buffer */
-	int8_t txBuf_count;		/*!< Bytes present in Tx buffer */
-	uint8_t rxBuf_uartIndex;/*!< UART index in Rx buffer */
-	uint8_t rxBuf_usbIndex;	/*!< USB index in Rx buffer */
-
-	volatile uint8_t usbTxBusy;		/*!< USB is busy sending previous packet */
+	uint16_t usbRx_count;
+	uint8_t *usbRx_buff;
+	volatile uint16_t usbTxFlags;	/*!< USB Tx Flag */
+	volatile uint16_t usbRxFlags;	/*!< USB Rx Flag */
 } UCOM_DATA_T;
 
 /** Virtual Comm port control data instance. */
-static UCOM_DATA_T 	g_uCOM;
-static bool			a3233_enable = false;
+static UCOM_DATA_T g_uCOM;
 
 /*****************************************************************************
  * Public types/enumerations/variables
@@ -101,9 +100,13 @@ static void UCOM_UartInit(void)
 
 	Chip_UART_Init(LPC_USART);
 	Chip_UART_SetBaudFDR(LPC_USART, 57600);
-	Chip_UART_ConfigData(LPC_USART, (UART_LCR_WLEN8 | UART_LCR_SBS_1BIT | UART_LCR_PARITY_DIS));
+	Chip_UART_ConfigData(LPC_USART, (UART_LCR_WLEN8 | UART_LCR_SBS_1BIT));
 	Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2));
 	Chip_UART_TXEnable(LPC_USART);
+
+	RingBuffer_Init(&uart_rxrb, uart_rxbuff, 1, UART_RX_BUF_SZ);
+	RingBuffer_Init(&uart_txrb, uart_txbuff, 1, UART_TX_BUF_SZ);
+	RingBuffer_Init(&usb_rxrb, usb_rxbuff, 1, UCOM_RX_BUF_SZ);
 
 	/* Enable receive data and line status interrupt */
 	Chip_UART_IntEnable(LPC_USART, (UART_IER_RBRINT | UART_IER_RLSINT));
@@ -115,80 +118,49 @@ static void UCOM_UartInit(void)
 	NVIC_EnableIRQ(UART0_IRQn);
 }
 
-unsigned int gen_test_a3233(uint32_t *buf)
-{
-	   buf[0] = 0x11111111;
-	   buf[2] = 0x00000000;
-	   buf[3] = 0x4ac1d001;
-	   buf[4] = 0x89517050;
-	   buf[5] = 0x087e051a;
-	   buf[6] = 0x06b168ae;
-	   buf[7] = 0x62a5f25c;
-	   buf[8] = 0x00639107;
-	   buf[9] = 0x13cdfd7b;
-	   buf[10] = 0xfa77fe7d;
-	   buf[11] = 0x9cb18a17;
-	   buf[12] = 0x65c90d1e;
-	   buf[13] = 0x8f41371d;
-	   buf[14] = 0x974bf4bb;
-	   buf[15] = 0x7145fd6d;
-	   buf[16] = 0xc44192c0;
-	   buf[17] = 0x12146495;
-	   buf[18] = 0xd8f8ef67;
-	   buf[19] = 0xa2cb45c1;
-	   buf[20] = 0x00000000;//0x1bee2ba0;
-	   buf[21] = 0xaaaaaaaa;
-	   return buf[20] + 0x6000;
-}
-
 /* UCOM bulk EP_IN and EP_OUT endpoints handler */
 static ErrorCode_t UCOM_bulk_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event)
 {
 	UCOM_DATA_T *pUcom = (UCOM_DATA_T *) data;
-	uint8_t work_buf[A3233_TASK_LEN];
-	
+
 	switch (event) {
-	/* A transfer from us to the USB host that we queued has completed.
-	 */
+	/* A transfer from us to the USB host that we queued has completed. */
 	case USB_EVT_IN:
-		pUcom->usbTxBusy = 0;
+		pUcom->usbTxFlags &= ~UCOM_TX_BUSY;
 		break;
 
-	/* We received a transfer from the USB host .
-	 * send to a3233 */
+	/* We received a transfer from the USB host . */
 	case USB_EVT_OUT:
-		AVALON_led_rgb(AVALON_LED_GREEN);
-		pUcom->txBuf_count += USBD_API->hw->ReadEP(hUsb, USB_CDC_OUT_EP, pUcom->txBuf+pUcom->txBuf_count);
-
-		if( pUcom->txBuf_count >= ICA_TASK_LEN )
-		{
-			pUcom->txBuf_uartIndex = 0;
-			/* kick start UART tranmission */
-			memset(work_buf, 0, A3233_TASK_LEN);
-			data_convert(&pUcom->txBuf[g_uCOM.txBuf_uartIndex]);
-			data_pkg(&pUcom->txBuf[g_uCOM.txBuf_uartIndex], work_buf);
-
-			if ( false == a3233_enable )
+		pUcom->usbRx_count = USBD_API->hw->ReadEP(hUsb, USB_CDC_OUT_EP, pUcom->usbRx_buff);
+		if(pUcom->usbRx_count){
+			if(1 == pUcom->usbRx_count){
+				RingBuffer_Insert(&usb_rxrb, pUcom->usbRx_buff);
+			}else
 			{
-				a3233_enable = true;
-				AVALON_POWER_Enable(true);
-				AVALON_Rstn_A3233();
-				((unsigned int*)work_buf)[1] = AVALON_Gen_A3233_Pll_Cfg(400);
-
-				work_buf[81] = 0x1;
-				work_buf[82] = 0x73;
-				work_buf[83] = 0xa2;		/* Nonce */
+				RingBuffer_InsertMult(&usb_rxrb, pUcom->usbRx_buff, pUcom->usbRx_count);
 			}
-#ifdef AVALON_TEST
-			gen_test_a3233((unsigned int*)work_buf);
-#endif
-			Chip_UART_SendBlocking(LPC_USART, work_buf, A3233_TASK_LEN);
-			Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 | UART_FCR_RX_RS));
-			pUcom->txBuf_count = 0;
 		}
+		if (pUcom->usbRxFlags & UCOM_RX_BUF_QUEUED) {
+			pUcom->usbRxFlags &= ~UCOM_RX_BUF_QUEUED;
+			if (pUcom->usbRx_count != 0) {
+				pUcom->usbRxFlags |= UCOM_RX_BUF_FULL;
+			}
+		}
+		break;
 
-		if( pUcom->txBuf_count == 0 ){
-			AVALON_led_rgb(AVALON_LED_BLUE);
+	case USB_EVT_OUT_NAK:
+		/* queue free buffer for RX */
+		if ((pUcom->usbRxFlags & (UCOM_RX_BUF_FULL | UCOM_RX_BUF_QUEUED)) == 0) {
+			pUcom->usbRx_count = USBD_API->hw->ReadReqEP(hUsb, USB_CDC_OUT_EP, pUcom->usbRx_buff, UCOM_RX_BUF_SZ);
+			if(pUcom->usbRx_count){
+				if(1 == pUcom->usbRx_count){
+					RingBuffer_Insert(&usb_rxrb, pUcom->usbRx_buff);
+				}else
+				{
+					RingBuffer_InsertMult(&usb_rxrb, pUcom->usbRx_buff, pUcom->usbRx_count);
+				}
+			}
+			pUcom->usbRxFlags |= UCOM_RX_BUF_QUEUED;
 		}
 		break;
 
@@ -203,6 +175,9 @@ static ErrorCode_t UCOM_bulk_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event
 static ErrorCode_t UCOM_SetLineCode(USBD_HANDLE_T hCDC, CDC_LINE_CODING *line_coding)
 {
 	uint32_t config_data = 0;
+	UCOM_DATA_T *pUcom = &g_uCOM;
+
+	pUcom->usbTxFlags = UCOM_TX_CONNECTED;
 
 	switch (line_coding->bDataBits) {
 	case 5:
@@ -284,6 +259,7 @@ static ErrorCode_t UCOM_SetLineCode(USBD_HANDLE_T hCDC, CDC_LINE_CODING *line_co
 		Chip_UART_SetBaud(LPC_USART, line_coding->dwDTERate);
 	}
 	Chip_UART_ConfigData(LPC_USART, config_data);
+	AVALON_led_rgb(AVALON_LED_GREEN);
 
 	return LPC_OK;
 }
@@ -298,36 +274,7 @@ static ErrorCode_t UCOM_SetLineCode(USBD_HANDLE_T hCDC, CDC_LINE_CODING *line_co
  */
 void UART_IRQHandler(void)
 {
-	static volatile uint32_t nonce_cnt = 0;
-	uint32_t nonce_value;
-	uint32_t count = 0;
-
-	/* Handle receive interrupt
-	 * receive data from a3233
-	 * */
-	count = Chip_UART_Read(LPC_USART, &g_uCOM.rxBuf[g_uCOM.rxBuf_uartIndex], UCOM_BUF_SZ - g_uCOM.rxBuf_uartIndex);
-	nonce_cnt += count;
-
-	if (count) {
-		/* Note, following logic works if UCOM_BUF_SZ is 2^n size only. */
-		g_uCOM.rxBuf_uartIndex = (g_uCOM.rxBuf_uartIndex + count) & (UCOM_BUF_SZ - 1);
-	}
-
-	if( nonce_cnt >= A3233_NONCE_LEN ){
-		if (g_uCOM.usbTxBusy == 0) {
-			nonce_cnt = 0;
-			g_uCOM.usbTxBusy = 1;
-
-			PACK32(&(g_uCOM.rxBuf[g_uCOM.rxBuf_usbIndex]), &nonce_value);
-			nonce_value -= 0x100000;
-			nonce_value = ((nonce_value >> 24) | (nonce_value << 24) | ((nonce_value >> 8) & 0xff00) | ((nonce_value << 8) & 0xff0000));
-			UNPACK32(nonce_value, &(g_uCOM.rxBuf[g_uCOM.rxBuf_usbIndex]));
-
-			count = USBD_API->hw->WriteEP(g_uCOM.hUsb, USB_CDC_IN_EP, &g_uCOM.rxBuf[g_uCOM.rxBuf_usbIndex], count);
-			g_uCOM.rxBuf_usbIndex = 0;
-			g_uCOM.rxBuf_uartIndex = 0;
-		}
-	}
+	Chip_UART_IRQRBHandler(LPC_USART, &uart_rxrb, &uart_txrb);
 }
 
 /* UART to USB com port init routine */
@@ -353,12 +300,9 @@ ErrorCode_t UCOM_init(USBD_HANDLE_T hUsb, USB_CORE_DESCS_T *pDesc, USBD_API_INIT
 
 	if (ret == LPC_OK) {
 		/* allocate transfer buffers */
-		g_uCOM.txBuf = (uint8_t *) cdc_param.mem_base;
-		cdc_param.mem_base += UCOM_BUF_SZ;
-		cdc_param.mem_size -= UCOM_BUF_SZ;
-		g_uCOM.rxBuf = (uint8_t *) cdc_param.mem_base;
-		cdc_param.mem_base += UCOM_BUF_SZ;
-		cdc_param.mem_size -= UCOM_BUF_SZ;
+		g_uCOM.usbRx_buff = (uint8_t *) cdc_param.mem_base;
+		cdc_param.mem_base += UCOM_RX_BUF_SZ;
+		cdc_param.mem_size -= UCOM_RX_BUF_SZ;
 
 		/* register endpoint interrupt handler */
 		ep_indx = (((USB_CDC_IN_EP & 0x0F) << 1) + 1);
@@ -379,6 +323,75 @@ ErrorCode_t UCOM_init(USBD_HANDLE_T hUsb, USB_CORE_DESCS_T *pDesc, USBD_API_INIT
 		/* update mem_base and size variables for cascading calls. */
 		pUsbParam->mem_base = cdc_param.mem_base;
 		pUsbParam->mem_size = cdc_param.mem_size;
+	}
+
+	return ret;
+}
+
+/* Gets current read count. */
+uint32_t UCOM_Read_Cnt(void)
+{
+	return RingBuffer_GetCount(&usb_rxrb);
+}
+
+/* Read data from usb */
+uint32_t UCOM_Read(uint8_t *pBuf, uint32_t buf_len)
+{
+	UCOM_DATA_T *pUcom = &g_uCOM;
+	uint16_t cnt = 0;
+
+	cnt = RingBuffer_PopMult(&usb_rxrb, (uint8_t *) pBuf, buf_len);
+	pUcom->usbRxFlags &= ~UCOM_RX_BUF_FULL;
+
+	return cnt;
+}
+
+/* Send data to usb */
+uint32_t UCOM_Write(uint8_t *pBuf, uint32_t len)
+{
+	UCOM_DATA_T *pUcom = &g_uCOM;
+	uint32_t ret = 0;
+
+	if ((pUcom->usbTxFlags & UCOM_TX_CONNECTED) && ((pUcom->usbTxFlags & UCOM_TX_BUSY) == 0)) {
+		pUcom->usbTxFlags |= UCOM_TX_BUSY;
+
+		/* enter critical section */
+		NVIC_DisableIRQ(USB0_IRQn);
+		ret = USBD_API->hw->WriteEP(pUcom->hUsb, USB_CDC_IN_EP, pBuf, len);
+		/* exit critical section */
+		NVIC_EnableIRQ(USB0_IRQn);
+	}
+
+	return ret;
+}
+
+/* Gets current read count. */
+uint32_t UART_Read_Cnt(void)
+{
+	return RingBuffer_GetCount(&uart_rxrb);
+}
+
+/* Read data from uart */
+uint32_t UART_Read(uint8_t *pBuf, uint32_t buf_len)
+{
+	uint16_t cnt = 0;
+
+	if(pBuf)
+	{
+		cnt = Chip_UART_ReadRB(LPC_USART, &uart_rxrb, pBuf, buf_len);
+	}
+
+	return cnt;
+}
+
+/* Send data to uart */
+uint32_t UART_Write(uint8_t *pBuf, uint32_t len)
+{
+	uint32_t ret = 0;
+
+	if(pBuf)
+	{
+		ret = Chip_UART_SendRB(LPC_USART, &uart_txrb, pBuf, len);
 	}
 
 	return ret;
