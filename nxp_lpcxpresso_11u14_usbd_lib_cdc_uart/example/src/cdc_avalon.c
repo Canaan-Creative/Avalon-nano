@@ -30,7 +30,7 @@
  */
 #include "cdc_avalon.h"
 
-void AVALON_POWER_Enable(bool On)
+void AVALON_POWER_Enable(Bool On)
 {
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 11, On);//VCore Enable
 }
@@ -42,9 +42,9 @@ static void Init_POWER()
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 11);//VCore Enable
 	*(unsigned int *) 0x4004402c = 0x81;
 
-	AVALON_POWER_Enable(false);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 22, true);//VID0
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 7, true);//VID1
+	AVALON_POWER_Enable(FALSE);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 22, TRUE);//VID0
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 7, TRUE);//VID1
 }
 
 #define VCORE_0P9   0x0
@@ -60,7 +60,7 @@ static void POWER_Cfg(unsigned char VID){
 static void Init_Rstn()
 {
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 20);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, true);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, TRUE);
 }
 
 void AVALON_Delay(unsigned int max)
@@ -72,11 +72,11 @@ void AVALON_Delay(unsigned int max)
 void AVALON_Rstn_A3233()
 {
 	AVALON_Delay(2000);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, true);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, TRUE);
 	AVALON_Delay(2000);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, false);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, FALSE);
 	AVALON_Delay(2000);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, true);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, TRUE);
 	AVALON_Delay(2000);
 }
 
@@ -90,25 +90,25 @@ static void Init_I2c(){
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 4);
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 5);
 
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, true);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, true);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, TRUE);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, TRUE);
 }
 
 static void I2c_Start(){
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, true);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, true);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, TRUE);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, TRUE);
 	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, false);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, FALSE);
 	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, false);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, FALSE);
 	AVALON_Delay(I2C_NOP);
 }
 
 static void I2c_Stop(){
 	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, true);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, TRUE);
 	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, true);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, TRUE);
 	AVALON_Delay(I2C_NOP);
 }
 
@@ -116,29 +116,29 @@ static void I2c_w_byte(unsigned char data){
 	unsigned int i;
 	unsigned char data_buf = data;
 	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, false);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, FALSE);
 	AVALON_Delay(I2C_NOP);
 
 	for(i=0; i<8; i++){
 		if((data_buf&0x80) == 0x80)
-			Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, true);
+			Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, TRUE);
 		else
-			Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, false);
+			Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, FALSE);
 		AVALON_Delay(I2C_NOP);
-		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, true);
+		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, TRUE);
 		AVALON_Delay(I2C_NOP);
-		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, false);
+		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, FALSE);
 		data_buf = data_buf << 1;
 		AVALON_Delay(I2C_NOP);
 	}
 	//master wait ACK
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, true);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, TRUE);
 	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, true);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, TRUE);
 	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, false);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, FALSE);
 	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, false);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, FALSE);
 	AVALON_Delay(I2C_NOP);
 }
 
@@ -146,29 +146,29 @@ unsigned char I2c_r_byte(){
 	unsigned int i;
 	unsigned char data_buf = 0;
 
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, false);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, true);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, FALSE);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, TRUE);
 	Chip_GPIO_SetPinDIRInput(LPC_GPIO, 0, 5);
 
 	for(i=0; i<8; i++){
 		AVALON_Delay(I2C_NOP);
-		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, true);
+		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, TRUE);
 		AVALON_Delay(I2C_NOP/2);
 		data_buf = data_buf << 1;
 		data_buf = data_buf | (Chip_GPIO_ReadPortBit(LPC_GPIO, 0, 5)&0x1);
 		AVALON_Delay(I2C_NOP/2);
-		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, false);
+		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, FALSE);
 		AVALON_Delay(I2C_NOP);
 	}
 
 	//master sent ACK
 	AVALON_Delay(I2C_NOP);
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 5);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, false);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, FALSE);
 	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, true);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, TRUE);
 	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, false);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, FALSE);
 	AVALON_Delay(I2C_NOP);
 
 	return data_buf;
@@ -312,21 +312,21 @@ unsigned int AVALON_Gen_A3233_Pll_Cfg(unsigned int freq){
 void AVALON_led_rgb(unsigned int rgb)
 {
 	if (rgb == AVALON_LED_GREEN) {
-		Board_LED_Set(0, false);//green
-		Board_LED_Set(1, true);//red
-		Board_LED_Set(2, true);//blue
+		Board_LED_Set(0, FALSE);//green
+		Board_LED_Set(1, TRUE);//red
+		Board_LED_Set(2, TRUE);//blue
 	} else if (rgb == AVALON_LED_RED) {
-		Board_LED_Set(0, true);//green
-		Board_LED_Set(1, false);//red
-		Board_LED_Set(2, true);//blue
+		Board_LED_Set(0, TRUE);//green
+		Board_LED_Set(1, FALSE);//red
+		Board_LED_Set(2, TRUE);//blue
 	} else if (rgb == AVALON_LED_BLUE) {
-		Board_LED_Set(0, true);//green
-		Board_LED_Set(1, true);//red
-		Board_LED_Set(2, false);//blue
+		Board_LED_Set(0, TRUE);//green
+		Board_LED_Set(1, TRUE);//red
+		Board_LED_Set(2, FALSE);//blue
 	} else {
-		Board_LED_Set(0, true);//green
-		Board_LED_Set(1, true);//red
-		Board_LED_Set(2, true);//blue
+		Board_LED_Set(0, TRUE);//green
+		Board_LED_Set(1, TRUE);//red
+		Board_LED_Set(2, TRUE);//blue
 	}
 }
 
@@ -371,7 +371,7 @@ static void Init_CLKOUT_PinMux(void)
 
 static void CLKOUT_Cfg(bool On)
 {
-	if(On == true)
+	if(On == TRUE)
 		Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 4);
 	else
 		Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 0);
@@ -395,8 +395,8 @@ ErrorCode_t AVALON_init (void){
 	Chip_ADC_Init(LPC_ADC, &ADCSetup);
 
 	POWER_Cfg(VCORE_0P675);
-	CLKOUT_Cfg(true);
-	AVALON_POWER_Enable(false);
+	CLKOUT_Cfg(TRUE);
+	AVALON_POWER_Enable(FALSE);
 
 	AVALON_led_rgb(AVALON_LED_OFF);
 

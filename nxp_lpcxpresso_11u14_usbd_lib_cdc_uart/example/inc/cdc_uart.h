@@ -54,9 +54,12 @@ ErrorCode_t UCOM_init (USBD_HANDLE_T hUsb, USB_CORE_DESCS_T *pDesc, USBD_API_INI
 uint32_t UCOM_Read_Cnt(void);
 uint32_t UCOM_Read(uint8_t *pBuf, uint32_t buf_len);
 uint32_t UCOM_Write(uint8_t *pBuf, uint32_t len);
+void UCOM_FlushRxRB(void);
 uint32_t UART_Read_Cnt(void);
 uint32_t UART_Read(uint8_t *pBuf, uint32_t buf_len);
 uint32_t UART_Write(uint8_t *pBuf, uint32_t len);
+void UART_FlushTxRB(void);
+void UART_FlushRxRB(void);
 /**
  * @}
  */

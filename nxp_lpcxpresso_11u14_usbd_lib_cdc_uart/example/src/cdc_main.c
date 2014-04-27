@@ -263,14 +263,13 @@ int main(void)
 				if(TRUE == invalid_icarusdat){
 					timestart = FALSE;
 					/* clear usb rx ring buffer */
-					while(UCOM_Read(icarus_buf, ICA_TASK_LEN));
+					UCOM_FlushRxRB();
 					AVALON_led_rgb(AVALON_LED_OFF);
-					AVALON_Delay(100000);
+					AVALON_Delay(10000);
 					AVALON_led_rgb(AVALON_LED_GREEN);
 
 					/* clear uart rx ring buffer*/
-					Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 | UART_FCR_RX_RS));
-					while(UART_Read(nonce_buf,A3233_NONCE_LEN));
+					UART_FlushRxRB();
 					continue;
 				}
 
@@ -280,8 +279,7 @@ int main(void)
 				}
 				else{
 					/* clear uart rx ring buffer*/
-					Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 | UART_FCR_RX_RS));
-					while(UART_Read(nonce_buf,A3233_NONCE_LEN));
+					UART_FlushRxRB();
 					continue;
 				}
 			}
@@ -290,7 +288,7 @@ int main(void)
 			}
 
 			AVALON_led_rgb(AVALON_LED_OFF);
-			AVALON_Delay(100000);
+			AVALON_Delay(10000);
 			AVALON_led_rgb(AVALON_LED_RED);
 
 			memset(icarus_buf, 0, ICA_TASK_LEN);
@@ -325,8 +323,7 @@ int main(void)
 
 			UART_Write(work_buf, A3233_TASK_LEN);
 			/* clear uart rx ring buffer*/
-			Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 | UART_FCR_RX_RS));
-			while(UART_Read(nonce_buf,A3233_NONCE_LEN));
+			UART_FlushRxRB();
 
 			if(UCOM_Read_Cnt() > 0){
 				continue;
@@ -340,12 +337,12 @@ int main(void)
 		while(1)
 		{
 			nonce_buflen = UART_Read_Cnt();
-			if(nonce_buflen >= A3233_NONCE_LEN){
+			if((nonce_buflen >= A3233_NONCE_LEN) && (FALSE == findnonce)){
 				/* clear usb rx ring buffer */
-				while(UCOM_Read(icarus_buf, ICA_TASK_LEN));
+				UCOM_FlushRxRB();
 
 				AVALON_led_rgb(AVALON_LED_OFF);
-				AVALON_Delay(100000);
+				AVALON_Delay(10000);
 				AVALON_led_rgb(AVALON_LED_BLUE);
 
 				memset(nonce_buf, 0, A3233_NONCE_LEN);
@@ -358,22 +355,27 @@ int main(void)
 
 				UCOM_Write(nonce_buf,A3233_NONCE_LEN);
 				findnonce = TRUE;
-				break;
+				/* for power saving */
+				AVALON_POWER_Enable(FALSE);
 			}
 
 			if(UCOM_Read_Cnt()){
-				Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 | UART_FCR_RX_RS));
-				while(UART_Read(nonce_buf,A3233_NONCE_LEN));
+				UART_FlushRxRB();
+				AVALON_POWER_Enable(TRUE);
+				AVALON_Rstn_A3233();
+
+				/* wait a3233 reset ok
+				 * and make sure com read ok
+				 * */
+				AVALON_Delay(10000);
 				break;
 			}
 
 			if(findnonce){
-				Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 | UART_FCR_RX_RS));
-				while(UART_Read(nonce_buf,A3233_NONCE_LEN));
+				UART_FlushRxRB();
 			}
+			/* Sleep until next IRQ happens */
+			__WFI();
 		}
-
-		/* Sleep until next IRQ happens */
-		__WFI();
 	}
 }

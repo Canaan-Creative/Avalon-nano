@@ -354,15 +354,16 @@ uint32_t UCOM_Write(uint8_t *pBuf, uint32_t len)
 
 	if ((pUcom->usbTxFlags & UCOM_TX_CONNECTED) && ((pUcom->usbTxFlags & UCOM_TX_BUSY) == 0)) {
 		pUcom->usbTxFlags |= UCOM_TX_BUSY;
-
-		/* enter critical section */
-		NVIC_DisableIRQ(USB0_IRQn);
 		ret = USBD_API->hw->WriteEP(pUcom->hUsb, USB_CDC_IN_EP, pBuf, len);
-		/* exit critical section */
-		NVIC_EnableIRQ(USB0_IRQn);
 	}
 
 	return ret;
+}
+
+/* clear UCOM tx ringbuffer */
+void UCOM_FlushRxRB(void)
+{
+	RingBuffer_Flush(&usb_rxrb);
 }
 
 /* Gets current read count. */
@@ -370,6 +371,7 @@ uint32_t UART_Read_Cnt(void)
 {
 	return RingBuffer_GetCount(&uart_rxrb);
 }
+
 
 /* Read data from uart */
 uint32_t UART_Read(uint8_t *pBuf, uint32_t buf_len)
@@ -395,4 +397,18 @@ uint32_t UART_Write(uint8_t *pBuf, uint32_t len)
 	}
 
 	return ret;
+}
+
+/* clear UART tx ringbuffer */
+void UART_FlushTxRB(void)
+{
+	Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 | UART_FCR_TX_RS));
+	RingBuffer_Flush(&uart_txrb);
+}
+
+/* clear UART rx ringbuffer */
+void UART_FlushRxRB(void)
+{
+	Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 | UART_FCR_RX_RS));
+	RingBuffer_Flush(&uart_rxrb);
 }
