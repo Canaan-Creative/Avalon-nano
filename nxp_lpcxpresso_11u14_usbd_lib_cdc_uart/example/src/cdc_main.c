@@ -40,7 +40,7 @@
 #define A3233_TASK_LEN 88
 #define A3233_NONCE_LEN	4
 #define ICA_TASK_LEN 64
-#define TICKRATE_HZ2 (1)
+#define TICKRATE_HZ2 (2)
 
 __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 /*****************************************************************************
@@ -239,7 +239,7 @@ int main(void)
 	/* Timer setup for match and interrupt at TICKRATE_HZ */
 	Chip_TIMER_Reset(LPC_TIMER32_0);
 	Chip_TIMER_MatchEnableInt(LPC_TIMER32_0, 1);
-	Chip_TIMER_SetMatch(LPC_TIMER32_0, 1, (timerFreq * TICKRATE_HZ2));
+	Chip_TIMER_SetMatch(LPC_TIMER32_0, 1, (timerFreq / TICKRATE_HZ2));
 	Chip_TIMER_ResetOnMatchEnable(LPC_TIMER32_0, 1);
 
 	/* Enable timer interrupt */
@@ -302,9 +302,7 @@ int main(void)
 				isgoldenob = FALSE;
 			}
 
-			if(isgoldenob){
-				data_convert(icarus_buf);
-			}
+			data_convert(icarus_buf);
 
 			data_pkg(icarus_buf, work_buf);
 			if ( FALSE == a3233_enable )
