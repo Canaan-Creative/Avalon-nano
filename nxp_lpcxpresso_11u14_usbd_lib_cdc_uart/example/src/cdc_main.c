@@ -284,6 +284,8 @@ int main(void)
 				}
 			}
 			else{
+				/* Sleep until next IRQ happens */
+				__WFI();
 				continue;
 			}
 
