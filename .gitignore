@@ -1,8 +1,6 @@
 *.d
 *.o
 *.launch
-*.cproject
-*.project
 
 lpc_chip_11uxx_lib/Debug/
 nxp_lpcxpresso_11u14_board_lib/Debug/
