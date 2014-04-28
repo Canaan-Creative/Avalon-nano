@@ -35,7 +35,6 @@
 #include "cdc_avalon.h"
 #include <NXP/crp.h>
 #include "sha2.h"
-#include "cdc_avalon.h"
 
 #define A3233_TASK_LEN 88
 #define A3233_NONCE_LEN	4
