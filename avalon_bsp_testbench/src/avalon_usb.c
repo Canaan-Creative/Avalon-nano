@@ -130,6 +130,7 @@ void AVALON_USB_Init(void)
 void AVALON_USB_PutChar(char ch)
 {
 	UCOM_Write(&ch,1);
+	/* delay for send finish */
 	AVALON_Delay(10000);
 }
 
@@ -137,6 +138,7 @@ void AVALON_USB_PutChar(char ch)
 void AVALON_USB_PutSTR(char *str)
 {
 	UCOM_Write(str,strlen(str));
+	/* delay for send finish */
 	AVALON_Delay(10000);
 }
 
@@ -144,8 +146,9 @@ void AVALON_USB_Test(void)
 {
 	AVALON_USB_Init();
 
-	AVALON_USBPutSTR("hello");
-	/* delay for send finish */
-	AVALON_Delay(10000);
-	AVALON_USBPutChar('V');
+	AVALON_USB_PutSTR("AVALON_USB_Test Start\n");
+	AVALON_USB_PutSTR("hello");
+	AVALON_USB_PutChar('V');
+	AVALON_USB_PutChar('\n');
+	AVALON_USB_PutSTR("AVALON_USB_Test End\n");
 }

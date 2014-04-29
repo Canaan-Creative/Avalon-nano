@@ -12,9 +12,9 @@
 #include <NXP/crp.h>
 #include "avalon_api.h"
 
-#define AVALON_USB_TEST			(0)
-#define AVALON_PWM_TEST			(0)
-#define AVALON_LED_TEST			(0)
+#define AVALON_USB_TEST			(1)
+#define AVALON_PWM_TEST			(1)
+#define AVALON_LED_TEST			(1)
 #define AVALON_A3233_TEST		(1)
 
 __CRP unsigned int CRP_WORD = CRP_NO_ISP;
@@ -42,11 +42,15 @@ int main(void) {
 #endif
 
 #if AVALON_PWM_TEST
+    	AVALON_USB_PutSTR("AVALON_Pwm_Test Start\n");
     	AVALON_Pwm_Test();
+    	AVALON_USB_PutSTR("AVALON_Pwm_Test End\n");
 #endif
 
 #if AVALON_A3233_TEST
+    	AVALON_USB_PutSTR("AVALON_A3233_Test Start\n");
     	AVALON_A3233_Test();
+    	AVALON_USB_PutSTR("AVALON_A3233_Test End\n");
 #endif
         i++ ;
     }

@@ -17,30 +17,27 @@
 #define V_18	1
 #define V_CORE	2
 #define V_09	3
-static float AVALON_A3233_ADCGuard(int type)
+/* vol = (dataADC/1024) * 3.3 */
+static uint16_t AVALON_A3233_ADCGuard(int type)
 {
 	uint16_t dataADC;
-	float vol;
+
 	switch (type) {
 	case V_25:
 		AVALON_ADC_Rd(ADC_CH1, &dataADC);
-		vol = (dataADC/1024) * 3.3;
 		break;
 	case V_18:
 		AVALON_ADC_Rd(ADC_CH3, &dataADC);
-		vol = (dataADC/1024) * 3.3;
 		break;
 	case V_CORE:
 		AVALON_ADC_Rd(ADC_CH5, &dataADC);
-		vol = (dataADC/1024) * 3.3;
 		break;
 	case V_09:
 		AVALON_ADC_Rd(ADC_CH7, &dataADC);
-		vol = (dataADC/1024) * 3.3;
 		break;
 	}
 
-	return vol;
+	return dataADC;
 }
 
 #ifdef HIGH_BAND
@@ -153,9 +150,9 @@ static void AVALON_A3233_PowerInit()
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 22);//VID0
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 7);//VID1
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 11);//VCore Enable
-	Chip_GPIO_SetPinDIRInput(LPC_GPIO, 0, 12);//Power Good
+	Chip_GPIO_SetPinDIRInput(LPC_GPIO, 0, 20);//Power Good
 
-	*(unsigned int *) 0x4004402c = 0x81;
+	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 11, IOCON_FUNC1 | IOCON_DIGMODE_EN);
 
 	AVALON_A3233_PowerEn(FALSE);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 22, TRUE);//VID0
@@ -164,7 +161,7 @@ static void AVALON_A3233_PowerInit()
 
 static Bool AVALON_A3233_IsPowerGood()
 {
-	return Chip_GPIO_ReadPortBit(LPC_GPIO, 0, 12);
+	return Chip_GPIO_ReadPortBit(LPC_GPIO, 0, 20);
 }
 
 #define VCORE_0P9   0x0
@@ -199,11 +196,7 @@ static unsigned int AVALON_A3233_TemperRd(){
 
 void AVALON_A3233_Init(void)
 {
-	static Bool bA3233Init = FALSE;
 	ADC_CLOCK_SETUP_T ADCSetup;
-
-	if(bA3233Init)
-		return;
 
 	Chip_GPIO_Init(LPC_GPIO);
 	AVALON_A3233_Rstn();
@@ -218,7 +211,6 @@ void AVALON_A3233_Init(void)
 	AVALON_A3233_PowerCfg(VCORE_0P675);
 	AVALON_A3233_CLKOUTCfg(TRUE);
 	AVALON_A3233_PowerEn(FALSE);
-	bA3233Init = TRUE;
 }
 
 /* convert radix */
@@ -306,50 +298,48 @@ void AVALON_A3233_Test(void)
 	UART_Write(work_buf, A3233_TASK_LEN);
 
 	findnonce = FALSE;
-	while(1){
-		AVALON_Delay(8000000);
-		if((UART_Read_Cnt() >= A3233_NONCE_LEN)&& (FALSE == findnonce)){
-			/* clear usb rx ring buffer */
-			UCOM_FlushRxRB();
 
-			memset(nonce_buf, 0, A3233_NONCE_LEN);
-			UART_Read(nonce_buf,A3233_NONCE_LEN);
+	AVALON_Delay(8000000);
+	if((UART_Read_Cnt() >= A3233_NONCE_LEN)&& (FALSE == findnonce)){
+		/* clear usb rx ring buffer */
+		UCOM_FlushRxRB();
 
-			PACK32(nonce_buf, &nonce_value);
-			nonce_value -= 0x100000; /* FIXME */
-			nonce_value = ((nonce_value >> 24) | (nonce_value << 24) | ((nonce_value >> 8) & 0xff00) | ((nonce_value << 8) & 0xff0000));
-			UNPACK32(nonce_value, nonce_buf);
+		memset(nonce_buf, 0, A3233_NONCE_LEN);
+		UART_Read(nonce_buf,A3233_NONCE_LEN);
 
-			UCOM_Write(nonce_buf,A3233_NONCE_LEN);
-			findnonce = TRUE;
-		}
+		PACK32(nonce_buf, &nonce_value);
+		nonce_value -= 0x100000; /* FIXME */
+		nonce_value = ((nonce_value >> 24) | (nonce_value << 24) | ((nonce_value >> 8) & 0xff00) | ((nonce_value << 8) & 0xff0000));
+		UNPACK32(nonce_value, nonce_buf);
 
-		strcpy(dbgbuf, "cur temp = ");
-		myitoa(AVALON_A3233_TemperRd(), strbuf, 10);
-		strcat(dbgbuf, strbuf);
-		strcat(dbgbuf,"\n");
-		AVALON_USB_PutSTR(dbgbuf);
-
-		strcpy(dbgbuf, "cur [V_25,V_18,V_CORE,V_09]=");
-		myitoa(AVALON_A3233_ADCGuard(V_25), strbuf, 10);
-		strcat(dbgbuf, strbuf);
-		strcat(dbgbuf,",");
-		myitoa(AVALON_A3233_ADCGuard(V_18), strbuf, 10);
-		strcat(dbgbuf, strbuf);
-		strcat(dbgbuf,",");
-		myitoa(AVALON_A3233_ADCGuard(V_CORE), strbuf, 10);
-		strcat(dbgbuf, strbuf);
-		strcat(dbgbuf,",");
-		myitoa(AVALON_A3233_ADCGuard(V_09), strbuf, 10);
-		strcat(dbgbuf, strbuf);
-		strcat(dbgbuf,"\n");
-		AVALON_USB_PutSTR(dbgbuf);
-
-	    strcpy(dbgbuf, "process nonce powergood = ");
-		myitoa(AVALON_A3233_IsPowerGood(), strbuf, 10);
-		strcat(dbgbuf, strbuf);
-		strcat(dbgbuf,"\n");
-		AVALON_USB_PutSTR(dbgbuf);
-
+		UCOM_Write(nonce_buf,A3233_NONCE_LEN);
+		findnonce = TRUE;
 	}
+
+	strcpy(dbgbuf, "cur temp = ");
+	myitoa(AVALON_A3233_TemperRd(), strbuf, 10);
+	strcat(dbgbuf, strbuf);
+	strcat(dbgbuf,"\n");
+	AVALON_USB_PutSTR(dbgbuf);
+
+	strcpy(dbgbuf, "cur [V_25,V_18,V_CORE,V_09]=");
+	myitoa(AVALON_A3233_ADCGuard(V_25), strbuf, 10);
+	strcat(dbgbuf, strbuf);
+	strcat(dbgbuf,",");
+	myitoa(AVALON_A3233_ADCGuard(V_18), strbuf, 10);
+	strcat(dbgbuf, strbuf);
+	strcat(dbgbuf,",");
+	myitoa(AVALON_A3233_ADCGuard(V_CORE), strbuf, 10);
+	strcat(dbgbuf, strbuf);
+	strcat(dbgbuf,",");
+	myitoa(AVALON_A3233_ADCGuard(V_09), strbuf, 10);
+	strcat(dbgbuf, strbuf);
+	strcat(dbgbuf,"\n");
+	AVALON_USB_PutSTR(dbgbuf);
+
+	strcpy(dbgbuf, "process nonce powergood = ");
+	myitoa(AVALON_A3233_IsPowerGood(), strbuf, 10);
+	strcat(dbgbuf, strbuf);
+	strcat(dbgbuf,"\n");
+	AVALON_USB_PutSTR(dbgbuf);
 }
