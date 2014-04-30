@@ -22,6 +22,9 @@ __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 int main(void) {
     // Read clock settings and update SystemCoreClock variable
     SystemCoreClockUpdate();
+	/* Initialize GPIO */
+	Chip_GPIO_Init(LPC_GPIO);
+
     AVALON_USB_Init();
 
     /* wait a little time for open usb cdc */

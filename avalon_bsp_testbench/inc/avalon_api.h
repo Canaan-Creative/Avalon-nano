@@ -66,15 +66,10 @@ void AVALON_ADC_Rd(uint8_t channel, uint16_t *data);
 
 /* iic */
 void AVALON_I2c_Init(void);
-void AVALON_I2c_Start(void);
-void AVALON_I2c_Start(void);
-void AVALON_I2c_Stop(void);
-void AVALON_I2c_Wbyte(unsigned char data);
-unsigned char AVALON_I2c_Rbyte(void);
+unsigned int AVALON_I2c_TemperRd();
 
 /* a3233 */
 void AVALON_A3233_Init(void);
-/* infinite loop */
 void AVALON_A3233_Test(void);
 
 /* pwm */

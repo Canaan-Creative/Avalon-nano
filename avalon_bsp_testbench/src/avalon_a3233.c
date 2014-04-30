@@ -174,26 +174,6 @@ static void AVALON_A3233_PowerCfg(unsigned char VID){
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 7, (bool)(VID>>1));//VID1
 }
 
-#define I2C_ADDR_W 0x92 //write:0x92, read:0x93
-#define I2C_ADDR_R 0x93 //write:0x92, read:0x93
-
-static unsigned int AVALON_A3233_TemperRd(){
-	unsigned int tmp = 0;
-	AVALON_I2c_Start();
-	AVALON_I2c_Wbyte(I2C_ADDR_W);
-	AVALON_I2c_Wbyte(0x0);//temperature register
-	AVALON_I2c_Stop();
-	AVALON_I2c_Start();
-	AVALON_I2c_Wbyte(I2C_ADDR_R);
-	tmp = AVALON_I2c_Rbyte()&0xff;
-	tmp = tmp << 8;
-	tmp = (tmp&0xffffff00) | AVALON_I2c_Rbyte();
-	AVALON_I2c_Stop();
-	tmp = (((tmp >> 4)&0xfff)/4)*0.25;
-	return tmp;
-}
-
-
 void AVALON_A3233_Init(void)
 {
 	ADC_CLOCK_SETUP_T ADCSetup;
@@ -317,7 +297,7 @@ void AVALON_A3233_Test(void)
 	}
 
 	strcpy(dbgbuf, "cur temp = ");
-	myitoa(AVALON_A3233_TemperRd(), strbuf, 10);
+	myitoa(AVALON_I2c_TemperRd(), strbuf, 10);
 	strcat(dbgbuf, strbuf);
 	strcat(dbgbuf,"\n");
 	AVALON_USB_PutSTR(dbgbuf);
