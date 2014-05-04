@@ -40,6 +40,14 @@
 #define A3233_NONCE_LEN	4
 #define ICA_TASK_LEN 64
 #define TICKRATE_HZ2 (2)
+#define A3233_TIMER_ICARUS_THRESHOLD	(1)
+#define A3233_TIMER_NONCE_THRESHOLD		(3)
+
+typedef enum{
+	A3233_TIMER_ICARUS,
+	A3233_TIMER_NONCE,
+	A3233_TIMER_MAX
+}A3233_Timer_e;
 
 __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 /*****************************************************************************
@@ -87,7 +95,8 @@ static void usb_pin_clk_init(void)
 }
 
 static Bool				a3233_enable = FALSE;
-static volatile Bool	invalid_icarusdat = FALSE;
+//TODO:add timer api
+static unsigned int		timerlist[A3233_TIMER_MAX];
 
 /*****************************************************************************
  * Public functions
@@ -162,9 +171,13 @@ unsigned int gen_test_a3233(uint32_t *buf)
  */
 void TIMER32_0_IRQHandler(void)
 {
+	A3233_Timer_e	Timer_e;
+
 	if (Chip_TIMER_MatchPending(LPC_TIMER32_0, 1)) {
 		Chip_TIMER_ClearMatch(LPC_TIMER32_0, 1);
-		invalid_icarusdat = TRUE;
+		for(Timer_e=A3233_TIMER_ICARUS; Timer_e<A3233_TIMER_MAX; Timer_e++){
+			timerlist[Timer_e] ++;
+		}
 	}
 }
 
@@ -185,8 +198,14 @@ int main(void)
 	uint32_t 		nonce_value = 0;
 	Bool			isgoldenob = FALSE;
 	Bool			timestart = FALSE;
+	Bool			timenoncestart = FALSE;
 	Bool			findnonce = FALSE;
 	uint32_t 		timerFreq;
+	A3233_Timer_e	Timer_e;
+
+	for(Timer_e=A3233_TIMER_ICARUS; Timer_e<A3233_TIMER_MAX; Timer_e++){
+		timerlist[Timer_e] = 0;
+	}
 
 	SystemCoreClockUpdate();
 
@@ -244,14 +263,13 @@ int main(void)
 	/* Enable timer interrupt */
 	NVIC_ClearPendingIRQ(TIMER_32_0_IRQn);
 	NVIC_EnableIRQ(TIMER_32_0_IRQn);
-	invalid_icarusdat = FALSE;
 
 	while (1) {
 		while(1){
 			icarus_buflen = UCOM_Read_Cnt();
 			if(icarus_buflen > 0){
 				if(!timestart){
-					invalid_icarusdat = FALSE;
+					timerlist[A3233_TIMER_ICARUS] = 0;
 					Chip_TIMER_Reset(LPC_TIMER32_0);
 					Chip_TIMER_Enable(LPC_TIMER32_0);
 					timestart = TRUE;
@@ -259,7 +277,7 @@ int main(void)
 				}
 
 				/* len timeout */
-				if(TRUE == invalid_icarusdat){
+				if(timerlist[A3233_TIMER_ICARUS] >= A3233_TIMER_ICARUS_THRESHOLD){
 					timestart = FALSE;
 					/* clear usb rx ring buffer */
 					UCOM_FlushRxRB();
@@ -333,10 +351,23 @@ int main(void)
 		}
 
 		findnonce = FALSE;
+		timenoncestart = FALSE;
+
 		while(1)
 		{
+			if(!timenoncestart){
+				timerlist[A3233_TIMER_NONCE] = 0;
+				Chip_TIMER_Reset(LPC_TIMER32_0);
+				Chip_TIMER_Enable(LPC_TIMER32_0);
+				timenoncestart = TRUE;
+			}
+
 			nonce_buflen = UART_Read_Cnt();
 			if((nonce_buflen >= A3233_NONCE_LEN) && (FALSE == findnonce)){
+				/* clear timeout check*/
+				Chip_TIMER_Disable(LPC_TIMER32_0);
+				timerlist[A3233_TIMER_NONCE] = 0;
+
 				/* clear usb rx ring buffer */
 				UCOM_FlushRxRB();
 
@@ -359,6 +390,10 @@ int main(void)
 			}
 
 			if(UCOM_Read_Cnt()){
+				/* clear timeout check*/
+				Chip_TIMER_Disable(LPC_TIMER32_0);
+				timerlist[A3233_TIMER_NONCE] = 0;
+
 				UART_FlushRxRB();
 				AVALON_POWER_Enable(TRUE);
 				AVALON_Rstn_A3233();
@@ -368,6 +403,20 @@ int main(void)
 				 * */
 				AVALON_Delay(10000);
 				break;
+			}else{
+				if(timerlist[A3233_TIMER_NONCE] >= A3233_TIMER_NONCE_THRESHOLD){
+					/* clear timeout check*/
+					Chip_TIMER_Disable(LPC_TIMER32_0);
+					timerlist[A3233_TIMER_NONCE] = 0;
+
+					/* timeout */
+					AVALON_led_rgb(AVALON_LED_OFF);
+					AVALON_Delay(10000);
+					AVALON_led_rgb(AVALON_LED_GREEN);
+
+					/* for power saving */
+					AVALON_POWER_Enable(FALSE);
+				}
 			}
 
 			if(findnonce){
