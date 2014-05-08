@@ -295,8 +295,6 @@ int main(void)
 					timestart = FALSE;
 				}
 				else{
-					/* clear uart rx ring buffer*/
-					UART_FlushRxRB();
 					continue;
 				}
 			}
@@ -341,17 +339,13 @@ int main(void)
 			UART_Write(work_buf, A3233_TASK_LEN);
 			/* clear uart rx ring buffer*/
 			UART_FlushRxRB();
-
-			if(UCOM_Read_Cnt() > 0){
-				continue;
-			}else{
-				/* find valid icarus data */
-				break;
-			}
+			break;
 		}
 
 		findnonce = FALSE;
 		timenoncestart = FALSE;
+		/* clear usb rx ring buffer */
+		UCOM_FlushRxRB();
 
 		while(1)
 		{
@@ -393,9 +387,7 @@ int main(void)
 				/* clear timeout check*/
 				Chip_TIMER_Disable(LPC_TIMER32_0);
 				timerlist[A3233_TIMER_NONCE] = 0;
-
-				UART_FlushRxRB();
-				AVALON_POWER_Enable(TRUE);
+				AVALON_POWER_Enable(TRUE);
 				AVALON_Rstn_A3233();
 
 				/* wait a3233 reset ok
@@ -417,12 +409,7 @@ int main(void)
 					/* for power saving */
 					AVALON_POWER_Enable(FALSE);
 				}
-			}
-
-			if(findnonce){
-				UART_FlushRxRB();
-			}
-			/* Sleep until next IRQ happens */
+			}				/* Sleep until next IRQ happens */
 			__WFI();
 		}
 	}
