@@ -373,8 +373,8 @@ int main(void)
 				UART_Read(nonce_buf,A3233_NONCE_LEN);
 
 				PACK32(nonce_buf, &nonce_value);
-				nonce_value -= 0x100000; /* FIXME */
 				nonce_value = ((nonce_value >> 24) | (nonce_value << 24) | ((nonce_value >> 8) & 0xff00) | ((nonce_value << 8) & 0xff0000));
+				nonce_value -= 0x1000;
 				UNPACK32(nonce_value, nonce_buf);
 
 				UCOM_Write(nonce_buf,A3233_NONCE_LEN);
