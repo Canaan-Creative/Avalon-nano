@@ -360,7 +360,7 @@ uint32_t UCOM_Write(uint8_t *pBuf, uint32_t len)
 	return ret;
 }
 
-/* clear UCOM tx ringbuffer */
+/* clear UCOM rx ringbuffer */
 void UCOM_FlushRxRB(void)
 {
 	RingBuffer_Flush(&usb_rxrb);
