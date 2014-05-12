@@ -44,7 +44,7 @@
 #define A3233_TIMER_NOICARUS_THRESHOLD	(3)
 #define A3233_TEMP_MAX					(60)
 #define A3233_TEMP_CHECKINTERVAL		(10)
-#define A3233_FREQ_MIN					(20)
+#define A3233_FREQ_MIN					(100)
 #define A3233_FREQ_MAX					(400)
 
 typedef enum{
@@ -387,7 +387,7 @@ int main(void)
 				a3233_enable = TRUE;
 				AVALON_POWER_Enable(TRUE);
 				AVALON_Rstn_A3233();
-				((unsigned int*)work_buf)[1] = AVALON_Gen_A3233_Pll_Cfg(a3233_curfreq);
+				((unsigned int*)work_buf)[1] = AVALON_Gen_A3233_Pll_Cfg(a3233_curfreq, NULL);
 			}
 
 			if (isgoldenob) {

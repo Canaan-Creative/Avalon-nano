@@ -259,13 +259,13 @@ static float ADC_Guard(int type)
 #endif
 
 /*
- * @brief	gen pll cfg val (freq 200-400 )
+ * @brief	gen pll cfg val (freq 100-450 )
  * @return	pll cfg val
  * */
-unsigned int AVALON_Gen_A3233_Pll_Cfg(unsigned int freq){
+unsigned int AVALON_Gen_A3233_Pll_Cfg(unsigned int freq, unsigned int *actfreq){
 	unsigned int NOx[4] , i=0;
 	unsigned int NO =0;//1 2 4 8
-	unsigned int Fin = 12;
+	unsigned int Fin = 25;
 	unsigned int NR =0;
 	unsigned int Fvco =0;
 	unsigned int Fout = 200 ;
@@ -301,11 +301,15 @@ unsigned int AVALON_Gen_A3233_Pll_Cfg(unsigned int freq){
 						((NF/2-1)&0x7f)<<21|
 						(OD<<28) ;
 
+					if(actfreq)
+						*actfreq = Fout;
 					return tmp;
 				}
 		}
 	}
 
+	if(actfreq)
+		*actfreq = 0;
 	return 0;
 }
 
@@ -372,7 +376,7 @@ static void Init_CLKOUT_PinMux(void)
 static void CLKOUT_Cfg(bool On)
 {
 	if(On == TRUE)
-		Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 4);
+		Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 2);
 	else
 		Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 0);
 }

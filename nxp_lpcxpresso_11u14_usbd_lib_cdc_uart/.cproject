@@ -183,9 +183,6 @@
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
 		<project id="nxp_lpcxpresso_11u14_usbd_lib_cdc_uart.com.crt.advproject.projecttype.exe.635327629" name="Executable" projectType="com.crt.advproject.projecttype.exe"/>
 	</storageModule>
-	<storageModule moduleId="scannerConfiguration">
-		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
 	<storageModule moduleId="com.crt.config">
 		<projectStorage>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
@@ -239,5 +236,14 @@
 		<configuration configurationName="Debug">
 			<resource resourceType="PROJECT" workspacePath="/nxp_lpcxpresso_11u14_usbd_lib_cdc_uart"/>
 		</configuration>
+	</storageModule>
+	<storageModule moduleId="scannerConfiguration">
+		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		<scannerConfigBuildInfo instanceId="com.crt.advproject.config.exe.debug.1077103717;com.crt.advproject.config.exe.debug.1077103717.;com.crt.advproject.gcc.exe.debug.2053058667;com.crt.advproject.compiler.input.982971641">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.crt.advproject.GCCManagedMakePerProjectProfile"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="com.crt.advproject.config.exe.debug.1077103717;com.crt.advproject.config.exe.debug.1077103717.;com.crt.advproject.gas.exe.debug.234482325;com.crt.advproject.assembler.input.1845035348">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.crt.advproject.GCCManagedMakePerProjectProfile"/>
+		</scannerConfigBuildInfo>
 	</storageModule>
 </cproject>
