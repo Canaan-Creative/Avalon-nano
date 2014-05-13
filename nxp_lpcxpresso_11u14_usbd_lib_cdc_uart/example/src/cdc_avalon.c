@@ -210,6 +210,7 @@ static void ADC_Rd(uint8_t channel, uint16_t *data){
 	Chip_ADC_EnableChannel(LPC_ADC, channel, DISABLE);
 }
 
+/* V_25 USB, V_18 A3233 IO Power, V_CORE A3233 Core, V_09 A3233 Pll*/
 #define V_25	0
 #define V_18	1
 #define V_CORE	2

@@ -177,7 +177,7 @@ static ErrorCode_t UCOM_SetLineCode(USBD_HANDLE_T hCDC, CDC_LINE_CODING *line_co
 	UCOM_DATA_T *pUcom = &g_uCOM;
 
 	/* indicate usb dte connected */
-	pUcom->usbTxFlags = UCOM_TX_CONNECTED;
+	pUcom->usbTxFlags |= UCOM_TX_CONNECTED;
 	AVALON_led_rgb(AVALON_LED_GREEN);
 
 	return LPC_OK;
@@ -271,7 +271,9 @@ uint32_t UCOM_Write(uint8_t *pBuf, uint32_t len)
 	UCOM_DATA_T *pUcom = &g_uCOM;
 	uint32_t ret = 0;
 
-	if ((pUcom->usbTxFlags & UCOM_TX_CONNECTED) && ((pUcom->usbTxFlags & UCOM_TX_BUSY) == 0)) {
+	if (pUcom->usbTxFlags & UCOM_TX_CONNECTED) {
+		while ((pUcom->usbTxFlags & UCOM_TX_BUSY) == 1);
+
 		pUcom->usbTxFlags |= UCOM_TX_BUSY;
 		ret = USBD_API->hw->WriteEP(pUcom->hUsb, USB_CDC_IN_EP, pBuf, len);
 	}
