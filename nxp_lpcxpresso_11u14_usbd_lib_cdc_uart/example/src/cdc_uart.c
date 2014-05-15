@@ -265,14 +265,21 @@ uint32_t UCOM_Read(uint8_t *pBuf, uint32_t buf_len)
 	return cnt;
 }
 
-/* Send data to usb */
+/* Send data to usb,FIX ME:how to make sure the data is sent */
 uint32_t UCOM_Write(uint8_t *pBuf, uint32_t len)
 {
 	UCOM_DATA_T *pUcom = &g_uCOM;
 	uint32_t ret = 0;
+	unsigned int timeout;
 
 	if (pUcom->usbTxFlags & UCOM_TX_CONNECTED) {
-		while ((pUcom->usbTxFlags & UCOM_TX_BUSY) == 1);
+		timeout = 0;
+		while ((pUcom->usbTxFlags & UCOM_TX_BUSY) == 1) {
+			AVALON_Delay(1000);
+			timeout ++;
+			if (timeout > 3)
+				break;
+		}
 
 		pUcom->usbTxFlags |= UCOM_TX_BUSY;
 		ret = USBD_API->hw->WriteEP(pUcom->hUsb, USB_CDC_IN_EP, pBuf, len);
