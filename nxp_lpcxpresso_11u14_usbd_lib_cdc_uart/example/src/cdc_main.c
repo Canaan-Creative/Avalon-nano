@@ -44,7 +44,7 @@
 #define A3233_TIMER_NOICARUS_THRESHOLD	(3)
 #define A3233_TEMP_MAX					(60)
 #define A3233_TEMP_CHECKINTERVAL		(10)
-#define A3233_FREQ_MIN					(100)
+#define A3233_FREQ_MIN					(360)
 #define A3233_FREQ_MAX					(400)
 
 typedef enum{
