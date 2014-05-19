@@ -14,7 +14,7 @@
 #define DUTY_25			(uint32_t)(DUTY_100*0.75)
 #define DUTY_10			(uint32_t)(DUTY_100*0.9)
 
-void AVALON_Pwm_Init(void)
+void AVALON_PWM_Init(void)
 {
 	/* System CLK 48MHz */
 	Chip_TIMER_Init(LPC_TIMER16_0);
@@ -51,14 +51,14 @@ void AVALON_Pwm_Init(void)
 }
 
 
-void AVALON_Pwm_Test(void)
+void AVALON_PWM_Test(void)
 {
 	static Bool bPwmInit = FALSE;
 
 	if(!bPwmInit)
 	{
 		bPwmInit = TRUE;
-		AVALON_Pwm_Init();
+		AVALON_PWM_Init();
 	}
 	Chip_TIMER_Enable(LPC_TIMER16_0);
 	AVALON_Delay(9000000);

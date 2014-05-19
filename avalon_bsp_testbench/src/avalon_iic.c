@@ -29,7 +29,7 @@ void I2C_IRQHandler(void)
 	}
 }
 
-void AVALON_I2c_Init(void)
+void AVALON_I2C_Init(void)
 {
 	Chip_SYSCTL_PeriphReset(RESET_I2C0);
 	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 4, IOCON_FUNC1 | IOCON_SFI2C_EN);
@@ -42,7 +42,7 @@ void AVALON_I2c_Init(void)
 	NVIC_EnableIRQ(I2C0_IRQn);
 }
 
-unsigned int AVALON_I2c_TemperRd()
+unsigned int AVALON_I2C_TemperRd()
 {
 	unsigned int 	tmp = 0;
 	uint8_t			tempreg = 0;

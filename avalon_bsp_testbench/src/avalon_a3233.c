@@ -186,7 +186,7 @@ void AVALON_A3233_Init(void)
 	AVALON_ADC_Init();
 	Chip_ADC_Init(LPC_ADC, &ADCSetup);
 
-	AVALON_I2c_Init();
+	AVALON_I2C_Init();
 
 	AVALON_A3233_PowerCfg(VCORE_0P675);
 	AVALON_A3233_CLKOUTCfg(TRUE);
@@ -297,7 +297,7 @@ void AVALON_A3233_Test(void)
 	}
 
 	strcpy(dbgbuf, "cur temp = ");
-	myitoa(AVALON_I2c_TemperRd(), strbuf, 10);
+	myitoa(AVALON_I2C_TemperRd(), strbuf, 10);
 	strcat(dbgbuf, strbuf);
 	strcat(dbgbuf,"\n");
 	AVALON_USB_PutSTR(dbgbuf);

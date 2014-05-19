@@ -49,9 +49,19 @@ extern "C"
 #define AVALON_LED_ON		(FALSE)
 #define AVALON_LED_OFF		(TRUE)
 
+typedef void (*TMRPROC)(void);
+
+typedef enum{
+	AVALON_TMR_ID1,
+	AVALON_TMR_ID2,
+	AVALON_TMR_ID3,
+	AVALON_TMR_ID4,
+	AVALON_TMR_MAX
+}AVALON_TMR_e;
+
 /* led */
-void AVALON_Led_Init(void);
-void AVALON_Led_Rgb(unsigned int rgb, Bool on);
+void AVALON_LED_Init(void);
+void AVALON_LED_Rgb(unsigned int rgb, Bool on);
 void AVALON_LED_Test(void);
 
 /* debug printf */
@@ -65,16 +75,23 @@ void AVALON_ADC_Init(void);
 void AVALON_ADC_Rd(uint8_t channel, uint16_t *data);
 
 /* iic */
-void AVALON_I2c_Init(void);
-unsigned int AVALON_I2c_TemperRd();
+void AVALON_I2C_Init(void);
+unsigned int AVALON_I2C_TemperRd();
 
 /* a3233 */
 void AVALON_A3233_Init(void);
 void AVALON_A3233_Test(void);
 
 /* pwm */
-void AVALON_Pwm_Init(void);
-void AVALON_Pwm_Test(void);
+void AVALON_PWM_Init(void);
+void AVALON_PWM_Test(void);
+
+/* timer */
+void AVALON_TMR_Init(void);
+void AVALON_TMR_Set(AVALON_TMR_e id, unsigned int interval, TMRPROC tmrcb);
+void AVALON_TMR_Kill(AVALON_TMR_e id);
+AVALON_TMR_e AVALON_TMR_GetReady(void);
+void AVALON_TMR_Test(void);
 
 static void AVALON_Delay(unsigned int max)
 {

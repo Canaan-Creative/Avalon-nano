@@ -7,6 +7,7 @@
  Description : avalon_usb api
 ===============================================================================
 */
+#include <string.h>
 #include "avalon_api.h"
 #include "app_usbd_cfg.h"
 #include "cdc_uart.h"
@@ -129,17 +130,13 @@ void AVALON_USB_Init(void)
 /* Sends a character on the USB */
 void AVALON_USB_PutChar(char ch)
 {
-	UCOM_Write(&ch,1);
-	/* delay for send finish */
-	AVALON_Delay(10000);
+	UCOM_Write((uint8_t*)&ch,1);
 }
 
 /* Outputs a string on the debug USB */
 void AVALON_USB_PutSTR(char *str)
 {
-	UCOM_Write(str,strlen(str));
-	/* delay for send finish */
-	AVALON_Delay(10000);
+	UCOM_Write((uint8_t*)str,strlen(str));
 }
 
 void AVALON_USB_Test(void)

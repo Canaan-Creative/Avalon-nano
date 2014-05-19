@@ -16,6 +16,7 @@
 #define AVALON_PWM_TEST			(1)
 #define AVALON_LED_TEST			(1)
 #define AVALON_A3233_TEST		(1)
+#define AVALON_TMR_TEST			(1)
 
 __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 
@@ -46,7 +47,7 @@ int main(void) {
 
 #if AVALON_PWM_TEST
     	AVALON_USB_PutSTR("AVALON_Pwm_Test Start\n");
-    	AVALON_Pwm_Test();
+    	AVALON_PWM_Test();
     	AVALON_USB_PutSTR("AVALON_Pwm_Test End\n");
 #endif
 
@@ -54,6 +55,12 @@ int main(void) {
     	AVALON_USB_PutSTR("AVALON_A3233_Test Start\n");
     	AVALON_A3233_Test();
     	AVALON_USB_PutSTR("AVALON_A3233_Test End\n");
+#endif
+
+#if AVALON_TMR_TEST
+    	AVALON_USB_PutSTR("AVALON_TMR_Test Start\n");
+    	AVALON_TMR_Test();
+    	AVALON_USB_PutSTR("AVALON_TMR_Test End\n");
 #endif
         i++ ;
     }

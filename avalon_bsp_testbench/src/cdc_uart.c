@@ -350,7 +350,9 @@ uint32_t UCOM_Write(uint8_t *pBuf, uint32_t len)
 	UCOM_DATA_T *pUcom = &g_uCOM;
 	uint32_t ret = 0;
 
-	if ((pUcom->usbTxFlags & UCOM_TX_CONNECTED) && ((pUcom->usbTxFlags & UCOM_TX_BUSY) == 0)) {
+	if (pUcom->usbTxFlags & UCOM_TX_CONNECTED) {
+		while ((pUcom->usbTxFlags & UCOM_TX_BUSY) == 1);
+
 		pUcom->usbTxFlags |= UCOM_TX_BUSY;
 		ret = USBD_API->hw->WriteEP(pUcom->hUsb, USB_CDC_IN_EP, pBuf, len);
 	}
