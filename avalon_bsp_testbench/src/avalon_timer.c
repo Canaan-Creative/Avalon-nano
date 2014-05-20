@@ -119,10 +119,9 @@ static void AVALON_TMRID1_Fun(void)
 
 static void AVALON_TMRID2_Fun(void)
 {
-	/*FIXME: cann't use AVALON_USB_PutSTR*/
-	AVALON_LED_Rgb(AVALON_LED_RED, AVALON_LED_ON);
-	AVALON_Delay(1000000);
-	AVALON_LED_Rgb(AVALON_LED_RED, AVALON_LED_OFF);
+	char str[20];
+	m_sprintf(str,"%s\n", __FUNCTION__);
+	AVALON_USB_PutSTR(str);
 	AVALON_TMR_Kill(AVALON_TMR_ID2);
 }
 
@@ -154,7 +153,6 @@ void AVALON_TMR_Test(void)
 	AVALON_TMR_e id;
 
 	AVALON_TMR_Init();
-	AVALON_LED_Init();
 
 	/* loop callback timer */
 	AVALON_TMR_Set(AVALON_TMR_ID1, 1000, tmrfun[AVALON_TMR_ID1]);

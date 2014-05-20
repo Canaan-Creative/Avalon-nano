@@ -32,6 +32,7 @@
 #include "board.h"
 #include "app_usbd_cfg.h"
 #include "cdc_uart.h"
+#include "avalon_api.h"
 
 /*****************************************************************************
  * Private types/enumerations/variables
@@ -98,7 +99,7 @@ static void UCOM_UartInit(void)
 	Init_UART_PinMux();
 
 	Chip_UART_Init(LPC_USART);
-	Chip_UART_SetBaudFDR(LPC_USART, 57600);
+	Chip_UART_SetBaudFDR(LPC_USART, 111111);
 	Chip_UART_ConfigData(LPC_USART, (UART_LCR_WLEN8 | UART_LCR_SBS_1BIT));
 	Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2));
 	Chip_UART_TXEnable(LPC_USART);
@@ -173,91 +174,10 @@ static ErrorCode_t UCOM_bulk_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event
 /* Set line coding call back routine */
 static ErrorCode_t UCOM_SetLineCode(USBD_HANDLE_T hCDC, CDC_LINE_CODING *line_coding)
 {
-	uint32_t config_data = 0;
 	UCOM_DATA_T *pUcom = &g_uCOM;
 
-	pUcom->usbTxFlags = UCOM_TX_CONNECTED;
-
-	switch (line_coding->bDataBits) {
-	case 5:
-		config_data |= UART_LCR_WLEN5;
-		break;
-
-	case 6:
-		config_data |= UART_LCR_WLEN6;
-		break;
-
-	case 7:
-		config_data |= UART_LCR_WLEN7;
-		break;
-
-	case 8:
-	default:
-		config_data |= UART_LCR_WLEN8;
-		break;
-	}
-
-	switch (line_coding->bCharFormat) {
-	case 1:	/* 1.5 Stop Bits */
-		/* In the UART hardware 1.5 stop bits is only supported when using 5
-		 * data bits. If data bits is set to 5 and stop bits is set to 2 then
-		 * 1.5 stop bits is assumed. Because of this 2 stop bits is not support
-		 * when using 5 data bits.
-		 */
-		if (line_coding->bDataBits == 5) {
-			config_data |= UART_LCR_SBS_2BIT;
-		}
-		else {
-			return ERR_USBD_UNHANDLED;
-		}
-		break;
-
-	case 2:	/* 2 Stop Bits */
-		/* In the UART hardware if data bits is set to 5 and stop bits is set to 2 then
-		 * 1.5 stop bits is assumed. Because of this 2 stop bits is
-		 * not support when using 5 data bits.
-		 */
-		if (line_coding->bDataBits != 5) {
-			config_data |= UART_LCR_SBS_2BIT;
-		}
-		else {
-			return ERR_USBD_UNHANDLED;
-		}
-		break;
-
-	default:
-	case 0:	/* 1 Stop Bit */
-		config_data |= UART_LCR_SBS_1BIT;
-		break;
-	}
-
-	switch (line_coding->bParityType) {
-	case 1:
-		config_data |= (UART_LCR_PARITY_EN | UART_LCR_PARITY_ODD);
-		break;
-
-	case 2:
-		config_data |= (UART_LCR_PARITY_EN | UART_LCR_PARITY_EVEN);
-		break;
-
-	case 3:
-		config_data |= (UART_LCR_PARITY_EN | UART_LCR_PARITY_F_1);
-		break;
-
-	case 4:
-		config_data |= (UART_LCR_PARITY_EN | UART_LCR_PARITY_F_0);
-		break;
-
-	default:
-	case 0:
-		config_data |= UART_LCR_PARITY_DIS;
-		break;
-	}
-
-	if (line_coding->dwDTERate < 3125000) {
-		Chip_UART_SetBaud(LPC_USART, line_coding->dwDTERate);
-	}
-	Chip_UART_ConfigData(LPC_USART, config_data);
+	/* indicate usb dte connected */
+	pUcom->usbTxFlags |= UCOM_TX_CONNECTED;
 
 	return LPC_OK;
 }
@@ -344,14 +264,21 @@ uint32_t UCOM_Read(uint8_t *pBuf, uint32_t buf_len)
 	return cnt;
 }
 
-/* Send data to usb */
+/* Send data to usb,FIX ME:how to make sure the data is sent */
 uint32_t UCOM_Write(uint8_t *pBuf, uint32_t len)
 {
 	UCOM_DATA_T *pUcom = &g_uCOM;
 	uint32_t ret = 0;
+	unsigned int timeout;
 
 	if (pUcom->usbTxFlags & UCOM_TX_CONNECTED) {
-		while ((pUcom->usbTxFlags & UCOM_TX_BUSY) == 1);
+		timeout = 0;
+		while ((pUcom->usbTxFlags & UCOM_TX_BUSY) == 1) {
+			AVALON_Delay(1000);
+			timeout ++;
+			if (timeout > 3)
+				break;
+		}
 
 		pUcom->usbTxFlags |= UCOM_TX_BUSY;
 		ret = USBD_API->hw->WriteEP(pUcom->hUsb, USB_CDC_IN_EP, pBuf, len);
@@ -360,7 +287,7 @@ uint32_t UCOM_Write(uint8_t *pBuf, uint32_t len)
 	return ret;
 }
 
-/* clear UCOM tx ringbuffer */
+/* clear UCOM rx ringbuffer */
 void UCOM_FlushRxRB(void)
 {
 	RingBuffer_Flush(&usb_rxrb);

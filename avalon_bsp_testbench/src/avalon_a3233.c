@@ -66,7 +66,7 @@ static unsigned int AVALON_A3233_PllCfgGen(unsigned int freq)
 {
 	unsigned int NOx[4] , i=0;
 	unsigned int NO =0;//1 2 4 8
-	unsigned int Fin = 12;
+	unsigned int Fin = 25;
 	unsigned int NR =0;
 	unsigned int Fvco =0;
 	unsigned int Fout = 200 ;
@@ -129,7 +129,7 @@ static void AVALON_A3233_CLKOUTInit(void)
 static void AVALON_A3233_CLKOUTCfg(bool On)
 {
 	if(On == TRUE)
-		Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 4);
+		Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 2);
 	else
 		Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 0);
 }
@@ -193,40 +193,6 @@ void AVALON_A3233_Init(void)
 	AVALON_A3233_PowerEn(FALSE);
 }
 
-/* convert radix */
-char *myitoa( int num, char*str, int radix)
-{
-	char index[]="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-	unsigned unum;
-	int i = 0, j, k;
-
-	if (radix == 10 && num < 0)
-	{
-		unum = (unsigned) -num;
-		str[i++] = '-';
-	}
-	else
-		unum = (unsigned) num;
-
-	do {
-		str[i++] = index[unum % (unsigned) radix];
-		unum /= radix;
-	} while (unum);
-	str[i] = '\0';
-
-	if (str[0] == '-')
-		k = 1;
-	else
-		k = 0;
-	char temp;
-	for (j = k; j <= (i - 1) / 2; j++) {
-		temp = str[j];
-		str[j] = str[i - 1 + k - j];
-		str[i - 1 + k - j] = temp;
-	}
-	return str;
-}
-
 static unsigned char golden_ob[] = "\x46\x79\xba\x4e\xc9\x98\x76\xbf\x4b\xfe\x08\x60\x82\xb4\x00\x25\x4d\xf6\xc3\x56\x45\x14\x71\x13\x9a\x3a\xfa\x71\xe4\x8f\x54\x4a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x87\x32\x0b\x1a\x14\x26\x67\x4f\x2f\xa7\x22\xce";
 
 #define A3233_TASK_LEN 88
@@ -237,22 +203,16 @@ static unsigned char golden_ob[] = "\x46\x79\xba\x4e\xc9\x98\x76\xbf\x4b\xfe\x08
 void AVALON_A3233_Test(void)
 {
 	char 		dbgbuf[100];
-	char		strbuf[20];
 	uint8_t 	icarus_buf[ICA_TASK_LEN];
 	unsigned char 	work_buf[A3233_TASK_LEN];
 	unsigned char	nonce_buf[A3233_NONCE_LEN];
 	uint32_t 		nonce_value = 0;
-	Bool			findnonce = FALSE;
 
 	/* enable usb for debug purpose */
     AVALON_USB_Init();
-
     AVALON_A3233_Init();
 
-    strcpy(dbgbuf, "after init powergood = ");
-	myitoa(AVALON_A3233_IsPowerGood(), strbuf, 10);
-	strcat(dbgbuf, strbuf);
-	strcat(dbgbuf,"\n");
+	m_sprintf(dbgbuf, "%s%d\n", "after init powergood = ", AVALON_A3233_IsPowerGood());
 	AVALON_USB_PutSTR(dbgbuf);
 
     memcpy(icarus_buf,golden_ob,ICA_TASK_LEN);
@@ -263,10 +223,7 @@ void AVALON_A3233_Test(void)
 	AVALON_A3233_PowerEn(TRUE);
 	AVALON_A3233_Rstn();
 
-    strcpy(dbgbuf, "after poweron powergood = ");
-	myitoa(AVALON_A3233_IsPowerGood(), strbuf, 10);
-	strcat(dbgbuf, strbuf);
-	strcat(dbgbuf,"\n");
+	m_sprintf(dbgbuf, "%s%d\n", "after powen powergood = ", AVALON_A3233_IsPowerGood());
 	AVALON_USB_PutSTR(dbgbuf);
 
 	((unsigned int*)work_buf)[1] = AVALON_A3233_PllCfgGen(400);
@@ -276,50 +233,34 @@ void AVALON_A3233_Test(void)
 	work_buf[82] = 0x73;
 	work_buf[83] = 0xa2;
 	UART_Write(work_buf, A3233_TASK_LEN);
+	UART_FlushRxRB();
 
-	findnonce = FALSE;
+	while (1){
+		if (UART_Read_Cnt() >= A3233_NONCE_LEN) {
+			UART_Read(nonce_buf,A3233_NONCE_LEN);
 
-	AVALON_Delay(8000000);
-	if((UART_Read_Cnt() >= A3233_NONCE_LEN)&& (FALSE == findnonce)){
-		/* clear usb rx ring buffer */
-		UCOM_FlushRxRB();
+			PACK32(nonce_buf, &nonce_value);
+			nonce_value = ((nonce_value >> 24) | (nonce_value << 24) | ((nonce_value >> 8) & 0xff00) | ((nonce_value << 8) & 0xff0000));
+			nonce_value -= 0x1000;
+			UNPACK32(nonce_value, nonce_buf);
 
-		memset(nonce_buf, 0, A3233_NONCE_LEN);
-		UART_Read(nonce_buf,A3233_NONCE_LEN);
-
-		PACK32(nonce_buf, &nonce_value);
-		nonce_value -= 0x100000; /* FIXME */
-		nonce_value = ((nonce_value >> 24) | (nonce_value << 24) | ((nonce_value >> 8) & 0xff00) | ((nonce_value << 8) & 0xff0000));
-		UNPACK32(nonce_value, nonce_buf);
-
-		UCOM_Write(nonce_buf,A3233_NONCE_LEN);
-		findnonce = TRUE;
+			/* FIXME: wrong nonce,why? */
+			UCOM_Write(nonce_buf, A3233_NONCE_LEN);
+			AVALON_A3233_PowerEn(FALSE);
+			break;
+		}
 	}
 
-	strcpy(dbgbuf, "cur temp = ");
-	myitoa(AVALON_I2C_TemperRd(), strbuf, 10);
-	strcat(dbgbuf, strbuf);
-	strcat(dbgbuf,"\n");
+	m_sprintf(dbgbuf, "%s%d\n", "cur temp = ", AVALON_I2C_TemperRd());
 	AVALON_USB_PutSTR(dbgbuf);
 
-	strcpy(dbgbuf, "cur [V_25,V_18,V_CORE,V_09]=");
-	myitoa(AVALON_A3233_ADCGuard(V_25), strbuf, 10);
-	strcat(dbgbuf, strbuf);
-	strcat(dbgbuf,",");
-	myitoa(AVALON_A3233_ADCGuard(V_18), strbuf, 10);
-	strcat(dbgbuf, strbuf);
-	strcat(dbgbuf,",");
-	myitoa(AVALON_A3233_ADCGuard(V_CORE), strbuf, 10);
-	strcat(dbgbuf, strbuf);
-	strcat(dbgbuf,",");
-	myitoa(AVALON_A3233_ADCGuard(V_09), strbuf, 10);
-	strcat(dbgbuf, strbuf);
-	strcat(dbgbuf,"\n");
+	m_sprintf(dbgbuf, "%s%d%d%d%d\n", "cur [V_25,V_18,V_CORE,V_09]=",
+			AVALON_A3233_ADCGuard(V_25),
+			AVALON_A3233_ADCGuard(V_18),
+			AVALON_A3233_ADCGuard(V_CORE),
+			AVALON_A3233_ADCGuard(V_09));
 	AVALON_USB_PutSTR(dbgbuf);
 
-	strcpy(dbgbuf, "process nonce powergood = ");
-	myitoa(AVALON_A3233_IsPowerGood(), strbuf, 10);
-	strcat(dbgbuf, strbuf);
-	strcat(dbgbuf,"\n");
+	m_sprintf(dbgbuf, "%s%d\n", "process nonce powergood = ", AVALON_A3233_IsPowerGood());
 	AVALON_USB_PutSTR(dbgbuf);
 }
