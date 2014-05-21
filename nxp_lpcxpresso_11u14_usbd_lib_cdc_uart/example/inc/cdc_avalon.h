@@ -44,6 +44,16 @@ extern "C"
 #define AVALON_LED_BLUE		2
 #define AVALON_LED_OFF		3
 
+typedef void (*TMRPROC)(void);
+
+typedef enum{
+	AVALON_TMR_ID1,
+	AVALON_TMR_ID2,
+	AVALON_TMR_ID3,
+	AVALON_TMR_ID4,
+	AVALON_TMR_MAX
+}AVALON_TMR_e;
+
 /** @ingroup EXAMPLES_USBDLIB_11XX_CDC_UART
  * @{
  */
@@ -59,14 +69,20 @@ ErrorCode_t AVALON_init (void);
 /*
  * */
 void AVALON_led_rgb(unsigned int rgb);
-
 void AVALON_POWER_Enable(Bool On);
-
+Bool AVALON_POWER_IsEnable(void);
 void AVALON_Rstn_A3233();
-
 unsigned int AVALON_Gen_A3233_Pll_Cfg(unsigned int freq, unsigned int *actfreq);
-
 void AVALON_Delay(unsigned int max);
+
+/* timer */
+void AVALON_TMR_Init(void);
+void AVALON_TMR_Set(AVALON_TMR_e id, unsigned int interval, TMRPROC tmrcb);
+void AVALON_TMR_Kill(AVALON_TMR_e id);
+AVALON_TMR_e AVALON_TMR_GetReady(void);
+Bool AVALON_TMR_IsTimeout(AVALON_TMR_e id);
+void AVALON_TMR_Test(void);
+
 /**
  * @}
  */

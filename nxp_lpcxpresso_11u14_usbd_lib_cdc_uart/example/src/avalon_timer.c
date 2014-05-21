@@ -7,7 +7,7 @@
  Description : avalon timer api
 ===============================================================================
 */
-#include "avalon_api.h"
+#include "cdc_avalon.h"
 
 /* 1ms */
 #define TICKRATE_AVALON (1000)
@@ -108,6 +108,18 @@ AVALON_TMR_e AVALON_TMR_GetReady(void)
 		}
 	}
 	return id;
+}
+
+Bool AVALON_TMR_IsTimeout(AVALON_TMR_e id)
+{
+	if ((id >= AVALON_TMR_ID1) && (id < AVALON_TMR_MAX)) {
+		if(tmrlist[id].Enable && tmrlist[id].IsTimeout) {
+			tmrlist[id].IsTimeout = FALSE;
+			return TRUE;
+		}
+	}
+
+	return FALSE;
 }
 
 static void AVALON_TMRID1_Fun(void)

@@ -30,9 +30,17 @@
  */
 #include "cdc_avalon.h"
 
+static Bool		a3233_poweren = FALSE;
+
 void AVALON_POWER_Enable(Bool On)
 {
+	a3233_poweren = On;
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 11, On);//VCore Enable
+}
+
+Bool AVALON_POWER_IsEnable(void)
+{
+	return a3233_poweren;
 }
 
 static void Init_POWER()

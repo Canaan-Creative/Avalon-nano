@@ -39,19 +39,17 @@
 #define A3233_TASK_LEN 88
 #define A3233_NONCE_LEN	4
 #define ICA_TASK_LEN 64
-#define TICKRATE_HZ2 (2)
-#define A3233_TIMER_ICARUS_THRESHOLD	(1)
-#define A3233_TIMER_NOICARUS_THRESHOLD	(3)
 #define A3233_TEMP_MAX					(60)
 #define A3233_TEMP_CHECKINTERVAL		(10)
 #define A3233_FREQ_MIN					(360)
 #define A3233_FREQ_MAX					(400)
-
-typedef enum{
-	A3233_TIMER_ICARUS,
-	A3233_TIMER_NOICARUS,
-	A3233_TIMER_MAX
-}A3233_Timer_e;
+#define A3233_TIMER_ICARUS				(AVALON_TMR_ID1)
+#define A3233_TIMER_NOICARUS			(AVALON_TMR_ID2)
+#define A3233_STAT_IDLE					1
+#define A3233_STAT_WAITICA				2
+#define A3233_STAT_CHKICA				3
+#define A3233_STAT_PROCICA				4
+#define A3233_STAT_RCVNONCE				5
 
 __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 /*****************************************************************************
@@ -83,6 +81,7 @@ const  USBD_API_T 		*g_pUsbApi = &g_usbApi;
 static unsigned char 	golden_ob[] = "\x46\x79\xba\x4e\xc9\x98\x76\xbf\x4b\xfe\x08\x60\x82\xb4\x00\x25\x4d\xf6\xc3\x56\x45\x14\x71\x13\x9a\x3a\xfa\x71\xe4\x8f\x54\x4a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x87\x32\x0b\x1a\x14\x26\x67\x4f\x2f\xa7\x22\xce";
 static unsigned int		a3233_curfreq = A3233_FREQ_MAX;
 static Bool				a3323_ishot = FALSE;
+static unsigned int 	a3233_stat = A3233_STAT_WAITICA;
 
 /*****************************************************************************
  * Private functions
@@ -99,10 +98,6 @@ static void usb_pin_clk_init(void)
 	/* power UP USB Phy */
 	Chip_SYSCTL_PowerUp(SYSCTL_POWERDOWN_USBPAD_PD);
 }
-
-static Bool				a3233_enable = FALSE;
-//TODO:add timer api
-static unsigned int		timerlist[A3233_TIMER_MAX];
 
 /*****************************************************************************
  * Public functions
@@ -177,13 +172,12 @@ void A3233_CheckTemp() {
 
 	tempcnt++;
 	if (tempcnt >= (A3233_TEMP_CHECKINTERVAL * checktimes)) {
-		if (a3233_enable) {
+		if (AVALON_POWER_IsEnable()) {
 			if (tmp102_rd() >= A3233_TEMP_MAX) {
 				if (a3233_curfreq > A3233_FREQ_MIN) {
 					a3233_curfreq -= 20;
 					/* set freq */
 					AVALON_POWER_Enable(FALSE);
-					a3233_enable = FALSE;
 					AVALON_led_rgb(AVALON_LED_OFF);
 				} else {
 					/* disable a3233 when freq is 20Mhz*/
@@ -198,7 +192,6 @@ void A3233_CheckTemp() {
 					a3233_curfreq = A3233_FREQ_MAX;
 
 				AVALON_POWER_Enable(FALSE);
-				a3233_enable = FALSE;
 				AVALON_led_rgb(AVALON_LED_OFF);
 				a3323_ishot = FALSE;
 				checktimes = 1;
@@ -207,23 +200,6 @@ void A3233_CheckTemp() {
 		tempcnt = 0;
 	}
 
-}
-
-/**
- * @brief	Handle interrupt from 32-bit timer
- * @return	Nothing
- */
-void TIMER32_0_IRQHandler(void)
-{
-	A3233_Timer_e	Timer_e;
-
-	if (Chip_TIMER_MatchPending(LPC_TIMER32_0, 1)) {
-		Chip_TIMER_ClearMatch(LPC_TIMER32_0, 1);
-		for(Timer_e=A3233_TIMER_ICARUS; Timer_e<A3233_TIMER_MAX; Timer_e++){
-			timerlist[Timer_e] ++;
-		}
-		A3233_CheckTemp();
-	}
 }
 
 /**
@@ -244,14 +220,8 @@ int main(void)
 	Bool			isgoldenob = FALSE;
 	Bool			timestart = FALSE;
 	Bool			timer_noicarus = FALSE;
-	uint32_t 		timerFreq;
-	A3233_Timer_e	Timer_e;
 
-	for(Timer_e=A3233_TIMER_ICARUS; Timer_e<A3233_TIMER_MAX; Timer_e++){
-		timerlist[Timer_e] = 0;
-	}
-
-	SystemCoreClockUpdate();
+  	SystemCoreClockUpdate();
 
 	/* enable clocks and pinmux */
 	usb_pin_clk_init();
@@ -291,84 +261,70 @@ int main(void)
 
 	/* Initialize avalon chip */
 	AVALON_init();
-
-	/* Enable timer 1 clock */
-	Chip_TIMER_Init(LPC_TIMER32_0);
-
-	/* Timer rate is system clock rate */
-	timerFreq = Chip_Clock_GetSystemClockRate();
-
-	/* Timer setup for match and interrupt at TICKRATE_HZ */
-	Chip_TIMER_Reset(LPC_TIMER32_0);
-	Chip_TIMER_MatchEnableInt(LPC_TIMER32_0, 1);
-	Chip_TIMER_SetMatch(LPC_TIMER32_0, 1, (timerFreq / TICKRATE_HZ2));
-	Chip_TIMER_ResetOnMatchEnable(LPC_TIMER32_0, 1);
-
-	/* Enable timer interrupt */
-	NVIC_ClearPendingIRQ(TIMER_32_0_IRQn);
-	NVIC_EnableIRQ(TIMER_32_0_IRQn);
+	AVALON_TMR_Init();
 
 	while (1) {
-		while (1) {
+		switch (a3233_stat) {
+		case A3233_STAT_WAITICA:
 			icarus_buflen = UCOM_Read_Cnt();
 			if (icarus_buflen > 0) {
-				if (timer_noicarus) {
-					timer_noicarus = FALSE;
-					Chip_TIMER_Disable(LPC_TIMER32_0);
-					timerlist[A3233_TIMER_NOICARUS] = 0;
-				}
-
-				if(!timestart){
-					timerlist[A3233_TIMER_ICARUS] = 0;
-					Chip_TIMER_Reset(LPC_TIMER32_0);
-					Chip_TIMER_Enable(LPC_TIMER32_0);
-					timestart = TRUE;
-					continue;
-				}
-
-				/* len timeout */
-				if(timerlist[A3233_TIMER_ICARUS] >= A3233_TIMER_ICARUS_THRESHOLD){
-					timestart = FALSE;
-
-					AVALON_led_rgb(AVALON_LED_OFF);
-					AVALON_Delay(10000);
-					AVALON_led_rgb(AVALON_LED_GREEN);
-
-					/* clear uart rx ring buffer*/
-					UART_FlushRxRB();
-					continue;
-				}
-
-				if(icarus_buflen >= ICA_TASK_LEN){
-					Chip_TIMER_Disable(LPC_TIMER32_0);
-					timestart = FALSE;
-				}
-				else{
-					continue;
-				}
+				timer_noicarus = FALSE;
+				AVALON_TMR_Kill(A3233_TIMER_NOICARUS);
+				a3233_stat = A3233_STAT_CHKICA;
+				break;
 			}
-			else{
-				if (!timer_noicarus) {
-					timerlist[A3233_TIMER_NOICARUS] = 0;
-					Chip_TIMER_Reset(LPC_TIMER32_0);
-					Chip_TIMER_Enable(LPC_TIMER32_0);
-					timer_noicarus = TRUE;
-				}
-				if (timerlist[A3233_TIMER_NOICARUS] >= A3233_TIMER_NOICARUS_THRESHOLD) {
-					timer_noicarus = FALSE;
-					Chip_TIMER_Disable(LPC_TIMER32_0);
-					timerlist[A3233_TIMER_NOICARUS] = 0;
-					AVALON_POWER_Enable(FALSE);
-					a3233_enable = FALSE;
-					AVALON_led_rgb(AVALON_LED_OFF);
-					AVALON_Delay(10000);
-					AVALON_led_rgb(AVALON_LED_GREEN);
-				}
-				continue;
+
+			if (!timer_noicarus) {
+				AVALON_TMR_Set(A3233_TIMER_NOICARUS, 50, NULL);
+				timer_noicarus = TRUE;
 			}
+
+			if (AVALON_TMR_IsTimeout(A3233_TIMER_NOICARUS)) {
+				/* no data */
+				timer_noicarus = FALSE;
+				AVALON_TMR_Kill(A3233_TIMER_NOICARUS);
+				a3233_stat = A3233_STAT_IDLE;
+			}
+			break;
+
+		case A3233_STAT_IDLE:
+			icarus_buflen = UCOM_Read_Cnt();
+			if (icarus_buflen > 0) {
+				a3233_stat = A3233_STAT_CHKICA;
+			}
+
+			if (AVALON_POWER_IsEnable())
+				AVALON_POWER_Enable(FALSE);
 
 			AVALON_led_rgb(AVALON_LED_OFF);
-			AVALON_Delay(10000);
+			AVALON_led_rgb(AVALON_LED_GREEN);
+			break;
+
+		case A3233_STAT_CHKICA:
+			icarus_buflen = UCOM_Read_Cnt();
+			if (icarus_buflen >= ICA_TASK_LEN) {
+				timestart = FALSE;
+				AVALON_TMR_Kill(A3233_TIMER_ICARUS);
+				a3233_stat = A3233_STAT_PROCICA;
+				break;
+			}
+
+			if (!timestart) {
+				AVALON_TMR_Set(A3233_TIMER_ICARUS, 80, NULL);
+				timestart = TRUE;
+			}
+
+			if (AVALON_TMR_IsTimeout(A3233_TIMER_ICARUS)) {
+				/* data format error */
+				timestart = FALSE;
+				AVALON_TMR_Kill(A3233_TIMER_ICARUS);
+				UCOM_FlushRxRB();
+				a3233_stat = A3233_STAT_IDLE;
+			}
+			break;
+
+		case A3233_STAT_PROCICA:
+			AVALON_led_rgb(AVALON_LED_OFF);
 			AVALON_led_rgb(AVALON_LED_RED);
 
 			memset(icarus_buf, 0, ICA_TASK_LEN);
@@ -383,8 +339,7 @@ int main(void)
 			data_convert(icarus_buf);
 			data_pkg(icarus_buf, work_buf);
 
-			if ((FALSE == a3233_enable) && !a3323_ishot) {
-				a3233_enable = TRUE;
+			if (!AVALON_POWER_IsEnable()) {
 				AVALON_POWER_Enable(TRUE);
 				AVALON_Rstn_A3233();
 				((unsigned int*)work_buf)[1] = AVALON_Gen_A3233_Pll_Cfg(a3233_curfreq, NULL);
@@ -397,12 +352,11 @@ int main(void)
 			}
 
 			UART_Write(work_buf, A3233_TASK_LEN);
-			/* clear uart rx ring buffer*/
 			UART_FlushRxRB();
+			a3233_stat = A3233_STAT_RCVNONCE;
 			break;
-		}
 
-		while (1) {
+		case A3233_STAT_RCVNONCE:
 			nonce_buflen = UART_Read_Cnt();
 			if (nonce_buflen >= A3233_NONCE_LEN) {
 				AVALON_led_rgb(AVALON_LED_OFF);
@@ -416,13 +370,21 @@ int main(void)
 				UNPACK32(nonce_value, nonce_buf);
 
 				UCOM_Write(nonce_buf, A3233_NONCE_LEN);
+				a3233_stat = A3233_STAT_WAITICA;
 				break;
 			}
 
 			if (UCOM_Read_Cnt())
-				break;
-			/* Sleep until next IRQ happens */
-			__WFI();
+				a3233_stat = A3233_STAT_WAITICA;
+
+			break;
+
+		default:
+			a3233_stat = A3233_STAT_IDLE;
+			break;
 		}
+		/* Sleep until next IRQ happens */
+		__WFI();
 	}
 }
+
