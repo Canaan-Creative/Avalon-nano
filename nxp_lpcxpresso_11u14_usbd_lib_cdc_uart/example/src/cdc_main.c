@@ -312,8 +312,8 @@ int main(void)
 				{
 					char freq[20];
 
-					m_sprintf(freq, "%04d%04d%04d", A3233_FreqNeeded(), tmp102_rd(), (int)A3233_IsTooHot());
-					UCOM_Write(freq, 12);
+					m_sprintf(freq, "%04d%04d%04d%04d", A3233_FreqNeeded(), tmp102_rd(), (int)A3233_IsTooHot(), ADC_Guard(0));
+					UCOM_Write(freq, 16);
 				}
 #endif
 				a3233_stat = A3233_STAT_WAITICA;

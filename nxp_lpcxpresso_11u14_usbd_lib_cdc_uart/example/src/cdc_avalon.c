@@ -32,16 +32,21 @@
 
 #define A3233_TEMP_MIN					(54)
 #define A3233_TEMP_MAX					(60)
-#define A3233_FREQ_MIN					(260)
-#define A3233_FREQ_MAX					(360)
-#define A3233_V25_MIN					(int)(2.2*1024/5)
+#define A3233_FREQ_MIN					(100)
+#define A3233_FREQ_ADJMIN				(260)
+#define A3233_FREQ_ADJMAX				(360)
+#define A3233_V25_ADJMIN				(int)(2.2*1024/5)
+#define A3233_V25_ADJMAX				(A3233_V25_ADJMIN+10)
 #define A3233_TIMER_ADJFREQ				(AVALON_TMR_ID3)
+#define A3233_TIMER_INTERVAL			(5000)
+#define A3233_ADJ_VCNT					(2)		/* n(5s) */
+#define A3233_ADJSTAT_TV				0
+#define A3233_ADJSTAT_V					1
 
-
-static unsigned int		a3233_freqneeded = A3233_FREQ_MAX;
+static unsigned int		a3233_freqneeded = A3233_FREQ_ADJMAX;
+static unsigned int		a3233_adjstat = A3233_ADJSTAT_TV;
 static Bool				a3323_istoohot = FALSE;
 static Bool				a3233_poweren = FALSE;
-
 void AVALON_POWER_Enable(Bool On)
 {
 	a3233_poweren = On;
@@ -234,7 +239,7 @@ static void ADC_Rd(uint8_t channel, uint16_t *data){
 #define V_CORE	2
 #define V_09	3
 /* vol = (dataADC/1024) * 3.3 */
-static int ADC_Guard(int type)
+int ADC_Guard(int type)
 {
 	uint16_t dataADC;
 
@@ -399,39 +404,68 @@ static void CLKOUT_Cfg(bool On)
 
 static void A3233_FreqMonitor()
 {
-	if (ADC_Guard(V_25) < A3233_V25_MIN)
-	{
-		a3233_freqneeded -= 20;
-		if (a3233_freqneeded < A3233_FREQ_MIN)
-			a3233_freqneeded = A3233_FREQ_MIN;
-		return;
-	}
+	static unsigned int cnt = 0;
+	int adc_val;
 
-	if (!a3323_istoohot && AVALON_POWER_IsEnable()) {
-		if (tmp102_rd() >= A3233_TEMP_MAX) {
-			if (a3233_freqneeded > A3233_FREQ_MIN) {
-				a3233_freqneeded -= 20;
-				AVALON_led_rgb(AVALON_LED_OFF);
+	switch(a3233_adjstat){
+	case A3233_ADJSTAT_TV:
+		if (ADC_Guard(V_25) < A3233_V25_ADJMIN) {
+			if (a3233_freqneeded == A3233_FREQ_ADJMIN)
+				a3233_adjstat = A3233_ADJSTAT_V;
+
+			a3233_freqneeded -= 20;
+			if (a3233_freqneeded < A3233_FREQ_ADJMIN)
+				a3233_freqneeded = A3233_FREQ_ADJMIN;
+			return;
+		}
+
+		if (!a3323_istoohot && AVALON_POWER_IsEnable()) {
+			if (tmp102_rd() >= A3233_TEMP_MAX) {
+				if (a3233_freqneeded > A3233_FREQ_ADJMIN) {
+					a3233_freqneeded -= 20;
+					AVALON_led_rgb(AVALON_LED_OFF);
+				} else {
+					/* disable a3233 when freq is A3233_FREQ_ADJMIN*/
+					if (a3233_freqneeded < A3233_FREQ_ADJMIN)
+						a3233_freqneeded = A3233_FREQ_ADJMIN;
+
+					a3323_istoohot = TRUE;
+					return;
+				}
 			} else {
-				/* disable a3233 when freq is A3233_FREQ_MIN*/
+				if (a3233_freqneeded <= A3233_FREQ_ADJMAX)
+					a3233_freqneeded += 20;
+				if (a3233_freqneeded > A3233_FREQ_ADJMAX)
+					a3233_freqneeded = A3233_FREQ_ADJMAX;
+
+				AVALON_led_rgb(AVALON_LED_OFF);
+			}
+		}
+
+		if (a3323_istoohot && (tmp102_rd() < A3233_TEMP_MIN)) {
+			a3323_istoohot = FALSE;
+		}
+		break;
+
+	case A3233_ADJSTAT_V:
+		adc_val = ADC_Guard(V_25);
+		if (cnt == A3233_ADJ_VCNT) {
+			if (adc_val >= A3233_V25_ADJMIN) {
+				if (adc_val > A3233_V25_ADJMAX)
+					a3233_freqneeded += 20;
+				if (a3233_freqneeded == A3233_FREQ_ADJMIN) {
+					a3233_adjstat = A3233_ADJSTAT_TV;
+				}
+				break;
+			} else {
+				a3233_freqneeded -= 20;
 				if (a3233_freqneeded < A3233_FREQ_MIN)
 					a3233_freqneeded = A3233_FREQ_MIN;
-
-				a3323_istoohot = TRUE;
-				return;
 			}
-		} else {
-			if (a3233_freqneeded <= A3233_FREQ_MAX)
-				a3233_freqneeded += 20;
-			if (a3233_freqneeded > A3233_FREQ_MAX)
-				a3233_freqneeded = A3233_FREQ_MAX;
-
-			AVALON_led_rgb(AVALON_LED_OFF);
+			cnt = 0;
 		}
-	}
-
-	if (a3323_istoohot && (tmp102_rd() < A3233_TEMP_MIN)) {
-		a3323_istoohot = FALSE;
+		cnt++;
+		break;
 	}
 }
 
