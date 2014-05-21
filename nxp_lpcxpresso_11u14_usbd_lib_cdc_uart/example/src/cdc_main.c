@@ -39,10 +39,6 @@
 #define A3233_TASK_LEN 88
 #define A3233_NONCE_LEN	4
 #define ICA_TASK_LEN 64
-#define A3233_TEMP_MAX					(60)
-#define A3233_TEMP_CHECKINTERVAL		(10)
-#define A3233_FREQ_MIN					(360)
-#define A3233_FREQ_MAX					(400)
 #define A3233_TIMER_ICARUS				(AVALON_TMR_ID1)
 #define A3233_TIMER_NOICARUS			(AVALON_TMR_ID2)
 #define A3233_STAT_IDLE					1
@@ -79,8 +75,6 @@ static const  USBD_API_T g_usbApi = {
 
 const  USBD_API_T 		*g_pUsbApi = &g_usbApi;
 static unsigned char 	golden_ob[] = "\x46\x79\xba\x4e\xc9\x98\x76\xbf\x4b\xfe\x08\x60\x82\xb4\x00\x25\x4d\xf6\xc3\x56\x45\x14\x71\x13\x9a\x3a\xfa\x71\xe4\x8f\x54\x4a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x87\x32\x0b\x1a\x14\x26\x67\x4f\x2f\xa7\x22\xce";
-static unsigned int		a3233_curfreq = A3233_FREQ_MAX;
-static Bool				a3323_ishot = FALSE;
 static unsigned int 	a3233_stat = A3233_STAT_WAITICA;
 
 /*****************************************************************************
@@ -140,68 +134,6 @@ USB_INTERFACE_DESCRIPTOR *find_IntfDesc(const uint8_t *pDesc, uint32_t intfClass
 	return pIntfDesc;
 }
 
-unsigned int gen_test_a3233(uint32_t *buf)
-{
-	   buf[0] = 0x11111111;
-	   buf[2] = 0x00000000;
-	   buf[3] = 0x4ac1d001;
-	   buf[4] = 0x89517050;
-	   buf[5] = 0x087e051a;
-	   buf[6] = 0x06b168ae;
-	   buf[7] = 0x62a5f25c;
-	   buf[8] = 0x00639107;
-	   buf[9] = 0x13cdfd7b;
-	   buf[10] = 0xfa77fe7d;
-	   buf[11] = 0x9cb18a17;
-	   buf[12] = 0x65c90d1e;
-	   buf[13] = 0x8f41371d;
-	   buf[14] = 0x974bf4bb;
-	   buf[15] = 0x7145fd6d;
-	   buf[16] = 0xc44192c0;
-	   buf[17] = 0x12146495;
-	   buf[18] = 0xd8f8ef67;
-	   buf[19] = 0xa2cb45c1;
-	   buf[20] = 0x00000000;//0x1bee2ba0;
-	   buf[21] = 0xaaaaaaaa;
-	   return buf[20] + 0x6000;
-}
-
-void A3233_CheckTemp() {
-	static unsigned int tempcnt = 0;
-	static unsigned int checktimes = 1;
-
-	tempcnt++;
-	if (tempcnt >= (A3233_TEMP_CHECKINTERVAL * checktimes)) {
-		if (AVALON_POWER_IsEnable()) {
-			if (tmp102_rd() >= A3233_TEMP_MAX) {
-				if (a3233_curfreq > A3233_FREQ_MIN) {
-					a3233_curfreq -= 20;
-					/* set freq */
-					AVALON_POWER_Enable(FALSE);
-					AVALON_led_rgb(AVALON_LED_OFF);
-				} else {
-					/* disable a3233 when freq is 20Mhz*/
-					AVALON_POWER_Enable(FALSE);
-					a3323_ishot = TRUE;
-					checktimes = 10;
-				}
-			} else {
-				if (a3233_curfreq <= A3233_FREQ_MAX)
-					a3233_curfreq += 20;
-				if (a3233_curfreq > A3233_FREQ_MAX)
-					a3233_curfreq = A3233_FREQ_MAX;
-
-				AVALON_POWER_Enable(FALSE);
-				AVALON_led_rgb(AVALON_LED_OFF);
-				a3323_ishot = FALSE;
-				checktimes = 1;
-			}
-		}
-		tempcnt = 0;
-	}
-
-}
-
 /**
  * @brief	main routine for blinky example
  * @return	Function should not exit.
@@ -216,6 +148,7 @@ int main(void)
 	unsigned char 	work_buf[A3233_TASK_LEN];
 	unsigned char	nonce_buf[A3233_NONCE_LEN];
 	unsigned int	nonce_buflen = 0;
+	unsigned int	last_freq = 0;
 	uint32_t 		nonce_value = 0;
 	Bool			isgoldenob = FALSE;
 	Bool			timestart = FALSE;
@@ -260,8 +193,8 @@ int main(void)
 	}
 
 	/* Initialize avalon chip */
-	AVALON_init();
 	AVALON_TMR_Init();
+	AVALON_init();
 
 	while (1) {
 		switch (a3233_stat) {
@@ -339,10 +272,15 @@ int main(void)
 			data_convert(icarus_buf);
 			data_pkg(icarus_buf, work_buf);
 
-			if (!AVALON_POWER_IsEnable()) {
+			if (A3233_IsTooHot()) {
+				//TODO:power off a3233 or other method
+			}
+
+			if (!AVALON_POWER_IsEnable() || (last_freq != A3233_FreqNeeded())) {
+				last_freq = A3233_FreqNeeded();
 				AVALON_POWER_Enable(TRUE);
 				AVALON_Rstn_A3233();
-				((unsigned int*)work_buf)[1] = AVALON_Gen_A3233_Pll_Cfg(a3233_curfreq, NULL);
+				((unsigned int*)work_buf)[1] = AVALON_Gen_A3233_Pll_Cfg(last_freq, NULL);
 			}
 
 			if (isgoldenob) {
@@ -370,6 +308,14 @@ int main(void)
 				UNPACK32(nonce_value, nonce_buf);
 
 				UCOM_Write(nonce_buf, A3233_NONCE_LEN);
+#ifdef A3233_FREQ_DEBUG
+				{
+					char freq[20];
+
+					m_sprintf(freq, "%04d%04d%04d", A3233_FreqNeeded(), tmp102_rd(), (int)A3233_IsTooHot());
+					UCOM_Write(freq, 12);
+				}
+#endif
 				a3233_stat = A3233_STAT_WAITICA;
 				break;
 			}

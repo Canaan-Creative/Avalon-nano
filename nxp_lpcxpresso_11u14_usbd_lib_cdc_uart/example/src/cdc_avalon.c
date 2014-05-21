@@ -30,7 +30,17 @@
  */
 #include "cdc_avalon.h"
 
-static Bool		a3233_poweren = FALSE;
+#define A3233_TEMP_MIN					(54)
+#define A3233_TEMP_MAX					(60)
+#define A3233_FREQ_MIN					(260)
+#define A3233_FREQ_MAX					(360)
+#define A3233_V25_MIN					(int)(2.2*1024/5)
+#define A3233_TIMER_ADJFREQ				(AVALON_TMR_ID3)
+
+
+static unsigned int		a3233_freqneeded = A3233_FREQ_MAX;
+static Bool				a3323_istoohot = FALSE;
+static Bool				a3233_poweren = FALSE;
 
 void AVALON_POWER_Enable(Bool On)
 {
@@ -223,30 +233,27 @@ static void ADC_Rd(uint8_t channel, uint16_t *data){
 #define V_18	1
 #define V_CORE	2
 #define V_09	3
-static float ADC_Guard(int type)
+/* vol = (dataADC/1024) * 3.3 */
+static int ADC_Guard(int type)
 {
 	uint16_t dataADC;
-	float vol;
+
 	switch (type) {
 	case V_25:
 		ADC_Rd(ADC_CH1, &dataADC);
-		vol = (dataADC/1024) * 3.3;
 		break;
 	case V_18:
 		ADC_Rd(ADC_CH3, &dataADC);
-		vol = (dataADC/1024) * 3.3;
 		break;
 	case V_CORE:
 		ADC_Rd(ADC_CH5, &dataADC);
-		vol = (dataADC/1024) * 3.3;
 		break;
 	case V_09:
 		ADC_Rd(ADC_CH7, &dataADC);
-		vol = (dataADC/1024) * 3.3;
 		break;
 	}
 
-	return vol;
+	return dataADC;
 }
 
 #ifdef HIGH_BAND
@@ -390,11 +397,46 @@ static void CLKOUT_Cfg(bool On)
 		Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 0);
 }
 
-void Init_Counter(){
-	Chip_Clock_EnablePeriphClock(SYSCTL_CLOCK_CT32B0);
+static void A3233_FreqMonitor()
+{
+	if (ADC_Guard(V_25) < A3233_V25_MIN)
+	{
+		a3233_freqneeded -= 20;
+		if (a3233_freqneeded < A3233_FREQ_MIN)
+			a3233_freqneeded = A3233_FREQ_MIN;
+		return;
+	}
+
+	if (!a3323_istoohot && AVALON_POWER_IsEnable()) {
+		if (tmp102_rd() >= A3233_TEMP_MAX) {
+			if (a3233_freqneeded > A3233_FREQ_MIN) {
+				a3233_freqneeded -= 20;
+				AVALON_led_rgb(AVALON_LED_OFF);
+			} else {
+				/* disable a3233 when freq is A3233_FREQ_MIN*/
+				if (a3233_freqneeded < A3233_FREQ_MIN)
+					a3233_freqneeded = A3233_FREQ_MIN;
+
+				a3323_istoohot = TRUE;
+				return;
+			}
+		} else {
+			if (a3233_freqneeded <= A3233_FREQ_MAX)
+				a3233_freqneeded += 20;
+			if (a3233_freqneeded > A3233_FREQ_MAX)
+				a3233_freqneeded = A3233_FREQ_MAX;
+
+			AVALON_led_rgb(AVALON_LED_OFF);
+		}
+	}
+
+	if (a3323_istoohot && (tmp102_rd() < A3233_TEMP_MIN)) {
+		a3323_istoohot = FALSE;
+	}
 }
 
-ErrorCode_t AVALON_init (void){
+ErrorCode_t AVALON_init (void)
+{
 	ErrorCode_t ret = LPC_OK;
 	ADC_CLOCK_SETUP_T ADCSetup;
 
@@ -412,6 +454,16 @@ ErrorCode_t AVALON_init (void){
 	AVALON_POWER_Enable(FALSE);
 
 	AVALON_led_rgb(AVALON_LED_OFF);
-
+	AVALON_TMR_Set(A3233_TIMER_ADJFREQ, 5000, A3233_FreqMonitor);
 	return ret;
+}
+
+unsigned int A3233_FreqNeeded(void)
+{
+	return a3233_freqneeded;
+}
+
+Bool A3233_IsTooHot(void)
+{
+	return a3323_istoohot;
 }

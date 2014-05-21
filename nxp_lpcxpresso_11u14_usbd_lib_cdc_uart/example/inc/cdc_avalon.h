@@ -74,6 +74,8 @@ Bool AVALON_POWER_IsEnable(void);
 void AVALON_Rstn_A3233();
 unsigned int AVALON_Gen_A3233_Pll_Cfg(unsigned int freq, unsigned int *actfreq);
 void AVALON_Delay(unsigned int max);
+unsigned int A3233_FreqNeeded();
+Bool A3233_IsTooHot(void);
 
 /* timer */
 void AVALON_TMR_Init(void);

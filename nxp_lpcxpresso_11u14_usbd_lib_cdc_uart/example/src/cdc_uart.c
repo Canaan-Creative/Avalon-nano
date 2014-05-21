@@ -265,7 +265,7 @@ uint32_t UCOM_Read(uint8_t *pBuf, uint32_t buf_len)
 	return cnt;
 }
 
-/* Send data to usb,FIX ME:how to make sure the data is sent */
+/* Send data to usb */
 uint32_t UCOM_Write(uint8_t *pBuf, uint32_t len)
 {
 	UCOM_DATA_T *pUcom = &g_uCOM;
@@ -277,6 +277,7 @@ uint32_t UCOM_Write(uint8_t *pBuf, uint32_t len)
 		while ((pUcom->usbTxFlags & UCOM_TX_BUSY) == 1) {
 			AVALON_Delay(1000);
 			timeout ++;
+			/*FIXME: busy is not always right,we must send after timeout */
 			if (timeout > 3)
 				break;
 		}
