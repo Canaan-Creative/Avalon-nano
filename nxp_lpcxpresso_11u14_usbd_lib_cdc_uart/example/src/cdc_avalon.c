@@ -30,21 +30,22 @@
  */
 #include "cdc_avalon.h"
 
-#define A3233_TEMP_MIN					(54)
-#define A3233_TEMP_MAX					(60)
-#define A3233_FREQ_MIN					(100)
-#define A3233_FREQ_ADJMIN				(260)
+#define A3233_TEMP_MIN					(60)
+#define A3233_TEMP_MAX					(65)
+#define A3233_FREQ_ADJMIN				(100)
 #define A3233_FREQ_ADJMAX				(360)
 #define A3233_V25_ADJMIN				(int)(2.2*1024/5)
 #define A3233_V25_ADJMAX				(A3233_V25_ADJMIN+10)
 #define A3233_TIMER_ADJFREQ				(AVALON_TMR_ID3)
 #define A3233_TIMER_INTERVAL			(5000)
-#define A3233_ADJ_VCNT					(2)		/* n(5s) */
-#define A3233_ADJSTAT_TV				0
+#define A3233_ADJ_VCNT					(2)		/* n x 5s */
+#define A3233_ADJ_TUPCNT				(1)		/* n x 5s */
+#define A3233_ADJ_TDOWNCNT				(2)		/* n x 5s */
+#define A3233_ADJSTAT_T					0
 #define A3233_ADJSTAT_V					1
 
 static unsigned int		a3233_freqneeded = A3233_FREQ_ADJMAX;
-static unsigned int		a3233_adjstat = A3233_ADJSTAT_TV;
+static unsigned int		a3233_adjstat = A3233_ADJSTAT_T;
 static Bool				a3323_istoohot = FALSE;
 static Bool				a3233_poweren = FALSE;
 void AVALON_POWER_Enable(Bool On)
@@ -402,69 +403,102 @@ static void CLKOUT_Cfg(bool On)
 		Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 0);
 }
 
+/*
+ * temp [A3233_TEMP_MIN,A3233_TEMP_MAX]
+ * temp raise check  A3233_ADJ_TUPCNT
+ * temp down/equal check A3233_ADJ_TDOWNCNT
+ * */
 static void A3233_FreqMonitor()
 {
-	static unsigned int cnt = 0;
+	static unsigned int adc_cnt = 0;
+	static unsigned int temp_cnt = 0;
+	static unsigned int lasttemp = 0;
 	int adc_val;
+	unsigned int temp;
+	Bool	adjtemp = FALSE;
+
+	if (!AVALON_POWER_IsEnable()) {
+		if (a3323_istoohot && (tmp102_rd() < A3233_TEMP_MIN))
+			a3323_istoohot = FALSE;
+		return;
+	}
 
 	switch(a3233_adjstat){
-	case A3233_ADJSTAT_TV:
+	case A3233_ADJSTAT_T:
 		if (ADC_Guard(V_25) < A3233_V25_ADJMIN) {
-			if (a3233_freqneeded == A3233_FREQ_ADJMIN)
-				a3233_adjstat = A3233_ADJSTAT_V;
-
-			a3233_freqneeded -= 20;
-			if (a3233_freqneeded < A3233_FREQ_ADJMIN)
-				a3233_freqneeded = A3233_FREQ_ADJMIN;
+			temp_cnt = 0;
+			a3233_adjstat = A3233_ADJSTAT_V;
 			return;
 		}
 
-		if (!a3323_istoohot && AVALON_POWER_IsEnable()) {
-			if (tmp102_rd() >= A3233_TEMP_MAX) {
+		temp = tmp102_rd();
+		if (!lasttemp) {
+			lasttemp = temp;
+			break;
+		}
+
+		adjtemp = FALSE;
+		/* TODO:may be a new way to check inflection point */
+		if (lasttemp < temp) {
+			if (temp_cnt >= A3233_ADJ_TUPCNT) {
+				temp_cnt = 0;
+				adjtemp = TRUE;
+			} else
+				temp_cnt++;
+		} else {
+			if (temp_cnt >= A3233_ADJ_TDOWNCNT) {
+				temp_cnt = 0;
+				adjtemp = TRUE;
+			} else
+				temp_cnt++;
+		}
+
+		if (adjtemp) {
+			if (temp >= A3233_TEMP_MAX) {
 				if (a3233_freqneeded > A3233_FREQ_ADJMIN) {
-					a3233_freqneeded -= 20;
+					a3233_freqneeded -= 40;
+					if (a3233_freqneeded < A3233_FREQ_ADJMIN)
+						a3233_freqneeded = A3233_FREQ_ADJMIN;
 					AVALON_led_rgb(AVALON_LED_OFF);
 				} else {
-					/* disable a3233 when freq is A3233_FREQ_ADJMIN*/
+					/* notify a3233 is too hot */
 					if (a3233_freqneeded < A3233_FREQ_ADJMIN)
 						a3233_freqneeded = A3233_FREQ_ADJMIN;
 
 					a3323_istoohot = TRUE;
 					return;
 				}
-			} else {
+			} else if (temp < A3233_TEMP_MIN) {
+				a3323_istoohot = FALSE;
 				if (a3233_freqneeded <= A3233_FREQ_ADJMAX)
 					a3233_freqneeded += 20;
 				if (a3233_freqneeded > A3233_FREQ_ADJMAX)
 					a3233_freqneeded = A3233_FREQ_ADJMAX;
 
 				AVALON_led_rgb(AVALON_LED_OFF);
+			} else {
+				a3323_istoohot = FALSE;
 			}
-		}
-
-		if (a3323_istoohot && (tmp102_rd() < A3233_TEMP_MIN)) {
-			a3323_istoohot = FALSE;
 		}
 		break;
 
 	case A3233_ADJSTAT_V:
 		adc_val = ADC_Guard(V_25);
-		if (cnt == A3233_ADJ_VCNT) {
+		if (adc_cnt == A3233_ADJ_VCNT) {
+			adc_cnt = 0;
 			if (adc_val >= A3233_V25_ADJMIN) {
 				if (adc_val > A3233_V25_ADJMAX)
-					a3233_freqneeded += 20;
-				if (a3233_freqneeded == A3233_FREQ_ADJMIN) {
-					a3233_adjstat = A3233_ADJSTAT_TV;
-				}
+					a3233_adjstat = A3233_ADJSTAT_T;
 				break;
 			} else {
 				a3233_freqneeded -= 20;
-				if (a3233_freqneeded < A3233_FREQ_MIN)
-					a3233_freqneeded = A3233_FREQ_MIN;
+				if (a3233_freqneeded < A3233_FREQ_ADJMIN)
+					a3233_freqneeded = A3233_FREQ_ADJMIN;
+
+				/* FIXME: if a3233_freqneeded = A3233_FREQ_ADJMIN also cann't work */
 			}
-			cnt = 0;
 		}
-		cnt++;
+		adc_cnt++;
 		break;
 	}
 }
