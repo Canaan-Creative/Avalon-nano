@@ -39,8 +39,7 @@
 #define A3233_TASK_LEN 88
 #define A3233_NONCE_LEN	4
 #define ICA_TASK_LEN 64
-#define A3233_TIMER_ICARUS				(AVALON_TMR_ID1)
-#define A3233_TIMER_NOICARUS			(AVALON_TMR_ID2)
+#define A3233_TIMER_TIMEOUT				(AVALON_TMR_ID1)
 #define A3233_STAT_IDLE					1
 #define A3233_STAT_WAITICA				2
 #define A3233_STAT_CHKICA				3
@@ -152,7 +151,6 @@ int main(void)
 	uint32_t 		nonce_value = 0;
 	Bool			isgoldenob = FALSE;
 	Bool			timestart = FALSE;
-	Bool			timer_noicarus = FALSE;
 
   	SystemCoreClockUpdate();
 
@@ -201,21 +199,21 @@ int main(void)
 		case A3233_STAT_WAITICA:
 			icarus_buflen = UCOM_Read_Cnt();
 			if (icarus_buflen > 0) {
-				timer_noicarus = FALSE;
-				AVALON_TMR_Kill(A3233_TIMER_NOICARUS);
+				timestart = FALSE;
+				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
 				a3233_stat = A3233_STAT_CHKICA;
 				break;
 			}
 
-			if (!timer_noicarus) {
-				AVALON_TMR_Set(A3233_TIMER_NOICARUS, 50, NULL);
-				timer_noicarus = TRUE;
+			if (!timestart) {
+				AVALON_TMR_Set(A3233_TIMER_TIMEOUT, 50, NULL);
+				timestart = TRUE;
 			}
 
-			if (AVALON_TMR_IsTimeout(A3233_TIMER_NOICARUS)) {
+			if (AVALON_TMR_IsTimeout(A3233_TIMER_TIMEOUT)) {
 				/* no data */
-				timer_noicarus = FALSE;
-				AVALON_TMR_Kill(A3233_TIMER_NOICARUS);
+				timestart = FALSE;
+				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
 				a3233_stat = A3233_STAT_IDLE;
 			}
 			break;
@@ -237,20 +235,20 @@ int main(void)
 			icarus_buflen = UCOM_Read_Cnt();
 			if (icarus_buflen >= ICA_TASK_LEN) {
 				timestart = FALSE;
-				AVALON_TMR_Kill(A3233_TIMER_ICARUS);
+				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
 				a3233_stat = A3233_STAT_PROCICA;
 				break;
 			}
 
 			if (!timestart) {
-				AVALON_TMR_Set(A3233_TIMER_ICARUS, 80, NULL);
+				AVALON_TMR_Set(A3233_TIMER_TIMEOUT, 80, NULL);
 				timestart = TRUE;
 			}
 
-			if (AVALON_TMR_IsTimeout(A3233_TIMER_ICARUS)) {
+			if (AVALON_TMR_IsTimeout(A3233_TIMER_TIMEOUT)) {
 				/* data format error */
 				timestart = FALSE;
-				AVALON_TMR_Kill(A3233_TIMER_ICARUS);
+				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
 				UCOM_FlushRxRB();
 				a3233_stat = A3233_STAT_IDLE;
 			}
@@ -316,12 +314,30 @@ int main(void)
 					UCOM_Write(freq, 16);
 				}
 #endif
+				timestart = FALSE;
+				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
 				a3233_stat = A3233_STAT_WAITICA;
 				break;
 			}
 
-			if (UCOM_Read_Cnt())
-				a3233_stat = A3233_STAT_WAITICA;
+			if (!timestart) {
+				AVALON_TMR_Set(A3233_TIMER_TIMEOUT, 2000, NULL);
+				timestart = TRUE;
+			}
+
+			if (AVALON_TMR_IsTimeout(A3233_TIMER_TIMEOUT)) {
+				/* no nonce response */
+				timestart = FALSE;
+				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
+				a3233_stat = A3233_STAT_IDLE;
+				break;
+			}
+
+			if (UCOM_Read_Cnt()) {
+				timestart = FALSE;
+				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
+				a3233_stat = A3233_STAT_CHKICA;
+			}
 
 			break;
 
