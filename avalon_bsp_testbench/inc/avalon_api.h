@@ -45,6 +45,7 @@ extern "C"
 #define AVALON_LED_GREEN 	0
 #define AVALON_LED_RED		1
 #define AVALON_LED_BLUE		2
+#define AVALON_LED_ALL		3
 
 #define AVALON_LED_ON		(FALSE)
 #define AVALON_LED_OFF		(TRUE)
@@ -92,6 +93,12 @@ void AVALON_TMR_Set(AVALON_TMR_e id, unsigned int interval, TMRPROC tmrcb);
 void AVALON_TMR_Kill(AVALON_TMR_e id);
 AVALON_TMR_e AVALON_TMR_GetReady(void);
 void AVALON_TMR_Test(void);
+
+/* watchdog */
+void AVALON_WDT_Init(void);
+void AVALON_WDT_Enable(void);
+void AVALON_WDT_Feed(void);
+void AVALON_WDT_Test(void);
 
 static void AVALON_Delay(unsigned int max)
 {

@@ -36,6 +36,12 @@ void AVALON_LED_Rgb(unsigned int rgb, Bool on)
 		Board_LED_Set(2, on);//blue
 		break;
 
+	case AVALON_LED_ALL:
+		Board_LED_Set(0, on);
+		Board_LED_Set(1, on);
+		Board_LED_Set(2, on);
+		break;
+
 	default:
 		break;
 	}
