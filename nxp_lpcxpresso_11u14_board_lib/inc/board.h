@@ -78,54 +78,6 @@ extern "C" {
 #define BOARD_NXP_XPRESSO_11U14
 
 /**
- * LED defines
- */
-#define LEDS_LED1           0x01
-#define LEDS_LED2           0x02
-#define LEDS_LED3           0x04
-#define LEDS_LED4           0x08
-#define LEDS_NO_LEDS        0x00
-
-/**
- * Button defines
- */
-#define BUTTONS_BUTTON1     0x01
-#define NO_BUTTON_PRESSED   0x00
-
-/**
- * Joystick defines
- */
-#define JOY_UP              0x01
-#define JOY_DOWN            0x02
-#define JOY_LEFT            0x04
-#define JOY_RIGHT           0x08
-#define JOY_PRESS           0x10
-
-/**
- * @brief	Initialize buttons on the board
- * @return	Nothing
- */
-void Board_Buttons_Init(void);
-
-/**
- * @brief	Get button status
- * @return	status of button
- */
-uint32_t Buttons_GetStatus(void);
-
-/**
- * @brief	Initialize Joystick
- * @return	Nothing
- */
-void Board_Joystick_Init(void);
-
-/**
- * @brief	Get Joystick status
- * @return	status of Joystick
- */
-uint8_t Joystick_GetStatus(void);
-
-/**
  * @}
  */
 

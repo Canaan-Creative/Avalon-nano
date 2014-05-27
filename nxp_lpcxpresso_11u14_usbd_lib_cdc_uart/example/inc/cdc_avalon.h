@@ -39,20 +39,28 @@ extern "C"
 {
 #endif
 
-#define AVALON_LED_GREEN 	0
-#define AVALON_LED_RED		1
-#define AVALON_LED_BLUE		2
-#define AVALON_LED_OFF		3
+#define AVALON_LED_GREEN 	0xff00
+#define AVALON_LED_RED		0xff0000
+#define AVALON_LED_BLUE		0xff
+#define AVALON_LED_BLACK	0
+#define AVALON_LED_WHITE	0xffffff
 
 typedef void (*TMRPROC)(void);
 
-typedef enum{
+typedef enum {
 	AVALON_TMR_ID1,
 	AVALON_TMR_ID2,
 	AVALON_TMR_ID3,
 	AVALON_TMR_ID4,
 	AVALON_TMR_MAX
-}AVALON_TMR_e;
+} AVALON_TMR_e;
+
+typedef enum {
+	AVALON_PWM_GREEN,
+	AVALON_PWM_BLUE,
+	AVALON_PWM_RED,
+	AVALON_PWM_MAX
+} AVALON_PWM_e;
 
 /** @ingroup EXAMPLES_USBDLIB_11XX_CDC_UART
  * @{
@@ -64,17 +72,18 @@ typedef enum{
  * @param	pUsbParam	: Pointer USB param structure returned by previous init call
  * @return	Always returns LPC_OK.
  */
-ErrorCode_t AVALON_init (void);
+ErrorCode_t AVALON_Init (void);
 
 /*
  * */
-void AVALON_led_rgb(unsigned int rgb);
 void AVALON_POWER_Enable(Bool On);
 Bool AVALON_POWER_IsEnable(void);
 void AVALON_Rstn_A3233();
 unsigned int AVALON_Gen_A3233_Pll_Cfg(unsigned int freq, unsigned int *actfreq);
 void AVALON_Delay(unsigned int max);
 unsigned int A3233_FreqNeeded();
+unsigned int A3233_FreqMin(void);
+unsigned int A3233_FreqMax(void);
 Bool A3233_IsTooHot(void);
 
 /* timer */
@@ -85,6 +94,18 @@ AVALON_TMR_e AVALON_TMR_GetReady(void);
 Bool AVALON_TMR_IsTimeout(AVALON_TMR_e id);
 void AVALON_TMR_Test(void);
 
+/* pwm */
+void AVALON_PWM_Init(void);
+void AVALON_PWM_SetDuty(AVALON_PWM_e pwm, unsigned char duty);
+void AVALON_PWM_Enable(void);
+void AVALON_PWM_Disable(void);
+void AVALON_PWM_Test(void);
+
+/* led */
+void AVALON_LED_Init(void);
+void AVALON_LED_Rgb(unsigned int rgb);
+void AVALON_LED_Blink(unsigned int rgb);
+void AVALON_LED_Test(void);
 /**
  * @}
  */

@@ -335,50 +335,6 @@ unsigned int AVALON_Gen_A3233_Pll_Cfg(unsigned int freq, unsigned int *actfreq){
 	return 0;
 }
 
-void AVALON_led_rgb(unsigned int rgb)
-{
-	if (rgb == AVALON_LED_GREEN) {
-		Board_LED_Set(0, FALSE);//green
-		Board_LED_Set(1, TRUE);//red
-		Board_LED_Set(2, TRUE);//blue
-	} else if (rgb == AVALON_LED_RED) {
-		Board_LED_Set(0, TRUE);//green
-		Board_LED_Set(1, FALSE);//red
-		Board_LED_Set(2, TRUE);//blue
-	} else if (rgb == AVALON_LED_BLUE) {
-		Board_LED_Set(0, TRUE);//green
-		Board_LED_Set(1, TRUE);//red
-		Board_LED_Set(2, FALSE);//blue
-	} else {
-		Board_LED_Set(0, TRUE);//green
-		Board_LED_Set(1, TRUE);//red
-		Board_LED_Set(2, TRUE);//blue
-	}
-}
-
-void Init_Pwm()
-{
-	Chip_Clock_EnablePeriphClock(SYSCTL_CLOCK_CT16B0);
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 1, 15, IOCON_FUNC2 | IOCON_MODE_INACT);//red
-	*(unsigned int *)0x4000c004 = 0x1;//enable tcr, ct16b0
-	*(unsigned int *)0x4000c008 = 0xffff;//timer counter
-	*(unsigned int *)0x4000c03c = 0x1 | (0x3<<8);//External Match
-	*(unsigned int *)0x4000c074 = 0x4;//pwm
-	*(unsigned int *)0x4000c020 = 0xffff/4;
-}
-
-void Init_Gpio(){
-	Chip_GPIO_Init(LPC_GPIO);
-}
-
-static void Init_Led(void)
-{
-	/* Set the PIO_7 as output */
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 17);
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 1, 15);
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 1, 19);
-}
-
 static void Init_CLKOUT_PinMux(void)
 {
 #if (defined(BOARD_NXP_XPRESSO_11U14) || defined(BOARD_NGX_BLUEBOARD_11U24))
@@ -459,7 +415,6 @@ static void A3233_FreqMonitor()
 					a3233_freqneeded -= 40;
 					if (a3233_freqneeded < A3233_FREQ_ADJMIN)
 						a3233_freqneeded = A3233_FREQ_ADJMIN;
-					AVALON_led_rgb(AVALON_LED_OFF);
 				} else {
 					/* notify a3233 is too hot */
 					if (a3233_freqneeded < A3233_FREQ_ADJMIN)
@@ -474,8 +429,6 @@ static void A3233_FreqMonitor()
 					a3233_freqneeded += 20;
 				if (a3233_freqneeded > A3233_FREQ_ADJMAX)
 					a3233_freqneeded = A3233_FREQ_ADJMAX;
-
-				AVALON_led_rgb(AVALON_LED_OFF);
 			} else {
 				a3323_istoohot = FALSE;
 			}
@@ -503,13 +456,11 @@ static void A3233_FreqMonitor()
 	}
 }
 
-ErrorCode_t AVALON_init (void)
+ErrorCode_t AVALON_Init (void)
 {
 	ErrorCode_t ret = LPC_OK;
 	ADC_CLOCK_SETUP_T ADCSetup;
 
-	Init_Gpio();
-	Init_Led();
 	Init_Rstn();//low active
 	Init_CLKOUT_PinMux();
 	Init_POWER();
@@ -520,15 +471,24 @@ ErrorCode_t AVALON_init (void)
 	POWER_Cfg(VCORE_0P675);
 	CLKOUT_Cfg(TRUE);
 	AVALON_POWER_Enable(FALSE);
-
-	AVALON_led_rgb(AVALON_LED_OFF);
 	AVALON_TMR_Set(A3233_TIMER_ADJFREQ, 5000, A3233_FreqMonitor);
+
 	return ret;
 }
 
 unsigned int A3233_FreqNeeded(void)
 {
 	return a3233_freqneeded;
+}
+
+unsigned int A3233_FreqMin(void)
+{
+	return A3233_FREQ_ADJMIN;
+}
+
+unsigned int A3233_FreqMax(void)
+{
+	return A3233_FREQ_ADJMAX;
 }
 
 Bool A3233_IsTooHot(void)

@@ -178,8 +178,6 @@ static ErrorCode_t UCOM_SetLineCode(USBD_HANDLE_T hCDC, CDC_LINE_CODING *line_co
 
 	/* indicate usb dte connected */
 	pUcom->usbTxFlags |= UCOM_TX_CONNECTED;
-	AVALON_led_rgb(AVALON_LED_GREEN);
-
 	return LPC_OK;
 }
 

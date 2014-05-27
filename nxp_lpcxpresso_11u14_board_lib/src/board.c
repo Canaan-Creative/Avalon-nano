@@ -36,20 +36,6 @@
  * Private types/enumerations/variables
  ****************************************************************************/
 
-#define BUTTONS_BUTTON1_GPIO_PORT_NUM			0
-#define BUTTONS_BUTTON1_GPIO_BIT_NUM			16
-
-#define JOYSTICK_UP_GPIO_PORT_NUM				1
-#define JOYSTICK_UP_GPIO_BIT_NUM				22
-#define JOYSTICK_DOWN_GPIO_PORT_NUM				1
-#define JOYSTICK_DOWN_GPIO_BIT_NUM				20
-#define JOYSTICK_LEFT_GPIO_PORT_NUM				1
-#define JOYSTICK_LEFT_GPIO_BIT_NUM				23
-#define JOYSTICK_RIGHT_GPIO_PORT_NUM			1
-#define JOYSTICK_RIGHT_GPIO_BIT_NUM				21
-#define JOYSTICK_PRESS_GPIO_PORT_NUM			1
-#define JOYSTICK_PRESS_GPIO_BIT_NUM				19
-
 /*****************************************************************************
  * Public types/enumerations/variables
  ****************************************************************************/
@@ -113,41 +99,6 @@ void Board_Debug_Init(void)
 #endif
 }
 
-/* Initializes board LED(s) */
-static void Board_LED_Init(void)
-{
-	/* Set the PIO_7 as output */
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 17);
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 1, 15);
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 1, 19);
-}
-
-/* Sets the state of a board LED to on or off */
-void Board_LED_Set(uint8_t LEDNumber, bool On)
-{
-	if(LEDNumber == 0) {
-		Chip_GPIO_SetPinState(LPC_GPIO, 0, 17, On);
-	}
-	if(LEDNumber == 1) {
-		Chip_GPIO_SetPinState(LPC_GPIO, 1, 15, On);
-	}
-	if(LEDNumber == 2) {
-		Chip_GPIO_SetPinState(LPC_GPIO, 1, 19, On);
-	}
-}
-
-/* Returns the current state of a board LED */
-bool Board_LED_Test(uint8_t LEDNumber)
-{
-	return Chip_GPIO_GetPinState(LPC_GPIO, 0, 17);
-}
-
-void Board_LED_Toggle(uint8_t LEDNumber)
-{
-	if (LEDNumber == 0)
-		Chip_GPIO_SetPinToggle(LPC_GPIO, 0, 17);
-}
-
 /* Set up and initialize all required blocks and functions related to the
    board hardware */
 void Board_Init(void)
@@ -157,56 +108,4 @@ void Board_Init(void)
 
 	/* Initialize GPIO */
 	Chip_GPIO_Init(LPC_GPIO);
-
-	/* Initialize LEDs */
-	Board_LED_Init();
-}
-
-void Board_Buttons_Init(void)
-{
-	Chip_GPIO_SetPinDIRInput(LPC_GPIO, BUTTONS_BUTTON1_GPIO_PORT_NUM, BUTTONS_BUTTON1_GPIO_BIT_NUM);
-}
-
-uint32_t Buttons_GetStatus(void)
-{
-	uint8_t ret = NO_BUTTON_PRESSED;
-	if (!Chip_GPIO_GetPinState(LPC_GPIO, BUTTONS_BUTTON1_GPIO_PORT_NUM, BUTTONS_BUTTON1_GPIO_BIT_NUM)) {
-		ret |= BUTTONS_BUTTON1;
-	}
-	return ret;
-}
-
-void Board_Joystick_Init(void)
-{
-	Chip_IOCON_PinMuxSet(LPC_IOCON, JOYSTICK_UP_GPIO_PORT_NUM, JOYSTICK_UP_GPIO_BIT_NUM, (IOCON_FUNC0 | IOCON_MODE_PULLUP));
-	Chip_IOCON_PinMuxSet(LPC_IOCON, JOYSTICK_DOWN_GPIO_PORT_NUM, JOYSTICK_DOWN_GPIO_BIT_NUM, (IOCON_FUNC0 | IOCON_MODE_PULLUP));
-	Chip_IOCON_PinMuxSet(LPC_IOCON, JOYSTICK_LEFT_GPIO_PORT_NUM, JOYSTICK_LEFT_GPIO_BIT_NUM, (IOCON_FUNC0 | IOCON_MODE_PULLUP));
-	Chip_IOCON_PinMuxSet(LPC_IOCON, JOYSTICK_RIGHT_GPIO_PORT_NUM, JOYSTICK_RIGHT_GPIO_BIT_NUM, (IOCON_FUNC0 | IOCON_MODE_PULLUP));
-	Chip_IOCON_PinMuxSet(LPC_IOCON, JOYSTICK_PRESS_GPIO_PORT_NUM, JOYSTICK_PRESS_GPIO_BIT_NUM, (IOCON_FUNC0 | IOCON_MODE_PULLUP));
-	Chip_GPIO_SetPinDIRInput(LPC_GPIO, JOYSTICK_UP_GPIO_PORT_NUM, JOYSTICK_UP_GPIO_BIT_NUM);
-	Chip_GPIO_SetPinDIRInput(LPC_GPIO, JOYSTICK_DOWN_GPIO_PORT_NUM, JOYSTICK_DOWN_GPIO_BIT_NUM);
-	Chip_GPIO_SetPinDIRInput(LPC_GPIO, JOYSTICK_LEFT_GPIO_PORT_NUM, JOYSTICK_LEFT_GPIO_BIT_NUM);
-	Chip_GPIO_SetPinDIRInput(LPC_GPIO, JOYSTICK_RIGHT_GPIO_PORT_NUM, JOYSTICK_RIGHT_GPIO_BIT_NUM);
-	Chip_GPIO_SetPinDIRInput(LPC_GPIO, JOYSTICK_PRESS_GPIO_PORT_NUM, JOYSTICK_PRESS_GPIO_BIT_NUM);
-}
-
-uint8_t Joystick_GetStatus(void)
-{
-	uint8_t ret = NO_BUTTON_PRESSED;
-	if ((Chip_GPIO_GetPinState(LPC_GPIO, JOYSTICK_UP_GPIO_PORT_NUM, JOYSTICK_UP_GPIO_BIT_NUM)) == 0x00) {
-		ret |= JOY_UP;
-	}
-	else if (Chip_GPIO_GetPinState(LPC_GPIO, JOYSTICK_DOWN_GPIO_PORT_NUM, JOYSTICK_DOWN_GPIO_BIT_NUM) == 0x00) {
-		ret |= JOY_DOWN;
-	}
-	else if ((Chip_GPIO_GetPinState(LPC_GPIO, JOYSTICK_LEFT_GPIO_PORT_NUM, JOYSTICK_LEFT_GPIO_BIT_NUM)) == 0x00) {
-		ret |= JOY_LEFT;
-	}
-	else if (Chip_GPIO_GetPinState(LPC_GPIO, JOYSTICK_RIGHT_GPIO_PORT_NUM, JOYSTICK_RIGHT_GPIO_BIT_NUM) == 0x00) {
-		ret |= JOY_RIGHT;
-	}
-	else if ((Chip_GPIO_GetPinState(LPC_GPIO, JOYSTICK_PRESS_GPIO_PORT_NUM, JOYSTICK_PRESS_GPIO_BIT_NUM)) == 0x00) {
-		ret |= JOY_PRESS;
-	}
-	return ret;
 }

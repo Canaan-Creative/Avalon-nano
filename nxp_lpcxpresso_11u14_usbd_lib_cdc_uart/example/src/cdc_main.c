@@ -45,6 +45,7 @@
 #define A3233_STAT_CHKICA				3
 #define A3233_STAT_PROCICA				4
 #define A3233_STAT_RCVNONCE				5
+#define A3233_STAT_PROTECT				6
 
 __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 /*****************************************************************************
@@ -152,6 +153,7 @@ int main(void)
 	Bool			isgoldenob = FALSE;
 	Bool			timestart = FALSE;
 
+	Board_Init();
   	SystemCoreClockUpdate();
 
 	/* enable clocks and pinmux */
@@ -192,7 +194,8 @@ int main(void)
 
 	/* Initialize avalon chip */
 	AVALON_TMR_Init();
-	AVALON_init();
+	AVALON_LED_Init();
+	AVALON_Init();
 
 	while (1) {
 		switch (a3233_stat) {
@@ -219,19 +222,25 @@ int main(void)
 			break;
 
 		case A3233_STAT_IDLE:
+			AVALON_LED_Rgb(AVALON_LED_BLACK);
 			icarus_buflen = UCOM_Read_Cnt();
 			if (icarus_buflen > 0) {
 				a3233_stat = A3233_STAT_CHKICA;
 			}
 
-			if (AVALON_POWER_IsEnable())
+			if (AVALON_POWER_IsEnable()) {
 				AVALON_POWER_Enable(FALSE);
-
-			AVALON_led_rgb(AVALON_LED_OFF);
-			AVALON_led_rgb(AVALON_LED_GREEN);
+			}
 			break;
 
 		case A3233_STAT_CHKICA:
+			if (A3233_IsTooHot()) {
+				a3233_stat = A3233_STAT_PROTECT;
+				timestart = FALSE;
+				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
+				break;
+			}
+
 			icarus_buflen = UCOM_Read_Cnt();
 			if (icarus_buflen >= ICA_TASK_LEN) {
 				timestart = FALSE;
@@ -254,10 +263,30 @@ int main(void)
 			}
 			break;
 
-		case A3233_STAT_PROCICA:
-			AVALON_led_rgb(AVALON_LED_OFF);
-			AVALON_led_rgb(AVALON_LED_RED);
+		case A3233_STAT_PROTECT:
+			if (!A3233_IsTooHot()) {
+				timestart = FALSE;
+				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
+				a3233_stat = A3233_STAT_CHKICA;
+				break;
+			}
 
+			if (AVALON_POWER_IsEnable())
+				AVALON_POWER_Enable(FALSE);
+
+			if (!timestart) {
+				AVALON_TMR_Set(A3233_TIMER_TIMEOUT, 10000, NULL);
+				AVALON_LED_Blink(AVALON_LED_RED);
+				timestart = TRUE;
+			}
+
+			if (AVALON_TMR_IsTimeout(A3233_TIMER_TIMEOUT)) {
+				/* data format error */
+				AVALON_TMR_Set(A3233_TIMER_TIMEOUT, 10000, NULL);
+			}
+			break;
+
+		case A3233_STAT_PROCICA:
 			memset(icarus_buf, 0, ICA_TASK_LEN);
 			UCOM_Read(icarus_buf, ICA_TASK_LEN);
 			memset(work_buf, 0, A3233_TASK_LEN);
@@ -270,15 +299,17 @@ int main(void)
 			data_convert(icarus_buf);
 			data_pkg(icarus_buf, work_buf);
 
-			if (A3233_IsTooHot()) {
-				//TODO:power off a3233 or other method
-			}
-
 			if (!AVALON_POWER_IsEnable() || (last_freq != A3233_FreqNeeded())) {
+				unsigned int r,g,b;
+
 				last_freq = A3233_FreqNeeded();
 				AVALON_POWER_Enable(TRUE);
 				AVALON_Rstn_A3233();
 				((unsigned int*)work_buf)[1] = AVALON_Gen_A3233_Pll_Cfg(last_freq, NULL);
+
+				r = ((last_freq - A3233_FreqMin())>>1)%255;
+				b = g = 255 - r;
+				AVALON_LED_Rgb((r << 16) | (g << 8) | b);
 			}
 
 			if (isgoldenob) {
@@ -295,9 +326,6 @@ int main(void)
 		case A3233_STAT_RCVNONCE:
 			nonce_buflen = UART_Read_Cnt();
 			if (nonce_buflen >= A3233_NONCE_LEN) {
-				AVALON_led_rgb(AVALON_LED_OFF);
-				AVALON_led_rgb(AVALON_LED_BLUE);
-
 				UART_Read(nonce_buf, A3233_NONCE_LEN);
 
 				PACK32(nonce_buf, &nonce_value);
@@ -316,7 +344,6 @@ int main(void)
 #endif
 				timestart = FALSE;
 				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
-				a3233_stat = A3233_STAT_WAITICA;
 				break;
 			}
 
