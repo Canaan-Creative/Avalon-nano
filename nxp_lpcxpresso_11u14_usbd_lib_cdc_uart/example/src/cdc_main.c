@@ -222,7 +222,7 @@ int main(void)
 			break;
 
 		case A3233_STAT_IDLE:
-			AVALON_LED_Rgb(AVALON_LED_BLACK);
+			AVALON_LED_Rgb(AVALON_LED_GREEN);
 			icarus_buflen = UCOM_Read_Cnt();
 			if (icarus_buflen > 0) {
 				a3233_stat = A3233_STAT_CHKICA;
@@ -281,7 +281,6 @@ int main(void)
 			}
 
 			if (AVALON_TMR_IsTimeout(A3233_TIMER_TIMEOUT)) {
-				/* data format error */
 				AVALON_TMR_Set(A3233_TIMER_TIMEOUT, 10000, NULL);
 			}
 			break;
@@ -300,15 +299,20 @@ int main(void)
 			data_pkg(icarus_buf, work_buf);
 
 			if (!AVALON_POWER_IsEnable() || (last_freq != A3233_FreqNeeded())) {
-				unsigned int r,g,b;
-
 				last_freq = A3233_FreqNeeded();
 				AVALON_POWER_Enable(TRUE);
 				AVALON_Rstn_A3233();
 				((unsigned int*)work_buf)[1] = AVALON_Gen_A3233_Pll_Cfg(last_freq, NULL);
 
-				r = ((last_freq - A3233_FreqMin())>>1)%255;
-				b = g = 255 - r;
+			}
+
+			{
+				unsigned int r,g,b;
+				r = last_freq - A3233_FreqMin();
+				if (r > 255 )
+					r = 255;
+				g = 0;
+				b = 255 - r;
 				AVALON_LED_Rgb((r << 16) | (g << 8) | b);
 			}
 
@@ -327,7 +331,6 @@ int main(void)
 			nonce_buflen = UART_Read_Cnt();
 			if (nonce_buflen >= A3233_NONCE_LEN) {
 				UART_Read(nonce_buf, A3233_NONCE_LEN);
-
 				PACK32(nonce_buf, &nonce_value);
 				nonce_value = ((nonce_value >> 24) | (nonce_value << 24) | ((nonce_value >> 8) & 0xff00) | ((nonce_value << 8) & 0xff0000));
 				nonce_value -= 0x1000;
@@ -344,6 +347,7 @@ int main(void)
 #endif
 				timestart = FALSE;
 				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
+				a3233_stat = A3233_STAT_WAITICA;
 				break;
 			}
 

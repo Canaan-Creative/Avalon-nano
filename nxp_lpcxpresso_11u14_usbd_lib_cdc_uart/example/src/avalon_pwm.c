@@ -37,18 +37,6 @@ void AVALON_PWM_Init(void)
 	/* CT16B0_MAT2 duty:10% */
 	Chip_TIMER_ExtMatchControlSet(LPC_TIMER16_0, 1, TIMER_EXTMATCH_SET, 2);
 	Chip_TIMER_SetMatch(LPC_TIMER16_0, 2, DUTY_0);
-
-	/* Prescale 0 */
-	Chip_TIMER_PrescaleSet(LPC_TIMER16_0, 0);
-
-	/* PWM Period 187500Hz(5.333333333us) */
-	Chip_TIMER_SetMatch(LPC_TIMER16_0, 3, DUTY_100);
-	Chip_TIMER_ResetOnMatchEnable(LPC_TIMER16_0, 3);
-
-	/* CT16B0_MAT0/CT16B0_MAT1/CT16B0_MAT2 Enable */
-	LPC_TIMER16_0->PWMC = 0b111;//pwm
-
-	//Chip_TIMER_Enable(LPC_TIMER16_0);
 }
 
 void AVALON_PWM_SetDuty(AVALON_PWM_e pwm, unsigned char duty)
@@ -72,7 +60,7 @@ void AVALON_PWM_Enable(void)
 	/* CT16B0_MAT0/CT16B0_MAT1/CT16B0_MAT2 Enable */
 	LPC_TIMER16_0->PWMC = 0b111;//pwm
 
-	//Chip_TIMER_Enable(LPC_TIMER16_0);
+	Chip_TIMER_Enable(LPC_TIMER16_0);
 }
 
 void AVALON_PWM_Disable(void)
@@ -85,6 +73,7 @@ void AVALON_PWM_Test(void)
 	unsigned char duty = 0;
 
 	AVALON_PWM_Init();
+	AVALON_PWM_Enable();
 	for (;duty < 255; duty++) {
 		AVALON_PWM_SetDuty(AVALON_PWM_RED, duty);
 		AVALON_Delay(20000);

@@ -18,10 +18,6 @@ static unsigned int blinkcolor;
 void AVALON_LED_Init(void)
 {
 	AVALON_PWM_Init();
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 17);
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 1, 19);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 17, 1);
-	Chip_GPIO_SetPinState(LPC_GPIO, 1, 19, 1);
 }
 
 static void AVALON_LED_PWMSet(unsigned int rgb)
@@ -38,8 +34,6 @@ static void AVALON_LED_PWMSet(unsigned int rgb)
 	AVALON_PWM_SetDuty(AVALON_PWM_GREEN, g);
 	AVALON_PWM_SetDuty(AVALON_PWM_BLUE, b);
 	AVALON_PWM_Enable();
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 17, g==0);
-	Chip_GPIO_SetPinState(LPC_GPIO, 1, 19, b==0);
 }
 
 void AVALON_LED_Rgb(unsigned int rgb)
