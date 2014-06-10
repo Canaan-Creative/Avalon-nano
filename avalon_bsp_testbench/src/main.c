@@ -22,7 +22,8 @@ __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 
 int main(void) {
     // Read clock settings and update SystemCoreClock variable
-    SystemCoreClockUpdate();
+	Board_Init();
+	SystemCoreClockUpdate();
 	/* Initialize GPIO */
 	Chip_GPIO_Init(LPC_GPIO);
 
