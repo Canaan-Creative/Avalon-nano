@@ -113,6 +113,9 @@ void AVALON_USB_PutChar(char ch);
 void AVALON_USB_PutSTR(char *str);
 void AVALON_USB_Test(void);
 
+/* iic */
+void AVALON_I2C_Init(void);
+unsigned int AVALON_I2C_TemperRd();
 /**
  * @}
  */

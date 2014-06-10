@@ -104,116 +104,6 @@ void AVALON_Rstn_A3233()
 	AVALON_Delay(2000);
 }
 
-/*i2c*/
-#define I2C_NOP 4 //even only
-#define I2C_ADDR_W 0x92 //write:0x92, read:0x93
-#define I2C_ADDR_R 0x93 //write:0x92, read:0x93
-static void Init_I2c(){
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 4, IOCON_FUNC0 | IOCON_MODE_INACT | IOCON_STDI2C_EN);
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 5, IOCON_FUNC0 | IOCON_MODE_INACT | IOCON_STDI2C_EN);
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 4);
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 5);
-
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, TRUE);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, TRUE);
-}
-
-static void I2c_Start(){
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, TRUE);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, TRUE);
-	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, FALSE);
-	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, FALSE);
-	AVALON_Delay(I2C_NOP);
-}
-
-static void I2c_Stop(){
-	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, TRUE);
-	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, TRUE);
-	AVALON_Delay(I2C_NOP);
-}
-
-static void I2c_w_byte(unsigned char data){
-	unsigned int i;
-	unsigned char data_buf = data;
-	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, FALSE);
-	AVALON_Delay(I2C_NOP);
-
-	for(i=0; i<8; i++){
-		if((data_buf&0x80) == 0x80)
-			Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, TRUE);
-		else
-			Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, FALSE);
-		AVALON_Delay(I2C_NOP);
-		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, TRUE);
-		AVALON_Delay(I2C_NOP);
-		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, FALSE);
-		data_buf = data_buf << 1;
-		AVALON_Delay(I2C_NOP);
-	}
-	//master wait ACK
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, TRUE);
-	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, TRUE);
-	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, FALSE);
-	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, FALSE);
-	AVALON_Delay(I2C_NOP);
-}
-
-unsigned char I2c_r_byte(){
-	unsigned int i;
-	unsigned char data_buf = 0;
-
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, FALSE);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, TRUE);
-	Chip_GPIO_SetPinDIRInput(LPC_GPIO, 0, 5);
-
-	for(i=0; i<8; i++){
-		AVALON_Delay(I2C_NOP);
-		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, TRUE);
-		AVALON_Delay(I2C_NOP/2);
-		data_buf = data_buf << 1;
-		data_buf = data_buf | (Chip_GPIO_ReadPortBit(LPC_GPIO, 0, 5)&0x1);
-		AVALON_Delay(I2C_NOP/2);
-		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, FALSE);
-		AVALON_Delay(I2C_NOP);
-	}
-
-	//master sent ACK
-	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 5);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, FALSE);
-	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, TRUE);
-	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, FALSE);
-	AVALON_Delay(I2C_NOP);
-
-	return data_buf;
-}
-
-unsigned int tmp102_rd(){
-	unsigned int tmp = 0;
-	I2c_Start();
-	I2c_w_byte(I2C_ADDR_W);
-	I2c_w_byte(0x0);//temperature register
-	I2c_Stop();
-	I2c_Start();
-	I2c_w_byte(I2C_ADDR_R);
-	tmp = I2c_r_byte()&0xff;
-	tmp = tmp << 8;
-	tmp = (tmp&0xffffff00) | I2c_r_byte();
-	I2c_Stop();
-	tmp = (((tmp >> 4)&0xfff)/4)*0.25;
-	return tmp;
-}
-
 /*ACD*/
 static void Init_ADC_PinMux(void)
 {
@@ -374,7 +264,7 @@ static void A3233_FreqMonitor()
 	Bool	adjtemp = FALSE;
 
 	if (!AVALON_POWER_IsEnable()) {
-		if (a3323_istoohot && (tmp102_rd() < A3233_TEMP_MIN))
+		if (a3323_istoohot && (AVALON_I2C_TemperRd() < A3233_TEMP_MIN))
 			a3323_istoohot = FALSE;
 		return;
 	}
@@ -387,7 +277,7 @@ static void A3233_FreqMonitor()
 			return;
 		}
 
-		temp = tmp102_rd();
+		temp = AVALON_I2C_TemperRd();
 		if (!lasttemp) {
 			lasttemp = temp;
 			break;
@@ -464,7 +354,7 @@ ErrorCode_t AVALON_Init (void)
 	Init_Rstn();//low active
 	Init_CLKOUT_PinMux();
 	Init_POWER();
-	Init_I2c();
+	AVALON_I2C_Init();
 	Init_ADC_PinMux();
 	Chip_ADC_Init(LPC_ADC, &ADCSetup);
 
