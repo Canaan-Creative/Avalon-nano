@@ -89,7 +89,7 @@ int main(void)
   	AVALON_USB_Init();
 	AVALON_TMR_Init();
 	AVALON_LED_Init();
-	AVALON_Init();
+	AVALON_A3233_Init();
 
 	while (1) {
 		switch (a3233_stat) {
@@ -122,13 +122,13 @@ int main(void)
 				a3233_stat = A3233_STAT_CHKICA;
 			}
 
-			if (AVALON_POWER_IsEnable()) {
-				AVALON_POWER_Enable(FALSE);
+			if (AVALON_A3233_IsPowerEn()) {
+				AVALON_A3233_PowerEn(FALSE);
 			}
 			break;
 
 		case A3233_STAT_CHKICA:
-			if (A3233_IsTooHot()) {
+			if (AVALON_A3233_IsTooHot()) {
 				a3233_stat = A3233_STAT_PROTECT;
 				timestart = FALSE;
 				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
@@ -158,15 +158,15 @@ int main(void)
 			break;
 
 		case A3233_STAT_PROTECT:
-			if (!A3233_IsTooHot()) {
+			if (!AVALON_A3233_IsTooHot()) {
 				timestart = FALSE;
 				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
 				a3233_stat = A3233_STAT_CHKICA;
 				break;
 			}
 
-			if (AVALON_POWER_IsEnable())
-				AVALON_POWER_Enable(FALSE);
+			if (AVALON_A3233_IsPowerEn())
+				AVALON_A3233_PowerEn(FALSE);
 
 			if (!timestart) {
 				AVALON_TMR_Set(A3233_TIMER_TIMEOUT, 10000, NULL);
@@ -192,17 +192,17 @@ int main(void)
 			data_convert(icarus_buf);
 			data_pkg(icarus_buf, work_buf);
 
-			if (!AVALON_POWER_IsEnable() || (last_freq != A3233_FreqNeeded())) {
-				last_freq = A3233_FreqNeeded();
-				AVALON_POWER_Enable(TRUE);
-				AVALON_Rstn_A3233();
-				((unsigned int*)work_buf)[1] = AVALON_Gen_A3233_Pll_Cfg(last_freq, NULL);
+			if (!AVALON_A3233_IsPowerEn() || (last_freq != AVALON_A3233_FreqNeeded())) {
+				last_freq = AVALON_A3233_FreqNeeded();
+				AVALON_A3233_PowerEn(TRUE);
+				AVALON_A3233_Reset();
+				((unsigned int*)work_buf)[1] = AVALON_A3233_PllCfg(last_freq, NULL);
 
 			}
 
 			{
 				unsigned int r,g,b;
-				r = last_freq - A3233_FreqMin();
+				r = last_freq - AVALON_A3233_FreqMin();
 				if (r > 255 )
 					r = 255;
 				g = 0;
@@ -236,7 +236,7 @@ int main(void)
 				{
 					char freq[20];
 
-					m_sprintf(freq, "%04d%04d%04d%04d", A3233_FreqNeeded(), AVALON_I2C_TemperRd(), (int)A3233_IsTooHot(), AVALON_ADC_Guard(0));
+					m_sprintf(freq, "%04d%04d%04d%04d", AVALON_A3233_FreqNeeded(), AVALON_I2C_TemperRd(), (int)AVALON_A3233_IsTooHot(), AVALON_A3233_ADCGuard(0));
 					UCOM_Write(freq, 16);
 				}
 #endif

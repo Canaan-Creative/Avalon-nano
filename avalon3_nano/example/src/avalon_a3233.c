@@ -48,25 +48,26 @@ static unsigned int		a3233_freqneeded = A3233_FREQ_ADJMAX;
 static unsigned int		a3233_adjstat = A3233_ADJSTAT_T;
 static Bool				a3323_istoohot = FALSE;
 static Bool				a3233_poweren = FALSE;
-void AVALON_POWER_Enable(Bool On)
+
+void AVALON_A3233_PowerEn(Bool On)
 {
 	a3233_poweren = On;
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 11, On);//VCore Enable
 }
 
-Bool AVALON_POWER_IsEnable(void)
+Bool AVALON_A3233_IsPowerEn(void)
 {
 	return a3233_poweren;
 }
 
-static void Init_POWER()
+static void AVALON_A3233_PowerInit()
 {
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 22);//VID0
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 7);//VID1
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 11);//VCore Enable
 	*(unsigned int *) 0x4004402c = 0x81;
 
-	AVALON_POWER_Enable(FALSE);
+	AVALON_A3233_PowerEn(FALSE);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 22, TRUE);//VID0
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 7, TRUE);//VID1
 }
@@ -76,24 +77,19 @@ static void Init_POWER()
 #define VCORE_0P725 0x2
 #define VCORE_0P675 0x3
 
-static void POWER_Cfg(unsigned char VID){
+static void AVALON_A3233_PowerCfg(unsigned char VID)
+{
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 22, (bool)(VID&1));//VID0
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 7, (bool)(VID>>1));//VID1
 }
 
-static void Init_Rstn()
+static void AVALON_A3233_Rstn(void)
 {
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 20);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, TRUE);
 }
 
-void AVALON_Delay(unsigned int max)
-{
-	volatile unsigned int i;
-	for(i = 0; i < max; i++);
-}
-
-void AVALON_Rstn_A3233()
+void AVALON_A3233_Reset(void)
 {
 	AVALON_Delay(2000);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, TRUE);
@@ -110,7 +106,7 @@ void AVALON_Rstn_A3233()
 #define V_CORE	2
 #define V_09	3
 /* vol = (dataADC/1024) * 3.3 */
-int AVALON_ADC_Guard(int type)
+int AVALON_A3233_ADCGuard(int type)
 {
 	uint16_t dataADC;
 
@@ -154,7 +150,7 @@ int AVALON_ADC_Guard(int type)
  * @brief	gen pll cfg val (freq 100-450 )
  * @return	pll cfg val
  * */
-unsigned int AVALON_Gen_A3233_Pll_Cfg(unsigned int freq, unsigned int *actfreq){
+unsigned int AVALON_A3233_PllCfg(unsigned int freq, unsigned int *actfreq){
 	unsigned int NOx[4] , i=0;
 	unsigned int NO =0;//1 2 4 8
 	unsigned int Fin = 25;
@@ -205,7 +201,7 @@ unsigned int AVALON_Gen_A3233_Pll_Cfg(unsigned int freq, unsigned int *actfreq){
 	return 0;
 }
 
-static void Init_CLKOUT_PinMux(void)
+static void AVALON_A3233_CLKInit(void)
 {
 #if (defined(BOARD_NXP_XPRESSO_11U14) || defined(BOARD_NGX_BLUEBOARD_11U24))
 	/* LPC11U14 Xpresso board has CLKOUT on pin PIO0_1 on J6-38 */
@@ -221,7 +217,7 @@ static void Init_CLKOUT_PinMux(void)
 #endif
 }
 
-static void CLKOUT_Cfg(bool On)
+static void AVALON_A3233_CLKCfg(bool On)
 {
 	if(On == TRUE)
 		Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 2);
@@ -234,7 +230,7 @@ static void CLKOUT_Cfg(bool On)
  * temp raise check  A3233_ADJ_TUPCNT
  * temp down/equal check A3233_ADJ_TDOWNCNT
  * */
-static void A3233_FreqMonitor()
+static void AVALON_A3233_FreqMonitor()
 {
 	static unsigned int adc_cnt = 0;
 	static unsigned int temp_cnt = 0;
@@ -243,7 +239,7 @@ static void A3233_FreqMonitor()
 	unsigned int temp;
 	Bool	adjtemp = FALSE;
 
-	if (!AVALON_POWER_IsEnable()) {
+	if (!AVALON_A3233_IsPowerEn()) {
 		if (a3323_istoohot && (AVALON_I2C_TemperRd() < A3233_TEMP_MIN))
 			a3323_istoohot = FALSE;
 		return;
@@ -251,7 +247,7 @@ static void A3233_FreqMonitor()
 
 	switch(a3233_adjstat){
 	case A3233_ADJSTAT_T:
-		if (AVALON_ADC_Guard(V_25) < A3233_V25_ADJMIN) {
+		if (AVALON_A3233_ADCGuard(V_25) < A3233_V25_ADJMIN) {
 			temp_cnt = 0;
 			a3233_adjstat = A3233_ADJSTAT_V;
 			return;
@@ -306,7 +302,7 @@ static void A3233_FreqMonitor()
 		break;
 
 	case A3233_ADJSTAT_V:
-		adc_val = AVALON_ADC_Guard(V_25);
+		adc_val = AVALON_A3233_ADCGuard(V_25);
 		if (adc_cnt == A3233_ADJ_VCNT) {
 			adc_cnt = 0;
 			if (adc_val >= A3233_V25_ADJMIN) {
@@ -326,40 +322,40 @@ static void A3233_FreqMonitor()
 	}
 }
 
-ErrorCode_t AVALON_Init (void)
+ErrorCode_t AVALON_A3233_Init (void)
 {
 	ErrorCode_t ret = LPC_OK;
 
-	Init_Rstn();//low active
-	Init_CLKOUT_PinMux();
-	Init_POWER();
+	AVALON_A3233_Rstn();//low active
+	AVALON_A3233_CLKInit();
+	AVALON_A3233_PowerInit();
 	AVALON_I2C_Init();
 	AVALON_ADC_Init();
 
-	POWER_Cfg(VCORE_0P675);
-	CLKOUT_Cfg(TRUE);
-	AVALON_POWER_Enable(FALSE);
-	AVALON_TMR_Set(A3233_TIMER_ADJFREQ, 5000, A3233_FreqMonitor);
+	AVALON_A3233_PowerCfg(VCORE_0P675);
+	AVALON_A3233_CLKCfg(TRUE);
+	AVALON_A3233_PowerEn(FALSE);
+	AVALON_TMR_Set(A3233_TIMER_ADJFREQ, 5000, AVALON_A3233_FreqMonitor);
 
 	return ret;
 }
 
-unsigned int A3233_FreqNeeded(void)
+unsigned int AVALON_A3233_FreqNeeded(void)
 {
 	return a3233_freqneeded;
 }
 
-unsigned int A3233_FreqMin(void)
+unsigned int AVALON_A3233_FreqMin(void)
 {
 	return A3233_FREQ_ADJMIN;
 }
 
-unsigned int A3233_FreqMax(void)
+unsigned int AVALON_A3233_FreqMax(void)
 {
 	return A3233_FREQ_ADJMAX;
 }
 
-Bool A3233_IsTooHot(void)
+Bool AVALON_A3233_IsTooHot(void)
 {
 	return a3323_istoohot;
 }

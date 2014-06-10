@@ -72,19 +72,15 @@ typedef enum {
  * @param	pUsbParam	: Pointer USB param structure returned by previous init call
  * @return	Always returns LPC_OK.
  */
-ErrorCode_t AVALON_Init (void);
-
-/*
- * */
-void AVALON_POWER_Enable(Bool On);
-Bool AVALON_POWER_IsEnable(void);
-void AVALON_Rstn_A3233();
-unsigned int AVALON_Gen_A3233_Pll_Cfg(unsigned int freq, unsigned int *actfreq);
-void AVALON_Delay(unsigned int max);
-unsigned int A3233_FreqNeeded();
-unsigned int A3233_FreqMin(void);
-unsigned int A3233_FreqMax(void);
-Bool A3233_IsTooHot(void);
+ErrorCode_t AVALON_A3233_Init (void);
+void AVALON_A3233_PowerEn(Bool On);
+Bool AVALON_A3233_IsPowerEn(void);
+void AVALON_A3233_Reset(void);
+unsigned int AVALON_A3233_PllCfg(unsigned int freq, unsigned int *actfreq);
+unsigned int AVALON_A3233_FreqNeeded(void);
+unsigned int AVALON_A3233_FreqMin(void);
+unsigned int AVALON_A3233_FreqMax(void);
+Bool AVALON_A3233_IsTooHot(void);
 
 /* timer */
 void AVALON_TMR_Init(void);
@@ -120,6 +116,12 @@ unsigned int AVALON_I2C_TemperRd();
 /* adc */
 void AVALON_ADC_Init(void);
 void AVALON_ADC_Rd(uint8_t channel, uint16_t *data);
+
+static void AVALON_Delay(unsigned int max)
+{
+	volatile unsigned int i;
+	for(i = 0; i < max; i++);
+}
 /**
  * @}
  */
