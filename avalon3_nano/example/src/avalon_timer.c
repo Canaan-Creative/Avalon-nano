@@ -7,7 +7,7 @@
  Description : avalon timer api
 ===============================================================================
 */
-#include "cdc_avalon.h"
+#include "avalon_api.h"
 
 /* 1ms */
 #define TICKRATE_AVALON (1000)

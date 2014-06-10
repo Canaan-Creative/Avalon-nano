@@ -7,7 +7,7 @@
  Description : avalon pwm api
 ===============================================================================
 */
-#include "cdc_avalon.h"
+#include "avalon_api.h"
 
 #define DUTY_100		(uint32_t)(256)
 #define DUTY_50			(uint32_t)(DUTY_100*0.5)

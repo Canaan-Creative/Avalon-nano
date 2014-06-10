@@ -32,7 +32,7 @@
 #include "board.h"
 #include "app_usbd_cfg.h"
 #include "cdc_uart.h"
-#include "cdc_avalon.h"
+#include "avalon_api.h"
 
 /*****************************************************************************
  * Private types/enumerations/variables

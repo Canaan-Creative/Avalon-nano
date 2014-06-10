@@ -8,7 +8,7 @@
 ===============================================================================
 */
 
-#include "cdc_avalon.h"
+#include "avalon_api.h"
 
 #define A3233_TIMER_LED				(AVALON_TMR_ID2)
 

@@ -28,8 +28,8 @@
  * copyright, permission, and disclaimer notice must appear in all copies of
  * this code.
  */
-#ifndef __CDC_AVALON_H_
-#define __CDC_AVALON_H_
+#ifndef __AVALON_API_H_
+#define __AVALON_API_H_
 
 #include <stdio.h>
 #include "board.h"
@@ -106,6 +106,13 @@ void AVALON_LED_Init(void);
 void AVALON_LED_Rgb(unsigned int rgb);
 void AVALON_LED_Blink(unsigned int rgb);
 void AVALON_LED_Test(void);
+
+/* debug printf */
+void AVALON_USB_Init(void);
+void AVALON_USB_PutChar(char ch);
+void AVALON_USB_PutSTR(char *str);
+void AVALON_USB_Test(void);
+
 /**
  * @}
  */
@@ -114,4 +121,4 @@ void AVALON_LED_Test(void);
 }
 #endif
 
-#endif /* __CDC_AVALON_H_ */
+#endif /* __AVALON_API_H_ */

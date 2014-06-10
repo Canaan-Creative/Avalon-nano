@@ -28,7 +28,7 @@
  * copyright, permission, and disclaimer notice must appear in all copies of
  * this code.
  */
-#include "cdc_avalon.h"
+#include "avalon_api.h"
 
 #define A3233_TEMP_MIN					(60)
 #define A3233_TEMP_MAX					(65)
