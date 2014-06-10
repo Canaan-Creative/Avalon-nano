@@ -72,9 +72,6 @@ static unsigned int 	a3233_stat = A3233_STAT_WAITICA;
  */
 int main(void)
 {
-	USBD_API_INIT_PARAM_T usb_param;
-	USB_CORE_DESCS_T desc;
-	ErrorCode_t ret = LPC_OK;
 	uint8_t 		icarus_buf[ICA_TASK_LEN];
 	unsigned int	icarus_buflen = 0;
 	unsigned char 	work_buf[A3233_TASK_LEN];
@@ -234,11 +231,12 @@ int main(void)
 				UNPACK32(nonce_value, nonce_buf);
 
 				UCOM_Write(nonce_buf, A3233_NONCE_LEN);
+
 #ifdef A3233_FREQ_DEBUG
 				{
 					char freq[20];
 
-					m_sprintf(freq, "%04d%04d%04d%04d", A3233_FreqNeeded(), tmp102_rd(), (int)A3233_IsTooHot(), ADC_Guard(0));
+					m_sprintf(freq, "%04d%04d%04d%04d", A3233_FreqNeeded(), AVALON_I2C_TemperRd(), (int)A3233_IsTooHot(), ADC_Guard(0));
 					UCOM_Write(freq, 16);
 				}
 #endif
