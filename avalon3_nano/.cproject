@@ -53,7 +53,7 @@
 							<tool id="com.crt.advproject.link.exe.debug.1789795450" name="MCU Linker" superClass="com.crt.advproject.link.exe.debug">
 								<option id="com.crt.advproject.link.arch.600491747" name="Architecture" superClass="com.crt.advproject.link.arch" value="com.crt.advproject.link.target.cm0" valueType="enumerated"/>
 								<option id="com.crt.advproject.link.thumb.1804100641" name="Thumb mode" superClass="com.crt.advproject.link.thumb" value="true" valueType="boolean"/>
-								<option id="com.crt.advproject.link.script.509927162" name="Linker script" superClass="com.crt.advproject.link.script" value="&quot;nxp_lpcxpresso_11u14_usbd_lib_cdc_uart_Debug.ld&quot;" valueType="string"/>
+								<option id="com.crt.advproject.link.script.509927162" name="Linker script" superClass="com.crt.advproject.link.script" value="&quot;avalon3_nano_Debug.ld&quot;" valueType="string"/>
 								<option id="com.crt.advproject.link.manage.1441551968" name="Manage linker script" superClass="com.crt.advproject.link.manage" value="true" valueType="boolean"/>
 								<option id="gnu.c.link.option.nostdlibs.1189720395" name="No startup or default libs (-nostdlib)" superClass="gnu.c.link.option.nostdlibs" value="true" valueType="boolean"/>
 								<option id="gnu.c.link.option.other.1667450399" name="Other options (-Xlinker [option])" superClass="gnu.c.link.option.other" valueType="stringList">
@@ -146,7 +146,7 @@
 							<tool id="com.crt.advproject.link.exe.release.912364096" name="MCU Linker" superClass="com.crt.advproject.link.exe.release">
 								<option id="com.crt.advproject.link.arch.1216010602" name="Architecture" superClass="com.crt.advproject.link.arch" value="com.crt.advproject.link.target.cm0" valueType="enumerated"/>
 								<option id="com.crt.advproject.link.thumb.1943506496" name="Thumb mode" superClass="com.crt.advproject.link.thumb" value="true" valueType="boolean"/>
-								<option id="com.crt.advproject.link.script.962622146" name="Linker script" superClass="com.crt.advproject.link.script" value="&quot;nxp_lpcxpresso_11u14_usbd_lib_cdc_uart_Release.ld&quot;" valueType="string"/>
+								<option id="com.crt.advproject.link.script.962622146" name="Linker script" superClass="com.crt.advproject.link.script" value="&quot;avalon3_nano_Release.ld&quot;" valueType="string"/>
 								<option id="com.crt.advproject.link.manage.1400563384" name="Manage linker script" superClass="com.crt.advproject.link.manage" value="true" valueType="boolean"/>
 								<option id="gnu.c.link.option.nostdlibs.1192358595" name="No startup or default libs (-nostdlib)" superClass="gnu.c.link.option.nostdlibs" value="true" valueType="boolean"/>
 								<option id="gnu.c.link.option.other.1204418539" name="Other options (-Xlinker [option])" superClass="gnu.c.link.option.other" valueType="stringList">

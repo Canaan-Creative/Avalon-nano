@@ -4,5 +4,5 @@
 
 lpc_chip_11uxx_lib/Debug/
 nxp_lpcxpresso_11u14_board_lib/Debug/
-nxp_lpcxpresso_11u14_usbd_lib_cdc_uart/Debug/
+avalon3_nano/Debug/
 avalon_bsp_testbench/Debug/
