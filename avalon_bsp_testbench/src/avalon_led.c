@@ -16,30 +16,30 @@ void AVALON_LED_Init(void)
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 1, 15);
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 1, 19);
 
-	Board_LED_Set(0, 1);
-	Board_LED_Set(1, 1);
-	Board_LED_Set(2, 1);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 17, 1);
+	Chip_GPIO_SetPinState(LPC_GPIO, 1, 15, 1);
+	Chip_GPIO_SetPinState(LPC_GPIO, 1, 19, 1);
 }
 
 void AVALON_LED_Rgb(unsigned int rgb, Bool on)
 {
 	switch(rgb){
 	case AVALON_LED_GREEN:
-		Board_LED_Set(0, on);//green
+		Chip_GPIO_SetPinState(LPC_GPIO, 0, 17, on);//green
 		break;
 
 	case AVALON_LED_RED:
-		Board_LED_Set(1, on);//red
+		Chip_GPIO_SetPinState(LPC_GPIO, 1, 15, on);//red
 		break;
 
 	case AVALON_LED_BLUE:
-		Board_LED_Set(2, on);//blue
+		Chip_GPIO_SetPinState(LPC_GPIO, 1, 19, on);//blue
 		break;
 
 	case AVALON_LED_ALL:
-		Board_LED_Set(0, on);
-		Board_LED_Set(1, on);
-		Board_LED_Set(2, on);
+		Chip_GPIO_SetPinState(LPC_GPIO, 0, 17, on);
+		Chip_GPIO_SetPinState(LPC_GPIO, 1, 15, on);
+		Chip_GPIO_SetPinState(LPC_GPIO, 1, 19, on);
 		break;
 
 	default:
