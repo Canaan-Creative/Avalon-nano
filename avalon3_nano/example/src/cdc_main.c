@@ -236,7 +236,7 @@ int main(void)
 				{
 					char freq[20];
 
-					m_sprintf(freq, "%04d%04d%04d%04d", A3233_FreqNeeded(), AVALON_I2C_TemperRd(), (int)A3233_IsTooHot(), ADC_Guard(0));
+					m_sprintf(freq, "%04d%04d%04d%04d", A3233_FreqNeeded(), AVALON_I2C_TemperRd(), (int)A3233_IsTooHot(), AVALON_ADC_Guard(0));
 					UCOM_Write(freq, 16);
 				}
 #endif

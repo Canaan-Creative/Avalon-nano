@@ -104,48 +104,28 @@ void AVALON_Rstn_A3233()
 	AVALON_Delay(2000);
 }
 
-/*ACD*/
-static void Init_ADC_PinMux(void)
-{
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 12, FUNC2);
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 14, FUNC2);
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 16, FUNC1);
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 23, FUNC1);
-}
-
-static void ADC_Rd(uint8_t channel, uint16_t *data){
-	Chip_ADC_EnableChannel(LPC_ADC, channel, ENABLE);
-	/* Start A/D conversion */
-	Chip_ADC_SetStartMode(LPC_ADC, ADC_START_NOW, ADC_TRIGGERMODE_RISING);
-	/* Waiting for A/D conversion complete */
-	while (Chip_ADC_ReadStatus(LPC_ADC, channel, ADC_DR_DONE_STAT) != SET) {}
-	/* Read ADC value */
-	Chip_ADC_ReadValue(LPC_ADC, channel, data);
-	Chip_ADC_EnableChannel(LPC_ADC, channel, DISABLE);
-}
-
 /* V_25 USB, V_18 A3233 IO Power, V_CORE A3233 Core, V_09 A3233 Pll*/
 #define V_25	0
 #define V_18	1
 #define V_CORE	2
 #define V_09	3
 /* vol = (dataADC/1024) * 3.3 */
-int ADC_Guard(int type)
+int AVALON_ADC_Guard(int type)
 {
 	uint16_t dataADC;
 
 	switch (type) {
 	case V_25:
-		ADC_Rd(ADC_CH1, &dataADC);
+		AVALON_ADC_Rd(ADC_CH1, &dataADC);
 		break;
 	case V_18:
-		ADC_Rd(ADC_CH3, &dataADC);
+		AVALON_ADC_Rd(ADC_CH3, &dataADC);
 		break;
 	case V_CORE:
-		ADC_Rd(ADC_CH5, &dataADC);
+		AVALON_ADC_Rd(ADC_CH5, &dataADC);
 		break;
 	case V_09:
-		ADC_Rd(ADC_CH7, &dataADC);
+		AVALON_ADC_Rd(ADC_CH7, &dataADC);
 		break;
 	}
 
@@ -271,7 +251,7 @@ static void A3233_FreqMonitor()
 
 	switch(a3233_adjstat){
 	case A3233_ADJSTAT_T:
-		if (ADC_Guard(V_25) < A3233_V25_ADJMIN) {
+		if (AVALON_ADC_Guard(V_25) < A3233_V25_ADJMIN) {
 			temp_cnt = 0;
 			a3233_adjstat = A3233_ADJSTAT_V;
 			return;
@@ -326,7 +306,7 @@ static void A3233_FreqMonitor()
 		break;
 
 	case A3233_ADJSTAT_V:
-		adc_val = ADC_Guard(V_25);
+		adc_val = AVALON_ADC_Guard(V_25);
 		if (adc_cnt == A3233_ADJ_VCNT) {
 			adc_cnt = 0;
 			if (adc_val >= A3233_V25_ADJMIN) {
@@ -349,14 +329,12 @@ static void A3233_FreqMonitor()
 ErrorCode_t AVALON_Init (void)
 {
 	ErrorCode_t ret = LPC_OK;
-	ADC_CLOCK_SETUP_T ADCSetup;
 
 	Init_Rstn();//low active
 	Init_CLKOUT_PinMux();
 	Init_POWER();
 	AVALON_I2C_Init();
-	Init_ADC_PinMux();
-	Chip_ADC_Init(LPC_ADC, &ADCSetup);
+	AVALON_ADC_Init();
 
 	POWER_Cfg(VCORE_0P675);
 	CLKOUT_Cfg(TRUE);

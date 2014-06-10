@@ -116,6 +116,10 @@ void AVALON_USB_Test(void);
 /* iic */
 void AVALON_I2C_Init(void);
 unsigned int AVALON_I2C_TemperRd();
+
+/* adc */
+void AVALON_ADC_Init(void);
+void AVALON_ADC_Rd(uint8_t channel, uint16_t *data);
 /**
  * @}
  */
