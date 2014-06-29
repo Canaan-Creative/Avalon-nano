@@ -33,7 +33,9 @@
 #include "app_usbd_cfg.h"
 #include "cdc_uart.h"
 #include "avalon_api.h"
+#ifdef __CODE_RED
 #include <NXP/crp.h>
+#endif
 #include "sha2.h"
 
 #define A3233_TASK_LEN 88
@@ -46,8 +48,10 @@
 #define A3233_STAT_PROCICA				4
 #define A3233_STAT_RCVNONCE				5
 #define A3233_STAT_PROTECT				6
-
+#ifdef __CODE_RED
 __CRP unsigned int CRP_WORD = CRP_NO_ISP;
+#endif
+
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
@@ -83,10 +87,10 @@ int main(void)
 	Bool			timestart = FALSE;
 
 	Board_Init();
-  	SystemCoreClockUpdate();
+	SystemCoreClockUpdate();
 
 	/* Initialize avalon chip */
-  	AVALON_USB_Init();
+	AVALON_USB_Init();
 	AVALON_TMR_Init();
 	AVALON_LED_Init();
 	AVALON_A3233_Init();
@@ -197,7 +201,6 @@ int main(void)
 				AVALON_A3233_PowerEn(TRUE);
 				AVALON_A3233_Reset();
 				((unsigned int*)work_buf)[1] = AVALON_A3233_PllCfg(last_freq, NULL);
-
 			}
 
 			{

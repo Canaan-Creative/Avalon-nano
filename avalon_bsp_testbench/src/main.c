@@ -8,8 +8,10 @@
 ===============================================================================
 */
 #include "board.h"
+#ifdef __CODE_RED
 #include <cr_section_macros.h>
 #include <NXP/crp.h>
+#endif
 #include "avalon_api.h"
 
 #define AVALON_USB_TEST			(0)
@@ -18,10 +20,14 @@
 #define AVALON_A3233_TEST		(0)
 #define AVALON_TMR_TEST			(0)
 #define AVALON_WDT_TEST			(1)
+#ifdef __CODE_RED
 __CRP unsigned int CRP_WORD = CRP_NO_ISP;
+#endif
 
 int main(void) {
-    // Read clock settings and update SystemCoreClock variable
+	// Force the counter to be placed into memory
+	volatile static int i = 0 ;
+	// Read clock settings and update SystemCoreClock variable
 	Board_Init();
 	SystemCoreClockUpdate();
 	/* Initialize GPIO */
@@ -32,8 +38,7 @@ int main(void) {
     /* wait a little time for open usb cdc */
     AVALON_Delay(5000000);
 
-    // Force the counter to be placed into memory
-    volatile static int i = 0 ;
+
     // Enter an infinite loop, just incrementing a counter
     while(1) {
 #if AVALON_USB_TEST

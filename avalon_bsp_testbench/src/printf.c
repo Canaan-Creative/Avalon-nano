@@ -75,7 +75,8 @@ static void printi(char **dest, int i, int b, int sg, int width, int pad, int le
 	if (i == 0) {
 		print_buf[0] = '0';
 		print_buf[1] = '\0';
-		return prints(dest, print_buf, width, pad);
+		prints(dest, print_buf, width, pad);
+		return;
 	}
 
 	if (sg && b == 10 && i < 0) {

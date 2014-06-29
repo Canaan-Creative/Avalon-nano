@@ -58,7 +58,7 @@ void AVALON_PWM_Enable(void)
 	Chip_TIMER_ResetOnMatchEnable(LPC_TIMER16_0, 3);
 
 	/* CT16B0_MAT0/CT16B0_MAT1/CT16B0_MAT2 Enable */
-	LPC_TIMER16_0->PWMC = 0b111;//pwm
+	LPC_TIMER16_0->PWMC = 0x7;
 
 	Chip_TIMER_Enable(LPC_TIMER16_0);
 }
