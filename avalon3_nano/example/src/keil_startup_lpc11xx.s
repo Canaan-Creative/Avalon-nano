@@ -18,7 +18,7 @@
 ; * CONSEQUENTIAL DAMAGES, FOR ANY REASON WHATSOEVER.
 ; *
 ; *****************************************************************************/
-
+#if defined(__CC_ARM)
 #include "sys_config.h"
 
 ; <h> Stack Configuration
@@ -735,3 +735,4 @@ __user_initial_stackheap
                 ENDIF
 
                 END
+#endif
