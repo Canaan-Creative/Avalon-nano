@@ -108,7 +108,7 @@ void AVALON_I2C_Init(void)
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, TRUE);
 }
 
-unsigned int AVALON_I2C_TemperRd()
+unsigned int AVALON_I2C_TemperRd(void)
 {
 	unsigned int tmp = 0;
 	I2c_Start();

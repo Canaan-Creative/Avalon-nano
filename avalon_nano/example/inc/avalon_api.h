@@ -111,12 +111,15 @@ void AVALON_USB_Test(void);
 
 /* iic */
 void AVALON_I2C_Init(void);
-unsigned int AVALON_I2C_TemperRd();
+unsigned int AVALON_I2C_TemperRd(void);
 
 /* adc */
 void AVALON_ADC_Init(void);
 void AVALON_ADC_Rd(uint8_t channel, uint16_t *data);
 
+/* printf */
+char *m_sprintf(char *dest, const char *format, ...);
+	
 static void AVALON_Delay(unsigned int max)
 {
 	volatile unsigned int i;

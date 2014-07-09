@@ -13,10 +13,11 @@
 
   <project>
     <PathAndName>..\nxp_lpcxpresso_11u14_board_lib\lib_lpc_board_nxp_lpcxpresso_11u14.uvproj</PathAndName>
+    <NodeIsExpanded>1</NodeIsExpanded>
   </project>
 
   <project>
-    <PathAndName>..\avalon3_nano\usbd_lib_cdc_uart.uvproj</PathAndName>
+    <PathAndName>..\avalon_nano\usbd_lib_cdc_uart.uvproj</PathAndName>
     <NodeIsActive>1</NodeIsActive>
     <NodeIsExpanded>1</NodeIsExpanded>
   </project>

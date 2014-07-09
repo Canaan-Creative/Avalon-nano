@@ -7,7 +7,7 @@
 
   <Targets>
     <Target>
-      <TargetName>avalon3_nano</TargetName>
+      <TargetName>avalon_nano</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
       <TargetOption>
@@ -45,7 +45,7 @@
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
           <OutputDirectory>.\keil_output\iflash_nxp_lpcxpresso_11u14\</OutputDirectory>
-          <OutputName>avalon3_nano</OutputName>
+          <OutputName>avalon_nano</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>1</CreateHexFile>
