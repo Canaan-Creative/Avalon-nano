@@ -5,7 +5,6 @@ Avalon nano is an opensource USB miner made by Avalon team.
 Directory structure
 ===================
 * `firmware`: Avalon nano firmware
-* `software`: Software for mining:pathes, CLI miner/GUI miner etc.
 * `tools`: Tool for developers
 * `testbench`: Module test for Avalon nano
 
@@ -37,9 +36,7 @@ or
        --icarus-timing 0.22 \
        --api-listen \
        2>log
-
-* Note: We need patch the cgminer before running.
-
+       
 IDE Support
 =============
 * LPCXpresso 6 or above (Free Edition)
@@ -47,8 +44,8 @@ IDE Support
 
 Miner Support
 =======
-* Cgminer 
-* bfgminer 
+* Cgminer (https://github.com/BitSyncom/cgminer/tree/avalon-usb)
+* bfgminer (https://github.com/luke-jr/bfgminer)
 
 OS Support
 =======
