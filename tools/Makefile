@@ -1,4 +1,4 @@
-CFLAGS = -I../nxp_lpcxpresso_11u14_usbd_lib_cdc_uart/example/inc
+CFLAGS = -I./
 
 help:
 	@echo "usage"
@@ -13,7 +13,7 @@ convclean:
 	rm convdata
 
 chk:
-	gcc -g -o chkdata chk_avalon_usbdata.c ../nxp_lpcxpresso_11u14_usbd_lib_cdc_uart/example/src/sha2.c $(CFLAGS) 
+	gcc -g -o chkdata chk_avalon_usbdata.c sha2.c $(CFLAGS) 
 chkclean:
 	rm chkdata
 
