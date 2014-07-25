@@ -11,10 +11,12 @@ Directory structure
 
 Quick start
 ==========
-For windows users:
+* For windows users:
+
 http://downloads.canaan-creative.com/software/avalon_nano/doc/
 
-For Linux users:
+* For Linux users:
+
 ./bfgminer \
        -S ICA:/dev/ttyACM0 \
        -o stratum+tcp://stratum.ozco.in:80 -O user:pass \
@@ -26,7 +28,9 @@ For Linux users:
        --set-device ICA:timing=0.22 \
        --api-listen \
        2>log
+       
 or
+
 ./cgminer \
        -o stratum+tcp://stratum.ozco.in:80 -O user:pass \
        --icarus-options 115200:1:1 \
@@ -34,7 +38,7 @@ or
        --api-listen \
        2>log
 
-Note: We need patch the cgminer before running.
+* Note: We need patch the cgminer before running.
 
 IDE Support
 =============
