@@ -55,6 +55,7 @@ OS Support
 Discussion
 ==========
 * IRC: #avalon @freenode.net
+* [![Gitter chat](https://badges.gitter.im/BitSyncom/Avalon-nano.png)](https://gitter.im/BitSyncom/Avalon-nano)
 * Mailing list: http://lists.canaan-creative.com/
 * Documents/Downloads: https://en.bitcoin.it/wiki/Avalon_nano
 
