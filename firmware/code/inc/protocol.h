@@ -38,11 +38,12 @@
 #define AVA2_P_STATUS		24
 #define AVA2_P_ACKDETECT	25
 #define AVA2_P_TEST_RET		26
-#define AVA2_P_MIDSTATE		27
-#define AVA2_P_DATA			28
-#define AVA2_P_ACKMIDSTATE	29
-#define AVA2_P_ACKDATA		30
-#define AVA2_P_CRCERROR		31
+#define AVA2_P_LONGCOINBASE	27
+#define AVA2_P_MIDSTATE		28
+#define AVA2_P_DATA			29
+#define AVA2_P_ACKMIDSTATE	30
+#define AVA2_P_ACKDATA		31
+#define AVA2_P_CRCERROR		32
 
 #endif	/* _PROTOCOL_H_ */
 
