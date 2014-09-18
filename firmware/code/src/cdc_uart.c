@@ -39,9 +39,9 @@
  ****************************************************************************/
 
 /* Ring buffer size */
-#define UCOM_RX_BUF_SZ      1024
+#define UCOM_RX_BUF_SZ		512
 #define UART_RX_BUF_SZ		128
-#define UART_TX_BUF_SZ		1024
+#define UART_TX_BUF_SZ		512
 #define UCOM_TX_CONNECTED   _BIT(8)		/* connection state is for both RX/Tx */
 #define UCOM_TX_BUSY        _BIT(0)
 #define UCOM_RX_BUF_FULL    _BIT(1)

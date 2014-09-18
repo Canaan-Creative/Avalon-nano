@@ -37,6 +37,7 @@
 #include <NXP/crp.h>
 #endif
 #include "sha2.h"
+#include "protocol.h"
 
 #define A3233_TASK_LEN 88
 #define A3233_NONCE_LEN	4
@@ -48,6 +49,7 @@
 #define A3233_STAT_PROCICA				4
 #define A3233_STAT_RCVNONCE				5
 #define A3233_STAT_PROTECT				6
+#define A3233_STAT_MM_PROC				7
 #ifdef __CODE_RED
 __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 #endif
@@ -61,6 +63,7 @@ __CRP unsigned int CRP_WORD = CRP_NO_ISP;
  ****************************************************************************/
 static unsigned char 	golden_ob[] = "\x46\x79\xba\x4e\xc9\x98\x76\xbf\x4b\xfe\x08\x60\x82\xb4\x00\x25\x4d\xf6\xc3\x56\x45\x14\x71\x13\x9a\x3a\xfa\x71\xe4\x8f\x54\x4a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x87\x32\x0b\x1a\x14\x26\x67\x4f\x2f\xa7\x22\xce";
 static unsigned int 	a3233_stat = A3233_STAT_WAITICA;
+static uint8_t MM_VERSION[MM_VERSION_LEN] = "201408";
 
 /*****************************************************************************
  * Private functions
@@ -70,13 +73,54 @@ static unsigned int 	a3233_stat = A3233_STAT_WAITICA;
  * Public functions
  ****************************************************************************/
 
+static int avalon_init_pkg(uint8_t *p,int type)
+{
+
+			uint16_t crc;
+			p[0] = AVA2_H1;
+			p[1] = AVA2_H2;
+
+			p[2] = type;
+			p[3] = 1;
+			p[4] = 1;
+			crc = crc16(p+5, AVA2_P_DATA_LEN);
+			p[AVA2_P_COUNT - 2] = crc & 0x00ff;
+			p[AVA2_P_COUNT - 1] = (crc & 0xff00) >> 8;
+			return 0;
+}
+
+static int decode_pkg(uint8_t *p)
+{
+	unsigned int expected_crc;
+	unsigned int actual_crc;
+	int idx;
+	int cnt;
+	int ret;
+	uint8_t *data = p + 5;
+
+	idx = p[3];
+	cnt = p[4];
+
+	expected_crc = (p[AVA2_P_COUNT - 1] & 0xff) | ((p[AVA2_P_COUNT - 2] & 0xff) << 8);
+	actual_crc = crc16(data, AVA2_P_DATA_LEN);
+	actual_crc = crc16(data, AVA2_P_DATA_LEN);
+
+	if(expected_crc != actual_crc) {
+		return AVA2_P_CRCERROR;
+	}
+
+	return p[2];
+}
+
 /**
  * @brief	main routine for blinky example
  * @return	Function should not exit.
  */
+
 int main(void)
 {
 	uint8_t 		icarus_buf[ICA_TASK_LEN];
+	uint8_t 		mm_buffer[AVA2_P_COUNT];
 	unsigned int	icarus_buflen = 0;
 	unsigned char 	work_buf[A3233_TASK_LEN];
 	unsigned char	nonce_buf[A3233_NONCE_LEN];
@@ -85,6 +129,9 @@ int main(void)
 	uint32_t 		nonce_value = 0;
 	Bool			isgoldenob = FALSE;
 	Bool			timestart = FALSE;
+	int				tmp;
+	uint8_t ret_pkg[AVA2_P_COUNT];
+
 
 	Board_Init();
 	SystemCoreClockUpdate();
@@ -140,10 +187,10 @@ int main(void)
 			}
 
 			icarus_buflen = UCOM_Read_Cnt();
-			if (icarus_buflen >= ICA_TASK_LEN) {
+			if (icarus_buflen >= AVA2_P_COUNT) {
 				timestart = FALSE;
 				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
-				a3233_stat = A3233_STAT_PROCICA;
+				a3233_stat = A3233_STAT_MM_PROC;
 				break;
 			}
 
@@ -183,9 +230,43 @@ int main(void)
 			}
 			break;
 
+		case A3233_STAT_MM_PROC:
+			memset(mm_buffer, 0, AVA2_P_COUNT);
+			UCOM_Read(mm_buffer, AVA2_P_COUNT);
+			tmp = decode_pkg(mm_buffer);
+			switch(tmp) {
+				case AVA2_P_DETECT:
+					memset(ret_pkg,0,AVA2_P_COUNT);
+					memcpy(ret_pkg+21,&MM_VERSION,MM_VERSION_LEN);
+					avalon_init_pkg(ret_pkg,AVA2_P_ACKDETECT);
+					UCOM_Write(ret_pkg,AVA2_P_COUNT);
+					a3233_stat = A3233_STAT_WAITICA;
+					break;
+				case AVA2_P_MIDSTATE:
+					memset(icarus_buf,0,ICA_TASK_LEN);
+					memcpy(icarus_buf,mm_buffer+5,32);
+					memset(ret_pkg,0,AVA2_P_COUNT);
+					avalon_init_pkg(ret_pkg,AVA2_P_ACKMIDSTATE);
+					a3233_stat = A3233_STAT_WAITICA;
+					break;
+
+				case AVA2_P_DATA:
+					memcpy(icarus_buf+32,mm_buffer+5,32);
+					a3233_stat = A3233_STAT_PROCICA;
+					break;
+
+				case AVA2_P_CRCERROR:
+					a3233_stat = A3233_STAT_WAITICA;
+					break;
+
+				default:
+					a3233_stat = A3233_STAT_WAITICA;
+				}
+			AVALON_LED_Rgb(AVALON_LED_BLUE);
+			break;
+
 		case A3233_STAT_PROCICA:
-			memset(icarus_buf, 0, ICA_TASK_LEN);
-			UCOM_Read(icarus_buf, ICA_TASK_LEN);
+
 			memset(work_buf, 0, A3233_TASK_LEN);
 
 			if (!memcmp(golden_ob, icarus_buf, ICA_TASK_LEN))
@@ -232,8 +313,10 @@ int main(void)
 				nonce_value = ((nonce_value >> 24) | (nonce_value << 24) | ((nonce_value >> 8) & 0xff00) | ((nonce_value << 8) & 0xff0000));
 				nonce_value -= 0x1000;
 				UNPACK32(nonce_value, nonce_buf);
-
-				UCOM_Write(nonce_buf, A3233_NONCE_LEN);
+				memset(&ret_pkg,0,AVA2_P_COUNT);
+				memcpy(ret_pkg+21,nonce_buf,4);
+				avalon_init_pkg(ret_pkg,AVA2_P_NONCE);
+				UCOM_Write(ret_pkg, AVA2_P_COUNT);
 
 #ifdef A3233_FREQ_DEBUG
 				{
