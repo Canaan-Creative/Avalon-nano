@@ -173,37 +173,33 @@ ALIGNED(4) const uint8_t USB_StringDescriptor[] = {
 	(6 * 2 + 2),						/* bLength (13 Char + Type + lenght) */
 	USB_STRING_DESCRIPTOR_TYPE,			/* bDescriptorType */
 	'A', 0,
-	'V', 0,
-	'A', 0,
-	'L', 0,
-	'O', 0,
-	'N', 0,
-	/* Index 0x02: Product */
-	(9 * 2 + 2),						/* bLength */
-	USB_STRING_DESCRIPTOR_TYPE,			/* bDescriptorType */
-	'V', 0,
-	'C', 0,
-	'O', 0,
-	'M', 0,
-	' ', 0,
-	'P', 0,
+	'v', 0,
+	'a', 0,
+	'l', 0,
 	'o', 0,
-	'r', 0,
-	't', 0,
+	'n', 0,
+	/* Index 0x02: Product */
+	(4 * 2 + 2),						/* bLength */
+	USB_STRING_DESCRIPTOR_TYPE,			/* bDescriptorType */
+	'n', 0,
+	'a', 0,
+	'n', 0,
+	'o', 0,
 	/* Index 0x03: Serial Number */
-	(6 * 2 + 2),						/* bLength (8 Char + Type + lenght) */
+	(8 * 2 + 2),						/* bLength (8 Char + Type + lenght) */
 	USB_STRING_DESCRIPTOR_TYPE,			/* bDescriptorType */
-	'N', 0,
-	'X', 0,
-	'P', 0,
-	'-', 0,
-	'7', 0,
-	'7', 0,
+	'2', 0,
+	'0', 0,
+	'1', 0,
+	'4', 0,
+	'0', 0,
+	'9', 0,
+	'2', 0,
+	'0', 0,
 	/* Index 0x04: Interface 1, Alternate Setting 0 */
-	( 4 * 2 + 2),						/* bLength (4 Char + Type + lenght) */
+	(3 * 2 + 2),						/* bLength (4 Char + Type + lenght) */
 	USB_STRING_DESCRIPTOR_TYPE,			/* bDescriptorType */
-	'V', 0,
 	'C', 0,
-	'O', 0,
-	'M', 0,
+	'D', 0,
+	'C', 0,
 };
