@@ -22,11 +22,11 @@ var TEST_IN_DATA = {
 	"length": 4
 }
 
-//chrome.usb.getDevices(DEVICE_INFO, function (devices) {
+//chrome.usb.getDevices(DEVICE_INFO, function(devices) {
 //	console.log("In getting device.");
 //	console.log(devices);
 //	for (var device of devices) {
-//		chrome.usb.openDevice(device, function (handle) {
+//		chrome.usb.openDevice(device, function(handle) {
 //			console.log("In openning device.");
 //			if (chrome.runtime.lastError) {
 //				console.error(chrome.runtime.lastError);
@@ -39,40 +39,56 @@ var TEST_IN_DATA = {
 //	}
 //});
 //
-chrome.usb.findDevices(DEVICE_INFO, function (handles) {
+chrome.usb.findDevices(DEVICE_INFO, function(handles) {
+	if (chrome.runtime.lastError) {
+		console.log(chrome.runtime.lastError);
+		return;
+	}
 	console.log(handles);
 	for (var handle of handles) {
-		chrome.usb.getConfiguration(handle, function (config) {
+		chrome.usb.getConfiguration(handle, function(config) {
+			if (chrome.runtime.lastError) {
+				console.log(chrome.runtime.lastError);
+				return;
+			}
 			console.log(config);
 		});
 		chrome.usb.listInterfaces(handle, function(descriptors) {
+			if (chrome.runtime.lastError) {
+				console.log(chrome.runtime.lastError);
+				return;
+			}
 			console.log(descriptors);
 		});
-		chrome.usb.resetDevice(handle, function(success) {
-			console.log(success);
-		})
-		//chrome.usb.releaseInterface(handle, 1, function () {
+		//chrome.usb.resetDevice(handle, function(success) {
+		//	if (chrome.runtime.lastError) {
+		//		console.log(chrome.runtime.lastError);
+		//		return;
+		//	}
+		//	console.log(success);
+		//});
+		//chrome.usb.releaseInterface(handle, 1, function() {
 		//	if (chrome.runtime.lastError) {
 		//		console.error(chrome.runtime.lastError);
 		//		return;
 		//	}
 		//	console.log("Released.");
 		//});
-		result = chrome.usb.claimInterface(handle, 1, function () {
+        //
+		chrome.usb.claimInterface(handle, 1, function() {
 			if (chrome.runtime.lastError) {
 				console.log(chrome.runtime.lastError);
 				return;
 			}
 			console.log("Claimed.");
 		});
-		console.log(result == null);
-		//chrome.usb.bulkTransfer(handle, TEST_OUT_DATA, function (result) {
-		//	if (chrome.runtime.lastError) {
-		//		console.error(chrome.runtime.lastError);
-		//		return;
-		//	}
-		//	console.log(result);
-		//});
+		chrome.usb.bulkTransfer(handle, TEST_OUT_DATA, function(result) {
+			if (chrome.runtime.lastError) {
+				console.error(chrome.runtime.lastError);
+				return;
+			}
+			console.log(result);
+		});
 		chrome.usb.closeDevice(handle);
 	}
 });
