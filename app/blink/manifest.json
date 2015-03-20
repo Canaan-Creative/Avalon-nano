@@ -1,0 +1,24 @@
+{
+	"name": "Avalon Nano Blink",
+	"version": "0.6",
+	"description": "Blink Test for Avalon Nano",
+	"manifest_version": 2,
+	"minimum_chrome_version": "40.0.2213.0",
+	"app": {
+		"background": {
+			"scripts": ["background.js"]
+		}
+	},
+	"permissions": [
+		"usb",
+		{
+			"usbDevices": [{
+				"vendorId": 10737,
+				"productId": 13297
+			}]
+		}
+	],
+	"icons": {
+		"128": "assets/icon_128.png"
+	}
+}

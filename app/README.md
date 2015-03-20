@@ -13,3 +13,4 @@ Ref: https://developer.chrome.com/apps/first_app#load
 
 * `test/`   avalon nano bulk transfer demo
 * `usb/`    usb device detect demo
+* `blink/`  avalon nano blink test
