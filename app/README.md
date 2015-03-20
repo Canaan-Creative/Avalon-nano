@@ -11,6 +11,5 @@ Ref: https://developer.chrome.com/apps/first_app#load
 
 ## Folders
 
-* test/
-
-* usb/
+* `test/`   avalon nano bulk transfer demo
+* `usb/`    usb device detect demo
