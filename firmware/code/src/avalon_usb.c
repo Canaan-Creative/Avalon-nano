@@ -10,11 +10,11 @@
 #include <string.h>
 #include "avalon_api.h"
 #include "app_usbd_cfg.h"
-#include "cdc_uart.h"
+#include "hid_uart.h"
 
 extern const  USBD_HW_API_T hw_api;
 extern const  USBD_CORE_API_T core_api;
-extern const  USBD_CDC_API_T cdc_api;
+extern const  USBD_HID_API_T hid_api;
 
 static USBD_HANDLE_T g_hUsb;
 static const  USBD_API_T g_usbApi = {
@@ -22,8 +22,8 @@ static const  USBD_API_T g_usbApi = {
 	&core_api,
 	0,
 	0,
+	&hid_api,
 	0,
-	&cdc_api,
 	0,
 	0x02221101,
 };
@@ -86,7 +86,6 @@ void AVALON_USB_Init(void)
 	USB_CORE_DESCS_T desc;
 	ErrorCode_t ret = LPC_OK;
 
-
 	if(bUsbInit)
 		return;
 
@@ -95,7 +94,7 @@ void AVALON_USB_Init(void)
 	/* initilize call back structures */
 	memset((void *) &usb_param, 0, sizeof(USBD_API_INIT_PARAM_T));
 	usb_param.usb_reg_base = LPC_USB0_BASE;
-	usb_param.max_num_ep = 3;
+	usb_param.max_num_ep = 2;
 	usb_param.mem_base = USB_STACK_MEM_BASE;
 	usb_param.mem_size = USB_STACK_MEM_SIZE;
 
@@ -114,7 +113,7 @@ void AVALON_USB_Init(void)
 	if (ret == LPC_OK) {
 
 		/* Init UCOM - USB to UART bridge interface */
-		ret = UCOM_init(g_hUsb, &desc, &usb_param);
+		ret = UCOM_init(g_hUsb, (USB_INTERFACE_DESCRIPTOR *) &USB_FsConfigDescriptor[sizeof(USB_CONFIGURATION_DESCRIPTOR)], &usb_param);
 		if (ret == LPC_OK) {
 			/* Make sure USB and UART IRQ priorities are same for this example */
 			NVIC_SetPriority(USB0_IRQn, 1);

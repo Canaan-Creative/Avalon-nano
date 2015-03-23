@@ -31,7 +31,7 @@
 #include <string.h>
 #include "board.h"
 #include "app_usbd_cfg.h"
-#include "cdc_uart.h"
+#include "hid_uart.h"
 #include "avalon_api.h"
 #ifdef __CODE_RED
 #include <NXP/crp.h>

@@ -29,8 +29,8 @@
  * this code.
  */
 
-#ifndef __CDC_UCOM_H_
-#define __CDC_UCOM_H_
+#ifndef __HID_UCOM_H_
+#define __HID_UCOM_H_
 
 #include "app_usbd_cfg.h"
 
@@ -39,7 +39,7 @@ extern "C"
 {
 #endif
 
-/** @ingroup EXAMPLES_USBDLIB_11XX_CDC_UART
+/** @ingroup EXAMPLES_USBDLIB_11XX_HID_UART
  * @{
  */
 
@@ -49,8 +49,7 @@ extern "C"
  * @param	pUsbParam	: Pointer USB param structure returned by previous init call
  * @return	Always returns LPC_OK.
  */
-ErrorCode_t UCOM_init (USBD_HANDLE_T hUsb, USB_CORE_DESCS_T *pDesc, USBD_API_INIT_PARAM_T *pUsbParam);
-
+ErrorCode_t UCOM_init(USBD_HANDLE_T hUsb, USB_INTERFACE_DESCRIPTOR *pIntfDesc, USBD_API_INIT_PARAM_T *pUsbParam);
 uint32_t UCOM_Read_Cnt(void);
 uint32_t UCOM_Read(uint8_t *pBuf, uint32_t buf_len);
 uint32_t UCOM_Write(uint8_t *pBuf, uint32_t len);
