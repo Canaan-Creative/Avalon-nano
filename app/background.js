@@ -7,6 +7,6 @@ chrome.app.runtime.onLaunched.addListener(function() {
 			minWidth: 670,
 			minHeight: 350
 		},
-	id: "Avalon-Nano"
+	id: "Avalon Nano"
 	});
 });
