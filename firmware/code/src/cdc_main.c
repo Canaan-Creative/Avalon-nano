@@ -311,7 +311,6 @@ int main(void) {
 				memcpy(gmm_ackpkg + 5, nonce_buf, 4);
 				init_mm_pkg(gmm_ackpkg, AVA2_P_NONCE);
 				UCOM_Write(gmm_ackpkg, AVA2_P_COUNT);
-
 #ifdef A3233_FREQ_DEBUG
 				{
 					char freq[20];
@@ -322,6 +321,12 @@ int main(void) {
 #endif
 				timestart = FALSE;
 				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
+				a3233_stat = A3233_STAT_WAITICA;
+				break;
+			} else {
+				memcpy(gmm_ackpkg + 5, "\x55\xaa\xaa\x55", 4);
+				init_mm_pkg(gmm_ackpkg, AVA2_P_NONCE);
+				UCOM_Write(gmm_ackpkg, AVA2_P_COUNT);
 				a3233_stat = A3233_STAT_WAITICA;
 				break;
 			}
