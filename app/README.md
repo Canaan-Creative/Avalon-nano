@@ -15,3 +15,5 @@ Ref: https://developer.chrome.com/apps/first_app#load
 
 ## Links
 * https://github.com/progranism/Bitcoin-JavaScript-Miner
+* https://github.com/bitcoinjs/bitcoinjs-lib
+* https://github.com/derjanb/hamiyoca
