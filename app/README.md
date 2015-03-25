@@ -9,8 +9,5 @@ Ref: https://developer.chrome.com/apps/first_app#load
 
 * Click the Load unpacked extension button, navigate to your app's folder and click OK.
 
-## Folders
-
-* `test/`   avalon nano bulk transfer demo
-* `usb/`    usb device detect demo
-* `blink/`  avalon nano blink test
+## UDEV Rule for Linux
+`KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="29f1", MODE="0664", GROUP="plugdev"`
