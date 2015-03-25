@@ -8,7 +8,7 @@ var FILTERS = {
 
 var P_DETECT = 0x0a;
 var P_REQUIRE = 0x12;
-var P_WORK = 0x1c;
+var P_WORK = 0x1e;
 var P_ACKDETECT = 0x19;
 
 var CANAAN_HEAD1 = 0x41;
@@ -49,52 +49,52 @@ var CRC16_TABLE = [
 	0x6E17, 0x7E36, 0x4E55, 0x5E74, 0x2E93, 0x3EB2, 0x0ED1, 0x1EF0
 	];
 
-	nanos = [];
+var Nano = function(device, connection) {
+	this.device = device;
+	this.connection = connection;
+};
 
-function init() {
-	chrome.hid.getDevices(FILTERS, function(devices) {
+Nano.prototype.init = function() {
+};
+
+Nano.prototype.detect = function() {
+	var nano = this;
+	this._send(this._mm_encode(P_DETECT, 0x01, 0x01, null, [0, 0, 0, 0, 0, 0, 0, 0]));
+	this._receive(function(data) {
+		if (data.type === P_ACKDETECT && nano._check_version(data.version))
+			nano.valid = true;
+		console.log(nano);
+	});
+};
+
+Nano.prototype._check_version = function(version) {
+	return version.slice(0, 15) === '3U1410-82418d6+';
+};
+
+Nano.prototype._send = function(data) {
+	chrome.hid.send(this.connection.connectionId, 0, data, function() {
 		if (chrome.runtime.lastError) {
 			console.log(chrome.runtime.lastError);
 			return;
 		}
-		for (device of devices) {
-			chrome.hid.connect(device.deviceId, function(connection) {
-				if (chrome.runtime.lastError) {
-					console.log(chrome.runtime.lastError);
-					return;
-				}
-				nanos.push({device: device, connection: connection});
-			});
-		}
+		console.log("Send");
 	});
-}
+};
 
-function send(data) {
-	for (var nano of nanos) {
-		chrome.hid.send(nano.connection.connectionId, 0, data, function() {
-			if (chrome.runtime.lastError) {
-				console.log(chrome.runtime.lastError);
-				return;
-			}
-			console.log("Send");
-		});
-	}
-}
-function receive() {
-	for (var nano of nanos) {
-		chrome.hid.receive(nano.connection.connectionId, function(reportId, pkg) {
-			if (chrome.runtime.lastError) {
-				console.log(chrome.runtime.lastError);
-				return;
-			}
-			console.log("Receive:");
-			console.log(new Uint8Array(pkg));
-			console.log(mm_decode(pkg));
-		});
-	}
-}
+Nano.prototype._receive = function(callback) {
+	var nano = this;
+	chrome.hid.receive(this.connection.connectionId, function(reportId, data) {
+		if (chrome.runtime.lastError) {
+			console.log(chrome.runtime.lastError);
+			return;
+		}
+		console.log("Receive:");
+		console.log(new Uint8Array(data));
+		callback(nano._mm_decode(data));
+	});
+};
 
-function crc16(arraybuffer) {
+Nano.prototype._crc16 = function(arraybuffer) {
 	var data = new Uint8Array(arraybuffer);
 	var crc = 0;
 	var i = 0;
@@ -102,9 +102,9 @@ function crc16(arraybuffer) {
 	while (len-- > 0)
 		crc = CRC16_TABLE[((crc >> 8) ^ data[i++]) & 0xff] ^ (crc << 8);
 	return crc;
-}
+};
 
-function mm_encode(type, idx, cnt, id, data) {
+Nano.prototype._mm_encode = function(type, idx, cnt, id, data) {
 	var buffer = new ArrayBuffer(64);
 	var dv = new DataView(buffer);
 	dv.setUint8(0, CANAAN_HEAD1);
@@ -114,17 +114,17 @@ function mm_encode(type, idx, cnt, id, data) {
 	dv.setUint8(4, cnt);
 	for (var i = 0; i < 8; i++)
 		dv.setUint32(i * 4 + 5, data[i]);
-	var crc = crc16(buffer.slice(5, 37));
+	var crc = this._crc16(buffer.slice(5, 37));
 	dv.setUint8(37, (crc & 0xff00) >> 8);
 	dv.setUint8(38, crc & 0x00ff);
 	return buffer;
-}
+};
 
-function mm_decode(pkg) {
+Nano.prototype._mm_decode = function(pkg) {
 	var dv = new DataView(pkg);
 	var head1 = dv.getUint8(0);
 	var head2 = dv.getUint8(1);
-	if (head1 != CANAAN_HEAD1 || head2 != CANAAN_HEAD2) {
+	if (head1 !== CANAAN_HEAD1 || head2 !== CANAAN_HEAD2) {
 		console.log("Wrong head.");
 		return false;
 	}
@@ -134,8 +134,8 @@ function mm_decode(pkg) {
 	var data = pkg.slice(5, 37);
 	var crc_l = dv.getUint8(37);
 	var crc_h = dv.getUint8(38);
-	var crc = crc16(data);
-	if (crc_l != ((crc & 0xff00) >> 8) || crc_h != (crc & 0x00ff)) {
+	var crc = this._crc16(data);
+	if (crc_l !== ((crc & 0xff00) >> 8) || crc_h !== (crc & 0x00ff)) {
 		console.log("Wrong CRC.");
 		return false;
 	}
@@ -144,15 +144,8 @@ function mm_decode(pkg) {
 			var version = '';
 			for (c of new Uint8Array(data))
 				version += String.fromCharCode(c);
-			return version;
+			return {type: P_ACKDETECT, version: version};
 		default:
 			return data;
 	}
-}
-
-init();
-setTimeout(function() {
-	var raw = mm_encode(P_DETECT, 0x01, 0x01, null, [0, 0, 0, 0, 0, 0, 0, 0]);
-	send(raw);
-	receive();
-}, 1000);
+};
