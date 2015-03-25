@@ -6,9 +6,10 @@ var FILTERS = {
 		productId: AVALON_NANO_PRODUCT_ID
 	}]};
 
-var CMD_DETECT = 0x0a;
-var CMD_REQUIRE = 0x12;
-var CMD_WORK = 0x1c;
+var P_DETECT = 0x0a;
+var P_REQUIRE = 0x12;
+var P_WORK = 0x1c;
+var P_ACKDETECT = 0x19;
 
 var CANAAN_HEAD1 = 0x41;
 var CANAAN_HEAD2 = 0x56;
@@ -46,9 +47,9 @@ var CRC16_TABLE = [
 	0x7C26, 0x6C07, 0x5C64, 0x4C45, 0x3CA2, 0x2C83, 0x1CE0, 0x0CC1,
 	0xEF1F, 0xFF3E, 0xCF5D, 0xDF7C, 0xAF9B, 0xBFBA, 0x8FD9, 0x9FF8,
 	0x6E17, 0x7E36, 0x4E55, 0x5E74, 0x2E93, 0x3EB2, 0x0ED1, 0x1EF0
-];
+	];
 
-nanos = [];
+	nanos = [];
 
 function init() {
 	chrome.hid.getDevices(FILTERS, function(devices) {
@@ -93,25 +94,27 @@ function receive() {
 	}
 }
 
-function crc16(data) {
+function crc16(arraybuffer) {
+	var data = new Uint8Array(arraybuffer);
 	var crc = 0;
 	var i = 0;
 	var len = data.length;
 	while (len-- > 0)
 		crc = CRC16_TABLE[((crc >> 8) ^ data[i++]) & 0xff] ^ (crc << 8);
+	return crc;
 }
 
-function mm_encode(cmd, idx, cnt, id, data) {
+function mm_encode(type, idx, cnt, id, data) {
 	var buffer = new ArrayBuffer(64);
 	var dv = new DataView(buffer);
 	dv.setUint8(0, CANAAN_HEAD1);
 	dv.setUint8(1, CANAAN_HEAD2);
-	dv.setUint8(2, cmd);
+	dv.setUint8(2, type);
 	dv.setUint8(3, idx);
 	dv.setUint8(4, cnt);
 	for (var i = 0; i < 8; i++)
 		dv.setUint32(i * 4 + 5, data[i]);
-	var crc = crc16(data);
+	var crc = crc16(buffer.slice(5, 37));
 	dv.setUint8(37, (crc & 0xff00) >> 8);
 	dv.setUint8(38, crc & 0x00ff);
 	return buffer;
@@ -128,22 +131,28 @@ function mm_decode(pkg) {
 	var cmd = dv.getUint8(2);
 	var idx = dv.getUint8(3);
 	var cnt = dv.getUint8(4);
-	var data = [];
-	for (var i = 0; i < 8; i++)
-		data.push(dv.getUint32(i * 4 + 5));
+	var data = pkg.slice(5, 37);
 	var crc_l = dv.getUint8(37);
 	var crc_h = dv.getUint8(38);
-	if (((crc_l & 0xff) | ((crc_h & 0xff) << 8)) != crc16(data)) {
+	var crc = crc16(data);
+	if (crc_l != ((crc & 0xff00) >> 8) || crc_h != (crc & 0x00ff)) {
 		console.log("Wrong CRC.");
 		return false;
 	}
-	return data;
+	switch (cmd) {
+		case P_ACKDETECT:
+			var version = '';
+			for (c of new Uint8Array(data))
+				version += String.fromCharCode(c);
+			return version;
+		default:
+			return data;
+	}
 }
 
 init();
 setTimeout(function() {
-	var raw = mm_encode(CMD_DETECT, 0x01, 0x01, null, [0, 0, 0, 0, 0, 0, 0, 0]);
-	console.log(new Uint8Array(raw));
+	var raw = mm_encode(P_DETECT, 0x01, 0x01, null, [0, 0, 0, 0, 0, 0, 0, 0]);
 	send(raw);
 	receive();
 }, 1000);
