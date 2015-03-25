@@ -87,8 +87,8 @@ static int init_mm_pkg(uint8_t *p, uint8_t type) {
 	p[4] = 1;
 
 	crc = crc16(p + 5, AVA2_P_DATA_LEN);
-	p[AVA2_P_COUNT - 2] = crc & 0x00ff;
-	p[AVA2_P_COUNT - 1] = (crc & 0xff00) >> 8;
+	p[AVA2_P_COUNT - 1] = crc & 0x00ff;
+	p[AVA2_P_COUNT - 2] = (crc & 0xff00) >> 8;
 	return 0;
 }
 
