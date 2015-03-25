@@ -11,3 +11,7 @@ Ref: https://developer.chrome.com/apps/first_app#load
 
 ## UDEV Rule for Linux
 `KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="29f1", MODE="0664", GROUP="plugdev"`
+
+
+## Links
+* https://github.com/progranism/Bitcoin-JavaScript-Miner
