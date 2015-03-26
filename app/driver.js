@@ -8,8 +8,9 @@ var FILTERS = {
 
 var P_DETECT = 0x0a;
 var P_REQUIRE = 0x12;
-var P_WORK = 0x1e;
+var P_WORK = 0x1c;
 var P_ACKDETECT = 0x19;
+var P_NONCE = 0x17;
 
 var CANAAN_HEAD1 = 0x41;
 var CANAAN_HEAD2 = 0x56;
@@ -64,9 +65,10 @@ Nano.prototype.detect = function() {
 		new ArrayBuffer(32)
 	));
 	this._receive(function(data) {
-		if (data.type === P_ACKDETECT)
+		if (data.type === P_ACKDETECT) {
+			console.info("Version: " + data.version);
 			nano.valid = nano._check_version(data.version);
-		console.log(nano);
+		}
 	});
 };
 
@@ -74,13 +76,28 @@ Nano.prototype._check_version = function(version) {
 	return version.slice(0, 15) === '3U1410-82418d6+';
 };
 
+Nano.prototype.work = function(data) {
+	var nano = this;
+	var cnt = Math.ceil(data.byteLength / 33);
+	for (var idx = 1; idx < cnt + 1; idx++) {
+		this._send(this._mm_encode(
+			P_WORK, idx, cnt, data.slice((idx - 1) * 32, idx * 32)
+		));
+	}
+	this._receive(function(data) {
+		if (data.type === P_NONCE)
+			console.log("Nonce:   0x" + data.nonce.toString(16));
+	});
+}
+
 Nano.prototype._send = function(data) {
+	var nano = this;
 	chrome.hid.send(this.connection.connectionId, 0, data, function() {
 		if (chrome.runtime.lastError) {
-			console.log(chrome.runtime.lastError);
+			console.error(chrome.runtime.lastError);
 			return;
 		}
-		console.log("Send");
+		console.debug("Send:    0x" + nano._ab2str(data));
 	});
 };
 
@@ -88,11 +105,10 @@ Nano.prototype._receive = function(callback) {
 	var nano = this;
 	chrome.hid.receive(this.connection.connectionId, function(reportId, data) {
 		if (chrome.runtime.lastError) {
-			console.log(chrome.runtime.lastError);
+			console.error(chrome.runtime.lastError);
 			return;
 		}
-		console.log("Receive:");
-		console.log(new Uint8Array(data));
+		console.debug("Receive: 0x" + nano._ab2str(data));
 		callback(nano._mm_decode(data));
 	});
 };
@@ -101,7 +117,7 @@ Nano.prototype._crc16 = function(arraybuffer) {
 	var data = new Uint8Array(arraybuffer);
 	var crc = 0;
 	var i = 0;
-	var len = data.length;
+	var len = data.byteLength;
 
 	while (len-- > 0)
 		crc = CRC16_TABLE[((crc >>> 8) ^ data[i++]) & 0xff] ^ (crc << 8);
@@ -109,8 +125,16 @@ Nano.prototype._crc16 = function(arraybuffer) {
 	return crc;
 };
 
+Nano.prototype._ab2str = function(arraybuffer) {
+	var view = new Uint8Array(arraybuffer);
+	var str = '';
+	for (v of view)
+		str += ('0' + v.toString(16)).slice(-2);
+	return str;
+}
+
 Nano.prototype._mm_encode = function(type, idx, cnt, data) {
-	var pkg = new ArrayBuffer(64);
+	var pkg = new ArrayBuffer(39);
 	var view = new Uint8Array(pkg);
 	var view_data = new Uint8Array(data);
 
@@ -121,7 +145,7 @@ Nano.prototype._mm_encode = function(type, idx, cnt, data) {
 	view[4] = cnt;
 
 	for (var i = 0; i < 32; i++)
-		view[i * 4 + 5] = view_data[i] || 0;
+		view[i + 5] = view_data[i] || 0;
 	var crc = this._crc16(pkg.slice(5, 37));
 	view[37] = (crc & 0xff00) >>> 8;
 	view[38] = crc & 0x00ff;
@@ -135,7 +159,7 @@ Nano.prototype._mm_decode = function(pkg) {
 	var head1 = view[0];
 	var head2 = view[1];
 	if (head1 !== CANAAN_HEAD1 || head2 !== CANAAN_HEAD2) {
-		console.log("Wrong head.");
+		console.warn("Wrong head.");
 		return false;
 	}
 	var cmd = view[2];
@@ -147,7 +171,7 @@ Nano.prototype._mm_decode = function(pkg) {
 	var crc_h = view[38];
 	var crc = this._crc16(data);
 	if (crc_l !== ((crc & 0xff00) >>> 8) || crc_h !== (crc & 0x00ff)) {
-		console.log("Wrong CRC.");
+		console.warn("Wrong CRC.");
 		return false;
 	}
 
@@ -157,6 +181,9 @@ Nano.prototype._mm_decode = function(pkg) {
 			for (c of new Uint8Array(data))
 				version += String.fromCharCode(c);
 			return {type: P_ACKDETECT, version: version};
+		case P_NONCE:
+			var nonce = new DataView(data).getUint32(0, false);
+			return {type: P_NONCE, nonce: nonce};
 		default:
 			return data;
 	}
