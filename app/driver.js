@@ -59,10 +59,13 @@ Nano.prototype.init = function() {
 
 Nano.prototype.detect = function() {
 	var nano = this;
-	this._send(this._mm_encode(P_DETECT, 0x01, 0x01, null, [0, 0, 0, 0, 0, 0, 0, 0]));
+	this._send(this._mm_encode(
+		P_DETECT, 0x01, 0x01,
+		new ArrayBuffer(32)
+	));
 	this._receive(function(data) {
-		if (data.type === P_ACKDETECT && nano._check_version(data.version))
-			nano.valid = true;
+		if (data.type === P_ACKDETECT)
+			nano.valid = nano._check_version(data.version);
 		console.log(nano);
 	});
 };
@@ -99,46 +102,55 @@ Nano.prototype._crc16 = function(arraybuffer) {
 	var crc = 0;
 	var i = 0;
 	var len = data.length;
+
 	while (len-- > 0)
 		crc = CRC16_TABLE[((crc >>> 8) ^ data[i++]) & 0xff] ^ (crc << 8);
+
 	return crc;
 };
 
-Nano.prototype._mm_encode = function(type, idx, cnt, id, data) {
-	var buffer = new ArrayBuffer(64);
-	var dv = new DataView(buffer);
-	dv.setUint8(0, CANAAN_HEAD1);
-	dv.setUint8(1, CANAAN_HEAD2);
-	dv.setUint8(2, type);
-	dv.setUint8(3, idx);
-	dv.setUint8(4, cnt);
-	for (var i = 0; i < 8; i++)
-		dv.setUint32(i * 4 + 5, data[i]);
+Nano.prototype._mm_encode = function(type, idx, cnt, data) {
+	var pkg = new ArrayBuffer(64);
+	var view = new Uint8Array(pkg);
+	var view_data = new Uint8Array(data);
+
+	view[0] = CANAAN_HEAD1;
+	view[1] = CANAAN_HEAD2;
+	view[2] = type;
+	view[3] = idx;
+	view[4] = cnt;
+
+	for (var i = 0; i < 32; i++)
+		view[i * 4 + 5] = view_data[i] || 0;
 	var crc = this._crc16(buffer.slice(5, 37));
-	dv.setUint8(37, (crc & 0xff00) >>> 8);
-	dv.setUint8(38, crc & 0x00ff);
+	view[37] = (crc & 0xff00) >>> 8;
+	view[38] = crc & 0x00ff;
+
 	return buffer;
 };
 
 Nano.prototype._mm_decode = function(pkg) {
-	var dv = new DataView(pkg);
-	var head1 = dv.getUint8(0);
-	var head2 = dv.getUint8(1);
+	var view = new Uint8Array(pkg);
+
+	var head1 = view[0];
+	var head2 = view[1];
 	if (head1 !== CANAAN_HEAD1 || head2 !== CANAAN_HEAD2) {
 		console.log("Wrong head.");
 		return false;
 	}
-	var cmd = dv.getUint8(2);
-	var idx = dv.getUint8(3);
-	var cnt = dv.getUint8(4);
+	var cmd = view[2];
+	var idx = view[3];
+	var cnt = view[4];
+
 	var data = pkg.slice(5, 37);
-	var crc_l = dv.getUint8(37);
-	var crc_h = dv.getUint8(38);
+	var crc_l = view[37];
+	var crc_h = view[38];
 	var crc = this._crc16(data);
 	if (crc_l !== ((crc & 0xff00) >>> 8) || crc_h !== (crc & 0x00ff)) {
 		console.log("Wrong CRC.");
 		return false;
 	}
+
 	switch (cmd) {
 		case P_ACKDETECT:
 			var version = '';
