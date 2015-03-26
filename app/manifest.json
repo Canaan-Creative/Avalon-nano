@@ -1,9 +1,9 @@
 {
 	"name": "Avalon Nano",
-	"version": "0.6",
-	"description": "Avalon Nano",
+	"version": "0.7",
+	"description": "Chrome Miner for Avalon Nano",
 	"manifest_version": 2,
-	"minimum_chrome_version": "40.0.2213.0",
+	"minimum_chrome_version": "41.0.2215.0",
 	"app": {
 		"background": {
 			"scripts": ["background.js"]
