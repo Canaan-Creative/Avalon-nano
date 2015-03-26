@@ -47,7 +47,7 @@ var CRC16_TABLE = [
 	0x7C26, 0x6C07, 0x5C64, 0x4C45, 0x3CA2, 0x2C83, 0x1CE0, 0x0CC1,
 	0xEF1F, 0xFF3E, 0xCF5D, 0xDF7C, 0xAF9B, 0xBFBA, 0x8FD9, 0x9FF8,
 	0x6E17, 0x7E36, 0x4E55, 0x5E74, 0x2E93, 0x3EB2, 0x0ED1, 0x1EF0
-	];
+];
 
 var Nano = function(device, connection) {
 	this.device = device;
@@ -100,7 +100,7 @@ Nano.prototype._crc16 = function(arraybuffer) {
 	var i = 0;
 	var len = data.length;
 	while (len-- > 0)
-		crc = CRC16_TABLE[((crc >> 8) ^ data[i++]) & 0xff] ^ (crc << 8);
+		crc = CRC16_TABLE[((crc >>> 8) ^ data[i++]) & 0xff] ^ (crc << 8);
 	return crc;
 };
 
@@ -115,7 +115,7 @@ Nano.prototype._mm_encode = function(type, idx, cnt, id, data) {
 	for (var i = 0; i < 8; i++)
 		dv.setUint32(i * 4 + 5, data[i]);
 	var crc = this._crc16(buffer.slice(5, 37));
-	dv.setUint8(37, (crc & 0xff00) >> 8);
+	dv.setUint8(37, (crc & 0xff00) >>> 8);
 	dv.setUint8(38, crc & 0x00ff);
 	return buffer;
 };
@@ -135,7 +135,7 @@ Nano.prototype._mm_decode = function(pkg) {
 	var crc_l = dv.getUint8(37);
 	var crc_h = dv.getUint8(38);
 	var crc = this._crc16(data);
-	if (crc_l !== ((crc & 0xff00) >> 8) || crc_h !== (crc & 0x00ff)) {
+	if (crc_l !== ((crc & 0xff00) >>> 8) || crc_h !== (crc & 0x00ff)) {
 		console.log("Wrong CRC.");
 		return false;
 	}
