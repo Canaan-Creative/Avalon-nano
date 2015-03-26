@@ -122,11 +122,11 @@ Nano.prototype._mm_encode = function(type, idx, cnt, data) {
 
 	for (var i = 0; i < 32; i++)
 		view[i * 4 + 5] = view_data[i] || 0;
-	var crc = this._crc16(buffer.slice(5, 37));
+	var crc = this._crc16(pkg.slice(5, 37));
 	view[37] = (crc & 0xff00) >>> 8;
 	view[38] = crc & 0x00ff;
 
-	return buffer;
+	return pkg;
 };
 
 Nano.prototype._mm_decode = function(pkg) {
