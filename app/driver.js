@@ -50,6 +50,10 @@ var CRC16_TABLE = [
 	0x6E17, 0x7E36, 0x4E55, 0x5E74, 0x2E93, 0x3EB2, 0x0ED1, 0x1EF0
 ];
 
+var INFO_STYLE = 'color: green';
+var DEBUG_STYLE = 'color: blue';
+var TRACE_STYLE = 'color: black';
+
 var Nano = function(device, connection) {
 	this.device = device;
 	this.connection = connection;
@@ -66,7 +70,7 @@ Nano.prototype.detect = function() {
 	));
 	this._receive(function(data) {
 		if (data.type === P_ACKDETECT) {
-			console.info("Version: " + data.version);
+			console.log("%cVersion: %s", INFO_STYLE, data.version);
 			nano.valid = nano._check_version(data.version);
 		}
 	});
@@ -86,9 +90,9 @@ Nano.prototype.work = function(data) {
 	}
 	this._receive(function(data) {
 		if (data.type === P_NONCE)
-			console.log("Nonce:   0x" + data.nonce.toString(16));
+			console.log("%cNonce:   0x%s", DEBUG_STYLE, data.nonce.toString(16));
 	});
-}
+};
 
 Nano.prototype._send = function(data) {
 	var nano = this;
@@ -97,7 +101,7 @@ Nano.prototype._send = function(data) {
 			console.error(chrome.runtime.lastError);
 			return;
 		}
-		console.debug("Send:    0x" + nano._ab2str(data));
+		console.log("%cSend:    0x%s", TRACE_STYLE, nano._ab2str(data));
 	});
 };
 
@@ -108,7 +112,7 @@ Nano.prototype._receive = function(callback) {
 			console.error(chrome.runtime.lastError);
 			return;
 		}
-		console.debug("Receive: 0x" + nano._ab2str(data));
+		console.log("%cReceive: 0x%s", TRACE_STYLE, nano._ab2str(data));
 		callback(nano._mm_decode(data));
 	});
 };
@@ -128,10 +132,10 @@ Nano.prototype._crc16 = function(arraybuffer) {
 Nano.prototype._ab2str = function(arraybuffer) {
 	var view = new Uint8Array(arraybuffer);
 	var str = '';
-	for (v of view)
+	for (var v of view)
 		str += ('0' + v.toString(16)).slice(-2);
 	return str;
-}
+};
 
 Nano.prototype._mm_encode = function(type, idx, cnt, data) {
 	var pkg = new ArrayBuffer(39);
@@ -178,7 +182,7 @@ Nano.prototype._mm_decode = function(pkg) {
 	switch (cmd) {
 		case P_ACKDETECT:
 			var version = '';
-			for (c of new Uint8Array(data))
+			for (var c of new Uint8Array(data))
 				version += String.fromCharCode(c);
 			return {type: P_ACKDETECT, version: version};
 		case P_NONCE:

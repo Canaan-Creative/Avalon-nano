@@ -4,15 +4,15 @@ function init() {
 			console.error(chrome.runtime.lastError);
 			return;
 		}
-		for (device of devices) {
-			chrome.hid.connect(device.deviceId, function(connection) {
-				if (chrome.runtime.lastError) {
-					console.error(chrome.runtime.lastError);
-					return;
-				}
-				nanos.push(new Nano(device, connection));
-			});
-		}
+		var register = function(connection) {
+			if (chrome.runtime.lastError) {
+				console.error(chrome.runtime.lastError);
+				return;
+			}
+			nanos.push(new Nano(device, connection));
+		};
+		for (var device of devices)
+			chrome.hid.connect(device.deviceId, register);
 	});
 }
 
