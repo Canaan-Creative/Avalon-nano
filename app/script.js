@@ -29,13 +29,22 @@ var TEST = [
 
 var nanos = [];
 init();
+
+setInterval(function() {
+	if (nanos[0].out_buffer.length < nanos[0].BUFFER_SIZE)
+		nanos[0].push_data(new Uint8Array(TEST).buffer);
+}, 10);
+
 setTimeout(function() {
-	nanos[0].detect();
+	nanos[0].run(5);
 }, 1000);
 
-var wait = setInterval(function() {
-	if (nanos[0].valid) {
-		nanos[0].work(new Uint8Array(TEST).buffer);
-		clearInterval(wait);
-	}
-}, 1000);
+setTimeout(function() {
+	nanos[0].stop = true;
+}, 60000 + 1000);
+
+setTimeout(function() {
+	chrome.hid.disconnect(nanos[0].connection.connectionId, function() {
+		console.info("Disconnected.");
+	});
+}, 10000 + 60000 + 1000);
