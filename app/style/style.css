@@ -1,0 +1,21 @@
+.row{
+	margin:0px;
+}
+.activity{
+	height:200px;
+}
+.nano-nav{
+	height:200px;
+}
+.nano-nav h3{
+	color:#fff;
+	height:30px;
+	line-height:30px;
+}
+.btn-custom{
+	min-width:200px;
+}
+.btn-row{
+	height:60px;
+	line-height:60px;
+}

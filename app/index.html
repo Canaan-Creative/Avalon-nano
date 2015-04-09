@@ -3,9 +3,73 @@
 	<head>
 		<title>Avalon Nano</title>
 		<link rel="stylesheet" href="style/style.css">
-	</head>
-	<body>
+		<link rel="stylesheet" href="style/buttons.css">
+		<link rel="stylesheet" href="style/bootstrap.min.css">
+		<script src="js/jquery.min.js"></script>
+		<script src="js/highcharts.js"></script>
+		<script src="js/custom.js"></script>
 		<script src="driver.js"></script>
 		<script src="script.js"></script>
+	</head>
+	<body>
+		<div class="container-fluid">
+		  <div class="row">
+
+			<div class="panel panel-default">
+			  <div class="panel-heading">
+			    <h3 class="panel-title">Avalon nano</h3>
+			  </div>
+			  <div class="panel-body" id="work-div">
+				<div class="row" id="activity">
+					<div class="col-sm-8">
+						<div id="container" style="min-width:300px;height:200px"></div>
+					</div>	
+					<div class="col-sm-4">
+					  <div class="row btn-row">
+					  	<button class="btn-custom button button-glow button-rounded button-highlight">Ths:1233.3</button>
+					  </div>
+					  <div class="row btn-row">
+					  	<button class="btn-custom button button-glow button-rounded button-caution">Mod:1521/1550</button>
+					  </div>
+					  <div class="row btn-row">
+					  	<button  class="btn-custom button button-glow button-rounded button-royal">Temp:41.8/50</button>
+					  </div>
+					</div>
+				</div>
+
+				<div class="row">
+					<table class="table table-striped">
+						<tr>
+							<th>矿池地址</th>
+							<th>矿工账号</th>
+							<th>端口号</th>
+							<th>状态</th>
+						</tr>
+						<tr>
+							<td>http://www.baidu.com</td>	
+							<td>dalong123</td>	
+							<td>3333</td>	
+							<td>正常</td>	
+						</tr>
+						<tr>
+							<td>http://www.baidu.com</td>	
+							<td>dalong123</td>	
+							<td>3333</td>	
+							<td>正常</td>	
+						</tr>
+						
+					
+					</table>
+				
+				
+				</div>
+
+				<div class="row">
+					<a href="javascript:;" class="pull-right button button-small-caps button-primary">矿池设置</a>
+				</div>
+			  </div>
+			</div>
+		  </div>
+		</div>
 	</body>
 </html>

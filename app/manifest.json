@@ -10,6 +10,7 @@
 		}
 	},
 	"permissions": [
+		"http://*/",
 		"hid",
 		{
 			"usbDevices": [{
@@ -21,5 +22,8 @@
 	"icons": {
 		"16": "assets/avalon_16.png",
 		"128": "assets/avalon_128.png"
+	},
+	"sockets": {
+		"tcp": { "connect" : "" }
 	}
 }

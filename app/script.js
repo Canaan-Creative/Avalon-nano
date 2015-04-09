@@ -1,19 +1,43 @@
 function init() {
+
 	chrome.hid.getDevices(FILTERS, function(devices) {
 		if (chrome.runtime.lastError) {
-			console.error(chrome.runtime.lastError);
+			console.error(chrome.runtime.lastError.message);
 			return;
 		}
+
 		var register = function(connection) {
 			if (chrome.runtime.lastError) {
-				console.error(chrome.runtime.lastError);
+				console.error(chrome.runtime.lastError.message);
 				return;
 			}
 			nanos.push(new Nano(device, connection));
 		};
+
 		for (var device of devices)
 			chrome.hid.connect(device.deviceId, register);
+		
+		
 	});
+}
+
+chrome.hid.onDeviceRemoved.addListener(function(deviceId){
+
+	if(chrome.runtime.lastError){
+		console.error(chrome.runtime.lastError.message)
+	}
+	console.log('onDeviceRemoved' + deviceId.deviceid);
+});
+
+function getWork(){		
+	var xhr = new XMLHttpRequest();
+	xhr.open("GET" , "http://t.local.com" , true );
+	xhr.onreadystatechange = function(){
+		if(xhr.readyState == 4){
+			console.log('xxxxxx:' + xhr.responseText);
+		}
+	}
+	xhr.send();
 }
 
 var TEST = [
@@ -29,7 +53,7 @@ var TEST = [
 
 var nanos = [];
 init();
-
+//getWork();
 setInterval(function() {
 	if (nanos[0].out_buffer.length < nanos[0].BUFFER_SIZE)
 		nanos[0].push_data(new Uint8Array(TEST).buffer);
