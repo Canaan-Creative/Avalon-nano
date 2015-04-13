@@ -58,73 +58,59 @@ __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
-
-/*****************************************************************************
- * Public types/enumerations/variables
- ****************************************************************************/
-static uint8_t MM_VERSION[MM_VERSION_LEN] = "3U1410-82418d6+";
+static uint8_t gmm_ver[MM_VERSION_LEN] = "3U1504-82418d6+";
 static unsigned char golden_ob[] =
 		"\x46\x79\xba\x4e\xc9\x98\x76\xbf\x4b\xfe\x08\x60\x82\xb4\x00\x25\x4d\xf6\xc3\x56\x45\x14\x71\x13\x9a\x3a\xfa\x71\xe4\x8f\x54\x4a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x87\x32\x0b\x1a\x14\x26\x67\x4f\x2f\xa7\x22\xce";
 static unsigned int a3233_stat = A3233_STAT_WAITICA;
 static uint8_t gica_pkg[ICA_TASK_LEN];
-static uint8_t gmm_reqpkg[AVA2_P_COUNT];
-static uint8_t gmm_ackpkg[AVA2_P_COUNT];
+static uint8_t gmm_reqpkg[AVAU_P_COUNT];
+static uint8_t gmm_ackpkg[AVAU_P_COUNT];
 
-/*****************************************************************************
- * Private functions
- ****************************************************************************/
-
-/*****************************************************************************
- * Public functions
- ****************************************************************************/
-static int init_mm_pkg(uint8_t *p, uint8_t type) {
+static int init_mm_pkg(struct avalon_pkg *pkg, uint8_t type)
+{
 	uint16_t crc;
 
-	p[0] = AVA2_H1;
-	p[1] = AVA2_H2;
-	p[2] = type;
-	p[3] = 1;
-	p[4] = 1;
+	pkg->head[0] = AVAU_H1;
+	pkg->head[1] = AVAU_H2;
+	pkg->type = type;
+	pkg->opt = 0;
+	pkg->idx = 1;
+	pkg->cnt = 1;
 
-	crc = crc16(p + 5, AVA2_P_DATA_LEN);
-	p[AVA2_P_COUNT - 1] = crc & 0x00ff;
-	p[AVA2_P_COUNT - 2] = (crc & 0xff00) >> 8;
+	crc = crc16(pkg->data, AVAU_P_DATA_LEN);
+	pkg->crc[0] = (crc & 0xff00) >> 8;
+	pkg->crc[1] = crc & 0x00ff;
 	return 0;
 }
 
-static unsigned int process_mm_pkg(uint8_t *p) {
-	unsigned int expected_crc;
-	unsigned int actual_crc;
-	int idx;
+static unsigned int process_mm_pkg(struct avalon_pkg *pkg)
+{
+	uint16_t expected_crc, actual_crc;
 	int ret;
-	uint8_t *data = p + 5;
 
-	idx = p[3];
+	expected_crc = (pkg->crc[1] & 0xff)
+			| ((pkg->crc[0] & 0xff) << 8);
+	actual_crc = crc16(pkg->data, AVAU_P_DATA_LEN);
 
-	expected_crc = (p[AVA2_P_COUNT - 1] & 0xff)
-			| ((p[AVA2_P_COUNT - 2] & 0xff) << 8);
-	actual_crc = crc16(data, AVA2_P_DATA_LEN);
-
-	if (expected_crc != actual_crc) {
+	if (expected_crc != actual_crc)
 		return A3233_STAT_WAITICA;
-	}
 
-	switch (p[2]) {
-	case AVA2_P_DETECT:
-		memset(gmm_ackpkg, 0, AVA2_P_COUNT);
-		memcpy(gmm_ackpkg + 5, &MM_VERSION, MM_VERSION_LEN);
-		init_mm_pkg(gmm_ackpkg, AVA2_P_ACKDETECT);
-		UCOM_Write(gmm_ackpkg, AVA2_P_COUNT);
+	switch (pkg->type) {
+	case AVAU_P_DETECT:
+		memset(gmm_ackpkg, 0, AVAU_P_COUNT);
+		memcpy(gmm_ackpkg + AVAU_P_DATAOFFSET, &gmm_ver, MM_VERSION_LEN);
+		init_mm_pkg((struct avalon_pkg *)gmm_ackpkg, AVAU_P_ACKDETECT);
+		UCOM_Write(gmm_ackpkg, AVAU_P_COUNT);
 		ret = A3233_STAT_WAITICA;
 		break;
-	case AVA2_P_WORK:
-		if (idx > 2) {
+	case AVAU_P_WORK:
+		if (pkg->idx > pkg->cnt) {
 			ret = A3233_STAT_WAITICA;
 			break;
 		}
 
-		memcpy(gica_pkg + ((idx - 1) * 32), data, 32);
-		if (idx == 2)
+		memcpy(gica_pkg + ((pkg->idx - 1) * 32), pkg->data, 32);
+		if (pkg->idx == pkg->cnt)
 			ret = A3233_STAT_PROCICA;
 		else
 			ret = A3233_STAT_MM_PROC;
@@ -137,12 +123,22 @@ static unsigned int process_mm_pkg(uint8_t *p) {
 	return ret;
 }
 
+void AVALON_Delay(unsigned int ms)
+{
+	unsigned int i;
+
+	while (ms && ms--) {
+		for(i = 0; i < SystemCoreClock/1000; i++)
+			__NOP();
+	}
+}
 /**
  * @brief	main routine for blinky example
  * @return	Function should not exit.
  */
 
-int main(void) {
+int main(void)
+{
 	unsigned int icarus_buflen = 0;
 	unsigned char work_buf[A3233_TASK_LEN];
 	unsigned char nonce_buf[A3233_NONCE_LEN];
@@ -207,7 +203,7 @@ int main(void) {
 			}
 
 			icarus_buflen = UCOM_Read_Cnt();
-			if (icarus_buflen >= AVA2_P_COUNT) {
+			if (icarus_buflen >= AVAU_P_COUNT) {
 				timestart = FALSE;
 				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
 				a3233_stat = A3233_STAT_MM_PROC;
@@ -251,9 +247,9 @@ int main(void) {
 			break;
 
 		case A3233_STAT_MM_PROC:
-			memset(gmm_reqpkg, 0, AVA2_P_COUNT);
-			UCOM_Read(gmm_reqpkg, AVA2_P_COUNT);
-			a3233_stat = process_mm_pkg(gmm_reqpkg);
+			memset(gmm_reqpkg, 0, AVAU_P_COUNT);
+			UCOM_Read(gmm_reqpkg, AVAU_P_COUNT);
+			a3233_stat = process_mm_pkg((struct avalon_pkg *)gmm_reqpkg);
 			break;
 
 		case A3233_STAT_PROCICA:
@@ -307,10 +303,10 @@ int main(void) {
 						| ((nonce_value << 8) & 0xff0000));
 				nonce_value -= 0x1000;
 				UNPACK32(nonce_value, nonce_buf);
-				memset(&gmm_ackpkg, 0, AVA2_P_COUNT);
+				memset(&gmm_ackpkg, 0, AVAU_P_COUNT);
 				memcpy(gmm_ackpkg + 5, nonce_buf, 4);
-				init_mm_pkg(gmm_ackpkg, AVA2_P_NONCE);
-				UCOM_Write(gmm_ackpkg, AVA2_P_COUNT);
+				init_mm_pkg((struct avalon_pkg *)gmm_ackpkg, AVAU_P_NONCE);
+				UCOM_Write(gmm_ackpkg, AVAU_P_COUNT);
 #ifdef A3233_FREQ_DEBUG
 				{
 					char freq[20];
@@ -325,8 +321,8 @@ int main(void) {
 				break;
 			} else {
 				memcpy(gmm_ackpkg + 5, "\x55\xaa\xaa\x55", 4);
-				init_mm_pkg(gmm_ackpkg, AVA2_P_NONCE);
-				UCOM_Write(gmm_ackpkg, AVA2_P_COUNT);
+				init_mm_pkg((struct avalon_pkg *)gmm_ackpkg, AVAU_P_NONCE);
+				UCOM_Write(gmm_ackpkg, AVAU_P_COUNT);
 				a3233_stat = A3233_STAT_WAITICA;
 				break;
 			}

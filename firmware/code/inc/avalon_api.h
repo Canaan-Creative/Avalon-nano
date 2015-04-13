@@ -119,12 +119,8 @@ void AVALON_ADC_Rd(uint8_t channel, uint16_t *data);
 
 /* printf */
 char *m_sprintf(char *dest, const char *format, ...);
-	
-static void AVALON_Delay(unsigned int max)
-{
-	volatile unsigned int i;
-	for(i = 0; i < max; i++);
-}
+
+void AVALON_Delay(unsigned int ms);
 /**
  * @}
  */
