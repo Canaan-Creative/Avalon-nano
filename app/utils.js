@@ -133,3 +133,16 @@ var mm_decode = function(pkg) {
 			return data;
 	}
 };
+
+var gw_pool2raw = function(midstat, data) {
+	var raw = new ArrayBuffer(64);
+	var view = new DataView(raw);
+	var i;
+
+	data = data.slice(128, 128 + 24);
+	for (i = 0; i < 32; i++)
+		view.setUint8(31 - i, parseInt(midstat.slice(i * 2, i * 2 + 2), 16), false);
+	for (i = 0; i < 12; i++)
+		view.setUint8(63 - i, parseInt(data.slice(i * 2, i * 2 + 2), 16), false);
+	return raw;
+};
