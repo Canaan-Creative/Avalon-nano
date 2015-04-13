@@ -43,7 +43,7 @@ Nano.prototype.run = function(queue_size) {
 	var nano = this;
 	this.detect(function() {
 		if (check_version(nano.version)) {
-			nano.stop = false;
+			nano._stop = false;
 			nano._receive_loop();
 			nano._decode_loop();
 			nano._send_loop(5);
@@ -51,11 +51,16 @@ Nano.prototype.run = function(queue_size) {
 	});
 };
 
+Nano.prototype.stop = function() {
+    this._stop = true;
+    console.info("Stopped");
+};
+
 Nano.prototype._decode_loop = function() {
 	var nano = this;
 	var decode = setInterval(function() {
 		var pkg = nano._in_buffer.shift();
-		if (nano.stop && pkg === undefined)
+		if (nano._stop && pkg === undefined)
 			clearInterval(decode);
 		else if (pkg !== undefined) {
 			var data = mm_decode(pkg);
@@ -70,7 +75,7 @@ Nano.prototype._decode_loop = function() {
 Nano.prototype._send_loop = function(queue_size) {
 	var nano = this;
 	var loop = setInterval(function() {
-		if (nano.stop)
+		if (nano._stop)
 			clearInterval(loop);
 		else
 			while (nano._send_queue < queue_size) {
@@ -97,7 +102,7 @@ Nano.prototype._send = function(pkg) {
 	this._send_queue += 1;
 	chrome.hid.send(this.connection.connectionId, 0, pkg, function() {
 		if (chrome.runtime.lastError) {
-			console.error(chrome.runtime.lastError);
+			console.error(chrome.runtime.lastError.message);
 			return;
 		}
 		console.debug("%cSend:    0x%s", DEBUG_STYLE, ab2str(pkg));
@@ -108,7 +113,7 @@ Nano.prototype._send = function(pkg) {
 Nano.prototype._receive = function(callback) {
 	chrome.hid.receive(this.connection.connectionId, function(reportId, pkg) {
 		if (chrome.runtime.lastError) {
-			console.error(chrome.runtime.lastError);
+			console.error(chrome.runtime.lastError.message);
 			return;
 		}
 		console.debug("%cReceive: 0x%s", DEBUG_STYLE, ab2str(pkg));
