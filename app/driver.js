@@ -1,12 +1,15 @@
 var Nano = function(device, connection) {
 	this.device = device;
 	this.connection = connection;
-	this.in_buffer = [];
-	this.out_buffer = [];
+	this._in_buffer = [];
+	this._out_buffer = [];
+	this._send_queue = 0;
 	this.BUFFER_SIZE = 32;
 };
 
 Nano.prototype.push_data = function(data) {
+	if (this._out_buffer.length >= this._BUFFER_SIZE)
+		return false;
 	var pkgs = [];
 	var cnt = Math.ceil(data.byteLength / 33);
 	for (var idx = 1; idx < cnt + 1; idx++) {
@@ -14,7 +17,8 @@ Nano.prototype.push_data = function(data) {
 			P_WORK, idx, cnt, data.slice((idx - 1) * 32, idx * 32)
 		));
 	}
-	this.out_buffer.push(pkgs);
+	this._out_buffer.push(pkgs);
+	return true;
 };
 
 Nano.prototype.detect = function(callback) {
@@ -35,60 +39,22 @@ Nano.prototype.detect = function(callback) {
 	});
 };
 
-Nano.prototype.work = function(pkgs, ntime, callback) {
+Nano.prototype.run = function(queue_size) {
 	var nano = this;
-	for (var pkg of pkgs)
-		this._send(pkg);
-
-	var receive_callback = function(pkg) {
-		nano.in_buffer.push(pkg);
-		callback();
-
-		// TODO: what if it is not a P_NONCE package?
-		//if (data.type === P_NONCE) {
-		//	console.log("%cNonce:   0x%s", LOG2_STYLE, data.nonce.toString(16));
-		//}
-	};
-
-	for (var i = 0; i < ntime; i++)
-		this._receive(receive_callback);
-};
-
-Nano.prototype.run = function(prepkgs) {
-	var nano = this;
-	var callback = function(pkg) {
-		nano.in_buffer.push(pkg);
-	};
-	var loop = function() {
-		if (nano.stop) {
-			console.info("Stopped.");
-			for (var j = 1; j < prepkgs; j++) {
-				nano._receive(callback);
-			}
-			return;
-		}
-		var pkgs = nano.out_buffer.shift();
-
-		// TODO: should wait until pkgs is not null
-		nano.work(pkgs, 1, loop);
-	};
-
 	this.detect(function() {
 		if (check_version(nano.version)) {
 			nano.stop = false;
-
-			// send some packages to fill the buffer of nano
-			for (var i = 1; i < prepkgs; i++) {
-				var pkgs = nano.out_buffer.shift();
-				for (var pkg of pkgs)
-					nano._send(pkg);
-			}
-			loop();
+			nano._receive_loop();
+			nano._decode_loop();
+			nano._send_loop(5);
 		}
 	});
+};
 
+Nano.prototype._decode_loop = function() {
+	var nano = this;
 	var decode = setInterval(function() {
-		var pkg = nano.in_buffer.shift();
+		var pkg = nano._in_buffer.shift();
 		if (nano.stop && pkg === undefined)
 			clearInterval(decode);
 		else if (pkg !== undefined) {
@@ -101,13 +67,41 @@ Nano.prototype.run = function(prepkgs) {
 	}, 10);
 };
 
+Nano.prototype._send_loop = function(queue_size) {
+	var nano = this;
+	var loop = setInterval(function() {
+		if (nano.stop)
+			clearInterval(loop);
+		else
+			while (nano._send_queue < queue_size) {
+				var pkgs = nano._out_buffer.shift();
+				if (pkgs === undefined)
+					break;
+				for (var pkg of pkgs)
+					nano._send(pkg);
+			}
+	}, 10);
+};
+
+Nano.prototype._receive_loop = function() {
+	var nano = this;
+	var callback = function(pkg) {
+		nano._in_buffer.push(pkg);
+		nano._receive(callback);
+	};
+	this._receive(callback);
+};
+
 Nano.prototype._send = function(pkg) {
+	var nano = this;
+	this._send_queue += 1;
 	chrome.hid.send(this.connection.connectionId, 0, pkg, function() {
 		if (chrome.runtime.lastError) {
 			console.error(chrome.runtime.lastError);
 			return;
 		}
 		console.debug("%cSend:    0x%s", DEBUG_STYLE, ab2str(pkg));
+		nano._send_queue -= 1;
 	});
 };
 
