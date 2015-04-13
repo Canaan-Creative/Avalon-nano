@@ -4,7 +4,7 @@ var Nano = function(device, connection) {
 	this._in_buffer = [];
 	this._out_buffer = [];
 	this._send_queue = 0;
-	this.BUFFER_SIZE = 32;
+	this._BUFFER_SIZE = 32;
 };
 
 Nano.prototype.push_data = function(data) {
@@ -52,8 +52,8 @@ Nano.prototype.run = function(queue_size) {
 };
 
 Nano.prototype.stop = function() {
-    this._stop = true;
-    console.info("Stopped");
+	this._stop = true;
+	console.info("Stopped");
 };
 
 Nano.prototype._decode_loop = function() {

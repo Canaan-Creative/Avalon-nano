@@ -13,7 +13,7 @@ function init(callback) {
 		};
 		for (var device of devices)
 			chrome.hid.connect(device.deviceId, register);
-        callback();
+		callback();
 	});
 }
 
