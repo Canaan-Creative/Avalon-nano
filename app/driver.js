@@ -102,24 +102,22 @@ Nano.prototype.run = function(prepkgs) {
 };
 
 Nano.prototype._send = function(pkg) {
-	var nano = this;
 	chrome.hid.send(this.connection.connectionId, 0, pkg, function() {
 		if (chrome.runtime.lastError) {
 			console.error(chrome.runtime.lastError);
 			return;
 		}
-		console.debug("%cSend:    0x%s", DEBUG_STYLE, nano._ab2str(pkg));
+		console.debug("%cSend:    0x%s", DEBUG_STYLE, ab2str(pkg));
 	});
 };
 
 Nano.prototype._receive = function(callback) {
-	var nano = this;
 	chrome.hid.receive(this.connection.connectionId, function(reportId, pkg) {
 		if (chrome.runtime.lastError) {
 			console.error(chrome.runtime.lastError);
 			return;
 		}
-		console.debug("%cReceive: 0x%s", DEBUG_STYLE, nano._ab2str(pkg));
+		console.debug("%cReceive: 0x%s", DEBUG_STYLE, ab2str(pkg));
 		callback(pkg);
 	});
 };
