@@ -38,8 +38,8 @@
  * Public types/enumerations/variables
  ****************************************************************************/
 
-#define HID_INPUT_REPORT_BYTES       39				/* size of report in Bytes */
-#define HID_OUTPUT_REPORT_BYTES      39				/* size of report in Bytes */
+#define HID_INPUT_REPORT_BYTES       40				/* size of report in Bytes */
+#define HID_OUTPUT_REPORT_BYTES      40				/* size of report in Bytes */
 #define HID_FEATURE_REPORT_BYTES     1				/* size of report in Bytes */
 
 /**
