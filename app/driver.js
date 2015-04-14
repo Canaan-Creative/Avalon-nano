@@ -32,7 +32,7 @@ Nano.prototype.detect = function(callback) {
 
 		// TODO: what if it is not a P_ACKDETECT package?
 		if (data.type === P_ACKDETECT) {
-			console.log("%cVersion: %s", LOG1_STYLE, data.version);
+			nano.log("log1", "Version: %s", data.version);
 			nano.version = data.version;
 			callback();
 		}
@@ -53,7 +53,56 @@ Nano.prototype.run = function(queue_size) {
 
 Nano.prototype.stop = function() {
 	this._stop = true;
-	console.info("Stopped");
+	this.log("info", "Stopped.");
+};
+
+Nano.prototype.disconnect = function() {
+	var nano = this;
+	chrome.hid.disconnect(nano.connection.connectionId, function() {
+		this.log("info", "Disconnected.");
+	});
+};
+
+Nano.prototype.log = function(level) {
+	var args = Array.prototype.slice.call(arguments);
+	var i;
+	switch (level) {
+		case 'error':
+			args[0] = "[NANO %d] " + arguments[1];
+			args[1] = this.device.deviceId;
+			console.error.apply(console, args);
+			break;
+		case 'warn':
+			args[0] = "[NANO %d] " + arguments[1];
+			args[1] = this.device.deviceId;
+			console.warn.apply(console, args);
+			break;
+		case 'info':
+			args[0] = "[NANO %d] " + arguments[1];
+			args[1] = this.device.deviceId;
+			console.info.apply(console, args);
+			break;
+		case 'log1':
+			args.unshift("%c[NANO %d] " + arguments[1]);
+			args[1] = LOG1_STYLE;
+			args[2] = this.device.deviceId;
+			console.log.apply(console, args);
+			break;
+		case 'log2':
+			args.unshift("%c[NANO %d] " + arguments[1]);
+			args[1] = LOG2_STYLE;
+			args[2] = this.device.deviceId;
+			console.log.apply(console, args);
+			break;
+		case 'debug':
+			args.unshift("%c[NANO %d] " + arguments[1]);
+			args[1] = DEBUG_STYLE;
+			args[2] = this.device.deviceId;
+			console.debug.apply(console, args);
+			break;
+		default:
+			break;
+	}
 };
 
 Nano.prototype._decode_loop = function() {
@@ -67,7 +116,7 @@ Nano.prototype._decode_loop = function() {
 
 			// TODO: what if it is not a P_NONCE package?
 			if (data.type === P_NONCE)
-				console.log("%cNonce:   0x%s", LOG2_STYLE, data.nonce.toString(16));
+				nano.log("log2", "Nonce:   0x%s", data.nonce.toString(16));
 		}
 	}, 10);
 };
@@ -102,21 +151,22 @@ Nano.prototype._send = function(pkg) {
 	this._send_queue += 1;
 	chrome.hid.send(this.connection.connectionId, 0, pkg, function() {
 		if (chrome.runtime.lastError) {
-			console.error(chrome.runtime.lastError.message);
+			nano.error(chrome.runtime.lastError.message);
 			return;
 		}
-		console.debug("%cSend:    0x%s", DEBUG_STYLE, ab2str(pkg));
+		nano.log("debug", "Send:    0x%s", ab2str(pkg));
 		nano._send_queue -= 1;
 	});
 };
 
 Nano.prototype._receive = function(callback) {
+	var nano = this;
 	chrome.hid.receive(this.connection.connectionId, function(reportId, pkg) {
 		if (chrome.runtime.lastError) {
-			console.error(chrome.runtime.lastError.message);
+			nano.error(chrome.runtime.lastError.message);
 			return;
 		}
-		console.debug("%cReceive: 0x%s", DEBUG_STYLE, ab2str(pkg));
+		nano.log("debug", "Receive: 0x%s", ab2str(pkg));
 		callback(pkg);
 	});
 };
