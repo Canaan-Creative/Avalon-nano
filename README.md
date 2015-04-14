@@ -68,3 +68,8 @@ Files under verilog/superkdf9/ have their own license (Lattice Semi-
 conductor Corporation Open Source License Agreement).
 
 Some files may have their own license disclaim by the author.
+
+Links
+=====
+* http://www.element14.com/community/servlet/JiveServlet/downloadBody/52460-102-1-266572/NXP.Application_Note_3.pdf
+* http://www.nxp.com/redirect/usb.org/developers/devclass_docs/DFU_1.1.pdf
