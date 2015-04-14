@@ -44,7 +44,7 @@ IDE Support
 
 Miner Support
 =======
-* Cgminer (https://github.com/BitSyncom/cgminer/tree/avalon-usb)
+* Cgminer (https://github.com/Canaan-Creative/cgminer/tree/avalon-usb)
 * bfgminer (https://github.com/luke-jr/bfgminer)
 
 OS Support
@@ -55,7 +55,7 @@ OS Support
 Discussion
 ==========
 * IRC: #avalon @freenode.net
-* [![Gitter chat](https://badges.gitter.im/BitSyncom/Avalon-nano.png)](https://gitter.im/BitSyncom/Avalon-nano)
+* [![Gitter chat](https://badges.gitter.im/Canaan-Creative/Avalon-nano.png)](https://gitter.im/Canaan-Creative/Avalon-nano)
 * Mailing list: http://lists.canaan-creative.com/
 * Documents/Downloads: https://en.bitcoin.it/wiki/Avalon_nano
 
