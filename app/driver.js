@@ -59,7 +59,7 @@ Nano.prototype.stop = function() {
 Nano.prototype.disconnect = function() {
 	var nano = this;
 	chrome.hid.disconnect(nano.connection.connectionId, function() {
-		this.log("info", "Disconnected.");
+		nano.log("info", "Disconnected.");
 	});
 };
 
