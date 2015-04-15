@@ -1,6 +1,5 @@
-var Nano = function(device, connection) {
+var Nano = function(device) {
 	this.device = device;
-	this.connection = connection;
 	this._in_buffer = [];
 	this._out_buffer = [];
 	this._send_queue = 0;
@@ -46,7 +45,7 @@ Nano.prototype.run = function(queue_size) {
 			nano._stop = false;
 			nano._receive_loop();
 			nano._decode_loop();
-			nano._send_loop(5);
+			nano._send_loop(queue_size);
 		}
 	});
 };
@@ -54,6 +53,17 @@ Nano.prototype.run = function(queue_size) {
 Nano.prototype.stop = function() {
 	this._stop = true;
 	this.log("info", "Stopped.");
+};
+
+Nano.prototype.connect = function() {
+	var nano = this;
+	chrome.hid.connect(this.device.deviceId, function(connection) {
+		if (chrome.runtime.lastError) {
+			nano.log("error", chrome.runtime.lastError.message);
+			return;
+		}
+		nano.connection = connection;
+	});
 };
 
 Nano.prototype.disconnect = function() {
@@ -118,7 +128,7 @@ Nano.prototype._decode_loop = function() {
 			if (data.type === P_NONCE)
 				nano.log("log2", "Nonce:   0x%s", data.nonce.toString(16));
 		}
-	}, 10);
+	}, 50);
 };
 
 Nano.prototype._send_loop = function(queue_size) {
@@ -134,7 +144,7 @@ Nano.prototype._send_loop = function(queue_size) {
 				for (var pkg of pkgs)
 					nano._send(pkg);
 			}
-	}, 10);
+	}, 50);
 };
 
 Nano.prototype._receive_loop = function() {
