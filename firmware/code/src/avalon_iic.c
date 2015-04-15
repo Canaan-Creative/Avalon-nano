@@ -13,7 +13,7 @@
 #include "avalon_api.h"
 
 //write:0x92, read:0x93
-#define I2C_NOP 4 //even only
+#define I2C_NOP 2 //even only
 #define I2C_ADDR_W 0x92
 #define I2C_ADDR_R 0x93
 

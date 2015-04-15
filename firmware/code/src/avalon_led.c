@@ -69,28 +69,28 @@ void AVALON_LED_Test(void)
 
 	/* open all led */
 	AVALON_LED_Rgb(AVALON_LED_WHITE);
-	AVALON_Delay(4000000);
+	AVALON_Delay(1000);
 
 	/* close all led */
 	AVALON_LED_Rgb(AVALON_LED_BLACK);
-	AVALON_Delay(4000000);
+	AVALON_Delay(1000);
 
 	/* open separate led and close it, r->g->b */
 	AVALON_LED_Rgb(AVALON_LED_RED);
-	AVALON_Delay(4000000);
+	AVALON_Delay(1000);
 	AVALON_LED_Rgb(AVALON_LED_BLACK);
 
 	AVALON_LED_Rgb(AVALON_LED_GREEN);
-	AVALON_Delay(4000000);
+	AVALON_Delay(1000);
 	AVALON_LED_Rgb(AVALON_LED_BLACK);
 
 	AVALON_LED_Rgb(AVALON_LED_BLUE);
-	AVALON_Delay(4000000);
+	AVALON_Delay(1000);
 	AVALON_LED_Rgb(AVALON_LED_BLACK);
 
 	/* all led has been closed */
-	AVALON_Delay(4000000);
+	AVALON_Delay(1000);
 
 	AVALON_LED_Blink(AVALON_LED_RED);
-	AVALON_Delay(8000000);
+	AVALON_Delay(4000);
 }

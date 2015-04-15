@@ -91,13 +91,13 @@ static void AVALON_A3233_Rstn(void)
 
 void AVALON_A3233_Reset(void)
 {
-	AVALON_Delay(2000);
+	AVALON_Delay(2);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, TRUE);
-	AVALON_Delay(2000);
+	AVALON_Delay(2);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, FALSE);
-	AVALON_Delay(2000);
+	AVALON_Delay(2);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, TRUE);
-	AVALON_Delay(2000);
+	AVALON_Delay(2);
 }
 
 /* V_25 USB, V_18 A3233 IO Power, V_CORE A3233 Core, V_09 A3233 Pll*/

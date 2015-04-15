@@ -63,7 +63,6 @@ static uint8_t usb_rxbuff[UCOM_RX_BUF_SZ];
  */
 typedef struct UCOM_DATA {
 	USBD_HANDLE_T hUsb;		/*!< Handle to USB stack */
-	uint8_t report[UCOM_REPORT_SIZE + 1];	/*!< Last report data  */
 	uint16_t usbRx_count;
 	uint8_t *usbRx_buff;
 	volatile uint16_t usbTxFlags;	/*!< USB Tx Flag */
@@ -268,7 +267,7 @@ uint32_t UCOM_Write(uint8_t *pBuf, uint32_t len)
 	if (g_uCOM.usbTxFlags & UCOM_TX_CONNECTED) {
 		timeout = 0;
 		while ((g_uCOM.usbTxFlags & UCOM_TX_BUSY) == 1) {
-			AVALON_Delay(1000);
+			AVALON_Delay(20);
 			timeout ++;
 			/*FIXME: busy is not always right,we must send after timeout */
 			if (timeout > 3)

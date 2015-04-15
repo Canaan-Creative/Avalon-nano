@@ -76,12 +76,12 @@ void AVALON_PWM_Test(void)
 	AVALON_PWM_Enable();
 	for (;duty < 255; duty++) {
 		AVALON_PWM_SetDuty(AVALON_PWM_RED, duty);
-		AVALON_Delay(20000);
+		AVALON_Delay(20);
 	}
-	AVALON_Delay(400000);
+	AVALON_Delay(1000);
 	for (;duty > 0; duty--) {
 		AVALON_PWM_SetDuty(AVALON_PWM_RED, duty);
-		AVALON_Delay(20000);
+		AVALON_Delay(20);
 	}
-	AVALON_Delay(500000);
+	AVALON_Delay(1000);
 }

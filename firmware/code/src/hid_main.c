@@ -59,6 +59,7 @@ __CRP unsigned int CRP_WORD = CRP_NO_ISP;
  * Private types/enumerations/variables
  ****************************************************************************/
 static uint8_t gmm_ver[MM_VERSION_LEN] = "3U1504-82418d6+";
+/* http://blockexplorer.com/block/00000000000004b64108a8e4168cfaa890d62b8c061c6b74305b7f6cb2cf9fda */
 static unsigned char golden_ob[] =
 		"\x46\x79\xba\x4e\xc9\x98\x76\xbf\x4b\xfe\x08\x60\x82\xb4\x00\x25\x4d\xf6\xc3\x56\x45\x14\x71\x13\x9a\x3a\xfa\x71\xe4\x8f\x54\x4a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x87\x32\x0b\x1a\x14\x26\x67\x4f\x2f\xa7\x22\xce";
 static unsigned int a3233_stat = A3233_STAT_WAITICA;
@@ -85,7 +86,8 @@ static int init_mm_pkg(struct avalon_pkg *pkg, uint8_t type)
 
 static unsigned int process_mm_pkg(struct avalon_pkg *pkg)
 {
-	uint16_t expected_crc, actual_crc;
+	unsigned int expected_crc;
+	unsigned int actual_crc;
 	int ret;
 
 	expected_crc = (pkg->crc[1] & 0xff)
@@ -125,20 +127,21 @@ static unsigned int process_mm_pkg(struct avalon_pkg *pkg)
 
 void AVALON_Delay(unsigned int ms)
 {
-	unsigned int i;
+       unsigned int i;
+       unsigned int msticks = SystemCoreClock/16000; /* FIXME: 16000 is not accurate */
 
-	while (ms && ms--) {
-		for(i = 0; i < SystemCoreClock/1000; i++)
-			__NOP();
-	}
+       while (ms && ms--) {
+               for(i = 0; i < msticks; i++)
+                       __NOP();
+       }
 }
+
 /**
  * @brief	main routine for blinky example
  * @return	Function should not exit.
  */
 
-int main(void)
-{
+int main(void) {
 	unsigned int icarus_buflen = 0;
 	unsigned char work_buf[A3233_TASK_LEN];
 	unsigned char nonce_buf[A3233_NONCE_LEN];
@@ -247,9 +250,27 @@ int main(void)
 			break;
 
 		case A3233_STAT_MM_PROC:
-			memset(gmm_reqpkg, 0, AVAU_P_COUNT);
-			UCOM_Read(gmm_reqpkg, AVAU_P_COUNT);
-			a3233_stat = process_mm_pkg((struct avalon_pkg *)gmm_reqpkg);
+			if (UCOM_Read_Cnt() >= AVAU_P_COUNT) {
+				memset(gmm_reqpkg, 0, AVAU_P_COUNT);
+				UCOM_Read(gmm_reqpkg, AVAU_P_COUNT);
+				a3233_stat = process_mm_pkg((struct avalon_pkg*)gmm_reqpkg);
+			}
+
+			if (!timestart) {
+				AVALON_TMR_Set(A3233_TIMER_TIMEOUT, 400, NULL);
+				timestart = TRUE;
+			}
+
+			if (AVALON_TMR_IsTimeout(A3233_TIMER_TIMEOUT)) {
+				timestart = FALSE;
+				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
+				a3233_stat = A3233_STAT_IDLE;
+			}
+
+			if (a3233_stat == A3233_STAT_PROCICA) {
+				timestart = FALSE;
+				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
+			}
 			break;
 
 		case A3233_STAT_PROCICA:
@@ -304,7 +325,7 @@ int main(void)
 				nonce_value -= 0x1000;
 				UNPACK32(nonce_value, nonce_buf);
 				memset(&gmm_ackpkg, 0, AVAU_P_COUNT);
-				memcpy(gmm_ackpkg + 5, nonce_buf, 4);
+				memcpy(gmm_ackpkg + AVAU_P_DATAOFFSET, nonce_buf, 4);
 				init_mm_pkg((struct avalon_pkg *)gmm_ackpkg, AVAU_P_NONCE);
 				UCOM_Write(gmm_ackpkg, AVAU_P_COUNT);
 #ifdef A3233_FREQ_DEBUG
@@ -320,7 +341,7 @@ int main(void)
 				a3233_stat = A3233_STAT_WAITICA;
 				break;
 			} else {
-				memcpy(gmm_ackpkg + 5, "\x55\xaa\xaa\x55", 4);
+				memcpy(gmm_ackpkg + AVAU_P_DATAOFFSET, "\x55\xaa\xaa\x55", 4);
 				init_mm_pkg((struct avalon_pkg *)gmm_ackpkg, AVAU_P_NONCE);
 				UCOM_Write(gmm_ackpkg, AVAU_P_COUNT);
 				a3233_stat = A3233_STAT_WAITICA;
@@ -356,4 +377,3 @@ int main(void)
 		__WFI();
 	}
 }
-
