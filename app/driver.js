@@ -161,7 +161,7 @@ Nano.prototype._send = function(pkg) {
 	this._send_queue += 1;
 	chrome.hid.send(this.connection.connectionId, 0, pkg, function() {
 		if (chrome.runtime.lastError) {
-			nano.error(chrome.runtime.lastError.message);
+			nano.log("error", chrome.runtime.lastError.message);
 			return;
 		}
 		nano.log("debug", "Send:    0x%s", ab2str(pkg));
@@ -173,7 +173,7 @@ Nano.prototype._receive = function(callback) {
 	var nano = this;
 	chrome.hid.receive(this.connection.connectionId, function(reportId, pkg) {
 		if (chrome.runtime.lastError) {
-			nano.error(chrome.runtime.lastError.message);
+			nano.log("error", chrome.runtime.lastError.message);
 			return;
 		}
 		nano.log("debug", "Receive: 0x%s", ab2str(pkg));
