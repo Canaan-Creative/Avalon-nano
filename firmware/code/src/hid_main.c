@@ -349,9 +349,19 @@ int main(void) {
 
 			if (AVALON_TMR_IsTimeout(A3233_TIMER_TIMEOUT)) {
 				/* no nonce response */
+				uint32_t tmp;
+
 				timestart = FALSE;
 				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
 				a3233_stat = A3233_STAT_IDLE;
+				memset(&gmm_ackpkg, 0, AVAU_P_COUNT);
+				tmp = AVALON_A3233_FreqNeeded();
+				tmp = ((tmp >> 24) | (tmp << 24)
+						| ((tmp >> 8) & 0xff00)
+						| ((tmp << 8) & 0xff0000));
+				memcpy(gmm_ackpkg + AVAU_P_DATAOFFSET, (uint8_t*)&tmp, 4);
+				init_mm_pkg((struct avalon_pkg *)gmm_ackpkg, AVAU_P_STATUS);
+				UCOM_Write(gmm_ackpkg, AVAU_P_COUNT);
 				break;
 			}
 
