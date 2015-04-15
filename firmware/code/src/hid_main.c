@@ -340,12 +340,6 @@ int main(void) {
 				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
 				a3233_stat = A3233_STAT_WAITICA;
 				break;
-			} else {
-				memcpy(gmm_ackpkg + AVAU_P_DATAOFFSET, "\x55\xaa\xaa\x55", 4);
-				init_mm_pkg((struct avalon_pkg *)gmm_ackpkg, AVAU_P_NONCE);
-				UCOM_Write(gmm_ackpkg, AVAU_P_COUNT);
-				a3233_stat = A3233_STAT_WAITICA;
-				break;
 			}
 
 			if (!timestart) {
