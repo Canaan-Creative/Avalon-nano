@@ -34,11 +34,11 @@ function main() {
 	setInterval(function() {
 		for (var nano of nanos)
 			nano.push_data(raw);
-	}, 40);
+	}, 20);
 
 	setTimeout(function() {
 		for (var nano of nanos)
-			nano.run(2);
+			nano.run(5);
 	}, 1000);
 
 	setTimeout(function() {

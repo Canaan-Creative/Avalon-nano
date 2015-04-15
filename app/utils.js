@@ -6,14 +6,23 @@ var FILTERS = {
 		productId: AVALON_NANO_PRODUCT_ID
 	}]};
 
-var P_DETECT = 0x0a;
-var P_REQUIRE = 0x12;
-var P_WORK = 0x1c;
-var P_ACKDETECT = 0x19;
-var P_NONCE = 0x17;
+var P_DETECT = 0x10;
+var P_SET_VOLT = 0x11;
+var P_SET_FREQ = 0x12;
+var P_WORK = 0x13;
+var P_POLLING = 0x14;
+var P_REQUIRE = 0x15;
+var P_TEST = 0x16;
 
-var CANAAN_HEAD1 = 0x41;
-var CANAAN_HEAD2 = 0x56;
+var P_ACKDETECT = 0x20;
+var P_GET_VOLT = 0x21;
+var P_GET_FREQ = 0x22;
+var P_NONCE = 0x23;
+var P_STATUS = 0x24;
+var P_TEST_RET = 0x25;
+
+var CANAAN_HEAD1 = 0x43;
+var CANAAN_HEAD2 = 0x4e;
 
 var CRC16_TABLE = [
 	0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50A5, 0x60C6, 0x70E7,
@@ -55,7 +64,7 @@ var LOG2_STYLE = 'color: blue';
 var DEBUG_STYLE = 'color: black';
 
 var check_version = function(version) {
-	return version.slice(0, 15) === '3U1410-82418d6+';
+	return version.slice(0, 15) === '3U1504-82418d6+';
 };
 
 var crc16 = function(arraybuffer) {
@@ -78,22 +87,23 @@ var ab2str = function(arraybuffer) {
 	return str;
 };
 
-var mm_encode = function(type, idx, cnt, data) {
-	var pkg = new ArrayBuffer(39);
+var mm_encode = function(type, opt, idx, cnt, data) {
+	var pkg = new ArrayBuffer(40);
 	var view = new Uint8Array(pkg);
 	var view_data = new Uint8Array(data);
 
 	view[0] = CANAAN_HEAD1;
 	view[1] = CANAAN_HEAD2;
 	view[2] = type;
-	view[3] = idx;
-	view[4] = cnt;
+	view[3] = opt;
+	view[4] = idx;
+	view[5] = cnt;
 
 	for (var i = 0; i < 32; i++)
-		view[i + 5] = view_data[i] || 0;
-	var crc = crc16(pkg.slice(5, 37));
-	view[37] = (crc & 0xff00) >>> 8;
-	view[38] = crc & 0x00ff;
+		view[i + 6] = view_data[i] || 0;
+	var crc = crc16(pkg.slice(6, 38));
+	view[38] = (crc & 0xff00) >>> 8;
+	view[39] = crc & 0x00ff;
 
 	return pkg;
 };
@@ -108,12 +118,13 @@ var mm_decode = function(pkg) {
 		return false;
 	}
 	var cmd = view[2];
-	var idx = view[3];
-	var cnt = view[4];
+	var opt = view[3];
+	var idx = view[4];
+	var cnt = view[5];
 
-	var data = pkg.slice(5, 37);
-	var crc_l = view[37];
-	var crc_h = view[38];
+	var data = pkg.slice(6, 38);
+	var crc_l = view[38];
+	var crc_h = view[39];
 	var crc = crc16(data);
 	if (crc_l !== ((crc & 0xff00) >>> 8) || crc_h !== (crc & 0x00ff)) {
 		console.warn("Wrong CRC.");

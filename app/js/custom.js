@@ -73,6 +73,58 @@ $(function () {
                 })()                                                                
             }]                                                                      
         });                                                                         
+
+	console.log('=---------------------------------------------------=');
+
+	chrome.storage.local.get('pool' , function(result){
+		$("#pool_info_address_1").html(result.pool.address);
+		$("#pool_info_worker_1").html(result.pool.worker);
+	});
     });                                                                             
+
+	$("#pool_info_edit_1").click(function() {
+		console.log('Edit.......');	
+	});	
                                                                                     
+	$("#add-pool-save").click(function(){
+		var Pool_address = $("#address").val();
+		var Pool_worker = $("#worker").val();
+		if(!Pool_address.length || !Pool_worker){
+			$("#message").html('Pool address or Worker is null').css("color","red");
+			return;
+		}	
+		console.log('address :' + Pool_address + ' | worker : ' + Pool_worker);
+		var pool = {};
+		pool.address = Pool_address;
+		pool.worker = Pool_worker;
+		chrome.storage.local.set({'pool' : pool} , function() {
+			console.log('Set pool success ~ ');	
+		});
+		$('#myModal').modal('hide');
+	});
+	
+	$("#get_data").click(function(){
+		console.log('Demo start ');
+		var Pool_address = Pool_worker = '';
+		chrome.storage.local.get('pool' , function(result) {
+			console.log('pool Result address : ' + result.pool.address);
+			console.log('pool Result worker : ' + result.pool.worker);
+		});
+
+	});
+
+	$('#myModal').on('hidden.bs.modal', function (e) {
+
+		$("#address").val('');
+		$("#worker").val('');
+		$("#message").html('');
+
+		chrome.storage.local.get('pool' , function(result){
+			$("#pool_info_address_1").html(result.pool.address);
+			$("#pool_info_worker_1").html(result.pool.worker);
+		});
+		console.log('Close modal');
+	})
 }); 
+
+
