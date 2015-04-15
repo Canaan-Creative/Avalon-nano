@@ -13,7 +13,7 @@ Nano.prototype.push_data = function(data) {
 	var cnt = Math.ceil(data.byteLength / 33);
 	for (var idx = 1; idx < cnt + 1; idx++) {
 		pkgs.push(mm_encode(
-			P_WORK, idx, cnt, data.slice((idx - 1) * 32, idx * 32)
+			P_WORK, 0, idx, cnt, data.slice((idx - 1) * 32, idx * 32)
 		));
 	}
 	this._out_buffer.push(pkgs);
@@ -23,7 +23,7 @@ Nano.prototype.push_data = function(data) {
 Nano.prototype.detect = function(callback) {
 	var nano = this;
 	this._send(mm_encode(
-		P_DETECT, 0x01, 0x01,
+		P_DETECT, 0, 0x01, 0x01,
 		new ArrayBuffer(32)
 	));
 	this._receive(function(pkg) {
@@ -128,7 +128,7 @@ Nano.prototype._decode_loop = function() {
 			if (data.type === P_NONCE)
 				nano.log("log2", "Nonce:   0x%s", data.nonce.toString(16));
 		}
-	}, 50);
+	}, 60);
 };
 
 Nano.prototype._send_loop = function(queue_size) {
@@ -144,7 +144,7 @@ Nano.prototype._send_loop = function(queue_size) {
 				for (var pkg of pkgs)
 					nano._send(pkg);
 			}
-	}, 50);
+	}, 60);
 };
 
 Nano.prototype._receive_loop = function() {
