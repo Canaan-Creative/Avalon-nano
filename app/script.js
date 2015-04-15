@@ -4,15 +4,10 @@ function init(callback) {
 			console.error(chrome.runtime.lastError.message);
 			return;
 		}
-		var register = function(connection) {
-			if (chrome.runtime.lastError) {
-				console.error(chrome.runtime.lastError.message);
-				return;
-			}
-			nanos.push(new Nano(device, connection));
-		};
 		for (var device of devices)
-			chrome.hid.connect(device.deviceId, register);
+			nanos.push(new Nano(device));
+		for (var nano of nanos)
+			nano.connect();
 		callback();
 	});
 }
@@ -37,21 +32,23 @@ function getWork() {
 
 function main() {
 	setInterval(function() {
-		nanos[0].push_data(raw);
-	}, 10);
-	
+		for (var nano of nanos)
+			nano.push_data(raw);
+	}, 40);
+
 	setTimeout(function() {
-		nanos[0].run(5);
+		for (var nano of nanos)
+			nano.run(2);
 	}, 1000);
-	
+
 	setTimeout(function() {
-		nanos[0].stop();
+		for (var nano of nanos)
+			nano.stop();
 	}, 10 * 60000 + 1000);
-	
+
 	setTimeout(function() {
-		chrome.hid.disconnect(nanos[0].connection.connectionId, function() {
-			console.info("Disconnected.");
-		});
+		for (var nano of nanos)
+			nano.disconnect();
 	}, 10000 + 10 * 60000 + 1000);
 }
 
