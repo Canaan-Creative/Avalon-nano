@@ -40,7 +40,6 @@
 
 #define HID_INPUT_REPORT_BYTES       40				/* size of report in Bytes */
 #define HID_OUTPUT_REPORT_BYTES      40				/* size of report in Bytes */
-#define HID_FEATURE_REPORT_BYTES     1				/* size of report in Bytes */
 
 /**
  * HID Report Descriptor
@@ -55,12 +54,12 @@ const uint8_t UCOM_ReportDescriptor[] = {
 	HID_ReportCount(HID_INPUT_REPORT_BYTES),
 	HID_Usage(0x01),
 	HID_Input(HID_Data | HID_Variable | HID_Absolute),
+	HID_LogicalMin(0),	/* value range: 0 - 0xFF */
+	HID_LogicalMaxS(0xFF),
+	HID_ReportSize(8),	/* 8 bits */
 	HID_ReportCount(HID_OUTPUT_REPORT_BYTES),
 	HID_Usage(0x01),
 	HID_Output(HID_Data | HID_Variable | HID_Absolute),
-	HID_ReportCount(HID_FEATURE_REPORT_BYTES),
-	HID_Usage(0x01),
-	HID_Feature(HID_Data | HID_Variable | HID_Absolute),
 	HID_EndCollection,
 };
 const uint16_t UCOM_ReportDescSize = sizeof(UCOM_ReportDescriptor);
@@ -130,14 +129,14 @@ ALIGNED(4) uint8_t USB_FsConfigDescriptor[] = {
 	HID_EP_IN,						/* bEndpointAddress */
 	USB_ENDPOINT_TYPE_INTERRUPT,	/* bmAttributes */
 	WBVAL(HID_INPUT_REPORT_BYTES),	/* wMaxPacketSize */
-	0x20,		/* 16ms */          /* bInterval */
+	10,		/* 10ms */          /* bInterval */
 	/* Endpoint, HID Interrupt Out */
 	USB_ENDPOINT_DESC_SIZE,			/* bLength */
 	USB_ENDPOINT_DESCRIPTOR_TYPE,	/* bDescriptorType */
 	HID_EP_OUT,						/* bEndpointAddress */
 	USB_ENDPOINT_TYPE_INTERRUPT,	/* bmAttributes */
 	WBVAL(HID_OUTPUT_REPORT_BYTES),	/* wMaxPacketSize */
-	0x20,							/* bInterval: 16ms */
+	10,							/* bInterval: 10ms */
 	/* Terminator */
 	0								/* bLength */
 };
