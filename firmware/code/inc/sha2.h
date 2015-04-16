@@ -64,7 +64,21 @@
            | ((uint32_t) *((str) + 0) << 24);   \
 }
 
+typedef struct {
+    unsigned int tot_len;
+    unsigned int len;
+    unsigned char block[2 * SHA256_BLOCK_SIZE];
+    uint32_t h[8];
+} sha256_ctx;
+
 extern uint32_t sha256_k[64];
+
+void sha256_init(sha256_ctx * ctx);
+void sha256_update(sha256_ctx *ctx, const unsigned char *message,
+                   unsigned int len);
+void sha256_final(sha256_ctx *ctx, unsigned char *digest);
+void sha256(const unsigned char *message, unsigned int len,
+            unsigned char *digest);
 
 void data_pkg(const uint8_t *data, uint8_t *out);
 void data_convert(uint8_t *data);
