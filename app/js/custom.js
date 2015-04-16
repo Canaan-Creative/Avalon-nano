@@ -74,18 +74,28 @@ $(function () {
             }]                                                                      
         });                                                                         
 
-	console.log('=---------------------------------------------------=');
 
-	chrome.storage.local.get('pool' , function(result){
-		$("#pool_info_address_1").html(result.pool.address);
-		$("#pool_info_worker_1").html(result.pool.worker);
-	});
+	$.setting._init();
     });                                                                             
 
+
+
 	$("#pool_info_edit_1").click(function() {
-		console.log('Edit.......');	
+		var pool_address = pool_worker = '';
+		chrome.storage.local.get('pool' , function(result){
+			pool_address = result.pool.address;
+			pool_worker= result.pool.worker;
+			$("#address").val(pool_address);
+			$("#worker").val(pool_worker);
+		});
+		$("#myModal").modal('show');	
 	});	
-                                                                                    
+
+	$("#pool_info_remove_1").click(function() {
+		$.setting._remove('pool');	
+		$.setting._init();
+	});
+
 	$("#add-pool-save").click(function(){
 		var Pool_address = $("#address").val();
 		var Pool_worker = $("#worker").val();
@@ -101,30 +111,53 @@ $(function () {
 			console.log('Set pool success ~ ');	
 		});
 		$('#myModal').modal('hide');
+		$.setting._init();
 	});
-	
-	$("#get_data").click(function(){
-		console.log('Demo start ');
-		var Pool_address = Pool_worker = '';
-		chrome.storage.local.get('pool' , function(result) {
-			console.log('pool Result address : ' + result.pool.address);
-			console.log('pool Result worker : ' + result.pool.worker);
-		});
-
-	});
-
 	$('#myModal').on('hidden.bs.modal', function (e) {
-
 		$("#address").val('');
 		$("#worker").val('');
 		$("#message").html('');
-
 		chrome.storage.local.get('pool' , function(result){
 			$("#pool_info_address_1").html(result.pool.address);
 			$("#pool_info_worker_1").html(result.pool.worker);
 		});
 		console.log('Close modal');
-	})
+	});
 }); 
+
+jQuery.setting = {
+
+	_init : function () {
+		console.log('init .........');
+		var pool_address = pool_worker = '';
+		chrome.storage.local.get('pool' , function(result){
+			console.log(typeof(result.pool));
+			if(typeof(result.pool) != "undefined"){
+				$.setting._show("#pool_info_row_1");	
+				pool_address = result.pool.address;
+				pool_worker = result.pool.worker;
+				$("#pool_info_address_1").html(result.pool.address);
+				$("#pool_info_worker_1").html(result.pool.worker);
+				$.setting._hide(".add_pool_button");
+			}else{
+				$.setting._hide("#pool_info_row_1");	
+				$.setting._show(".add_pool_button");
+			}
+
+		});
+	},
+	_hide : function ( id ) {
+		$(id).hide();			
+	},
+	_show : function ( id ) {
+		$(id).show();	
+	},
+	_remove : function ( key ) {
+		chrome.storage.local.remove( key , function(){
+			console.log('Remove ' + key + 'success ~');
+		});
+	}
+
+} 
 
 
