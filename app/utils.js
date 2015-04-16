@@ -140,6 +140,9 @@ var mm_decode = function(pkg) {
 		case P_NONCE:
 			var nonce = new DataView(data).getUint32(0, false);
 			return {type: P_NONCE, nonce: nonce};
+		case P_STATUS:
+			var frequency = new DataView(data).getUint32(0, false);
+			return {type: P_STATUS, frequency: frequency};
 		default:
 			return data;
 	}
