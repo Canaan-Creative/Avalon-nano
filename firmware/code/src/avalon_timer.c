@@ -122,6 +122,15 @@ Bool AVALON_TMR_IsTimeout(AVALON_TMR_e id)
 	return FALSE;
 }
 
+unsigned int AVALON_TMR_Elapsed(AVALON_TMR_e id)
+{
+	if ((id >= AVALON_TMR_ID1) && (id < AVALON_TMR_MAX))
+		if(tmrlist[id].Enable)
+			return tmrlist[id].InitVal - tmrlist[id].CurVal;
+
+	return 0;
+}
+
 static void AVALON_TMRID1_Fun(void)
 {
 	char str[20];
