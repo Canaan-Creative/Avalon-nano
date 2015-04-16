@@ -33,20 +33,96 @@ Nano.prototype.detect = function(callback) {
 		if (data.type === P_ACKDETECT) {
 			nano.log("log1", "Version: %s", data.version);
 			nano.version = data.version;
-			callback();
+			if (check_version(nano.version))
+				callback();
+			else
+				nano.log("info", "Wrong Version.");
 		}
 	});
 };
 
-Nano.prototype.run = function(queue_size) {
+Nano.prototype.sync_run = function() {
+	var nano = this;
+	var in_nano = function() {
+		nano._receive(out_nano);
+	};
+	var out_nano = function(in_pkg) {
+		if (in_pkg !== undefined)
+			nano._in_buffer.push(in_pkg);
+		if (nano._stop)
+			return;
+		var pkgs = nano._out_buffer.shift();
+		var i = 0;
+		var loop = function() {
+			if (i === pkgs.length)
+				in_nano();
+			else
+				nano._send(pkgs[i++], loop);
+		};
+		loop();
+	};
+	this._decode_loop();
+	this.detect(out_nano);
+};
+
+Nano.prototype.old_run = function(prepkgs) {
+	var nano = this;
+	var callback = function(pkg) {
+		nano._in_buffer.push(pkg);
+	};
+	var loop = function() {
+		if (nano._stop) {
+			for (var j = 1; j < prepkgs; j++) {
+				nano._receive(callback);
+			}
+			return;
+		}
+		var pkgs = nano._out_buffer.shift();
+
+		// TODO: should wait until pkgs is not null
+		nano._work(pkgs, 1, loop);
+	};
+
+	this.detect(function() {
+		nano._stop = false;
+		nano._decode_loop();
+
+		// send some packages to fill the buffer of nano
+		for (var i = 1; i < prepkgs; i++) {
+			var pkgs = nano._out_buffer.shift();
+			for (var pkg of pkgs)
+				nano._send(pkg);
+		}
+		loop();
+	});
+};
+
+Nano.prototype._work = function(pkgs, ntime, callback) {
+	var nano = this;
+	for (var pkg of pkgs)
+		this._send(pkg);
+
+	var receive_callback = function(pkg) {
+		nano._in_buffer.push(pkg);
+		callback();
+
+		// TODO: what if it is not a P_NONCE package?
+		//if (data.type === P_NONCE) {
+		//	console.log("%cNonce:   0x%s", LOG2_STYLE, data.nonce.toString(16));
+		//}
+	};
+
+	for (var i = 0; i < ntime; i++)
+		this._receive(receive_callback);
+};
+
+Nano.prototype.async_run = function(queue_size) {
 	var nano = this;
 	this.detect(function() {
-		if (check_version(nano.version)) {
-			nano._stop = false;
-			nano._receive_loop();
-			nano._decode_loop();
-			nano._send_loop(queue_size);
-		}
+		nano._stop = false;
+		nano._receive_loop();
+		nano._decode_loop();
+		nano._send_loop(queue_size);
 	});
 };
 
@@ -75,7 +151,6 @@ Nano.prototype.disconnect = function() {
 
 Nano.prototype.log = function(level) {
 	var args = Array.prototype.slice.call(arguments);
-	var i;
 	switch (level) {
 		case 'error':
 			args[0] = "[NANO %d] " + arguments[1];
@@ -127,8 +202,10 @@ Nano.prototype._decode_loop = function() {
 			// TODO: what if it is not a P_NONCE package?
 			if (data.type === P_NONCE)
 				nano.log("log2", "Nonce:   0x%s", data.nonce.toString(16));
+			else if (data.type === P_STATUS)
+				nano.log("log2", "Status:  %d MHz", data.frequency);
 		}
-	}, 60);
+	}, 50);
 };
 
 Nano.prototype._send_loop = function(queue_size) {
@@ -144,19 +221,21 @@ Nano.prototype._send_loop = function(queue_size) {
 				for (var pkg of pkgs)
 					nano._send(pkg);
 			}
-	}, 60);
+	}, 50);
 };
 
 Nano.prototype._receive_loop = function() {
 	var nano = this;
 	var callback = function(pkg) {
+		if (nano._stop)
+			return;
 		nano._in_buffer.push(pkg);
 		nano._receive(callback);
 	};
 	this._receive(callback);
 };
 
-Nano.prototype._send = function(pkg) {
+Nano.prototype._send = function(pkg, callback) {
 	var nano = this;
 	this._send_queue += 1;
 	chrome.hid.send(this.connection.connectionId, 0, pkg, function() {
@@ -166,6 +245,8 @@ Nano.prototype._send = function(pkg) {
 		}
 		nano.log("debug", "Send:    0x%s", ab2str(pkg));
 		nano._send_queue -= 1;
+		if (callback !== undefined)
+			callback();
 	});
 };
 
