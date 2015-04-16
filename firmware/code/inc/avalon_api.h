@@ -88,6 +88,7 @@ void AVALON_TMR_Set(AVALON_TMR_e id, unsigned int interval, TMRPROC tmrcb);
 void AVALON_TMR_Kill(AVALON_TMR_e id);
 AVALON_TMR_e AVALON_TMR_GetReady(void);
 Bool AVALON_TMR_IsTimeout(AVALON_TMR_e id);
+unsigned int AVALON_TMR_Elapsed(AVALON_TMR_e id);
 void AVALON_TMR_Test(void);
 
 /* pwm */
