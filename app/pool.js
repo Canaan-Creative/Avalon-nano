@@ -5,7 +5,7 @@ Pool = function(url, port, username, password) {
 	this.password = password;
 };
 
-Pool.prototype.init = function() {
+Pool.prototype.run = function() {
 	var pool = this;
 
 	var SUBSCRIBE = {
@@ -13,26 +13,14 @@ Pool.prototype.init = function() {
 		method: "mining.subscribe",
 		params: ["avalon-app"]
 	};
-	var AUTHORIZE = {
-		id: 2,
-		method: "mining.authorize",
-		params: [this.username, this.password]
-	}
 
 	var download = function(info) {
 		if (info.socketId != pool.socketId)
 			return;
-		var result = ab2str(info.data);
-		console.log(result);
-		result = JSON.parse(result);
-		switch (result.id) {
-			case 1:
-				pool.upload(AUTHORIZE);
-				break;
-			default:
-				//console.log(result);
-				break;
-		}
+		var results = ab2str(info.data).split("\n");
+
+		for (var i = 0; i < results.length - 1; i++)
+			pool.decode(results[i]);
 	};
 	chrome.sockets.tcp.create({}, function(createInfo) {
 		pool.socketId = createInfo.socketId;
@@ -44,6 +32,25 @@ Pool.prototype.init = function() {
 };
 
 Pool.prototype.disconnect = function() {
+};
+
+Pool.prototype.decode = function(result) {
+	var AUTHORIZE = {
+		id: 2,
+		method: "mining.authorize",
+		params: [this.username, this.password]
+	};
+	var data = JSON.parse(result);
+	switch (data.id) {
+		case 1:
+			console.log(data);
+			pool.upload(AUTHORIZE);
+			break;
+		default:
+			// TODO: get work from this DATA
+			console.log(data);
+			break;
+	}
 };
 
 Pool.prototype.upload = function(data) {
