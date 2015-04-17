@@ -4,6 +4,7 @@ var Nano = function(device) {
 	this._out_buffer = [];
 	this._send_queue = 0;
 	this._BUFFER_SIZE = 32;
+    this._get_buffer = [];
 };
 
 Nano.prototype.push_data = function(data) {
@@ -200,12 +201,20 @@ Nano.prototype._decode_loop = function() {
 			var data = mm_decode(pkg);
 
 			// TODO: what if it is not a P_NONCE package?
-			if (data.type === P_NONCE)
+			if (data.type === P_NONCE) {
 				nano.log("log2", "Nonce:   0x%s", data.nonce.toString(16));
-			else if (data.type === P_STATUS)
+				nano._get_buffer.push(data);
+			}
+			else if (data.type === P_STATUS) {
 				nano.log("log2", "Status:  %d MHz", data.frequency);
+				nano._get_buffer.push(data);
+			}
 		}
-	}, 50);
+	}, 10);
+};
+
+Nano.prototype.get_data = function() {
+	return this._get_buffer.shift();
 };
 
 Nano.prototype._send_loop = function(queue_size) {
