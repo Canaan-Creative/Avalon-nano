@@ -260,7 +260,7 @@ Nano.prototype._send = function(pkg, callback) {
 			nano.log("error", chrome.runtime.lastError.message);
 			return;
 		}
-		nano.log("debug", "Send:    0x%s", ab2str(pkg));
+		nano.log("debug", "Send:    0x%s", ab2hex(pkg));
 		nano._send_queue -= 1;
 		if (callback !== undefined)
 			callback();
@@ -274,7 +274,7 @@ Nano.prototype._receive = function(callback) {
 			nano.log("error", chrome.runtime.lastError.message);
 			return;
 		}
-		nano.log("debug", "Receive: 0x%s", ab2str(pkg));
+		nano.log("debug", "Receive: 0x%s", ab2hex(pkg));
 		callback(pkg);
 	});
 };

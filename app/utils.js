@@ -79,12 +79,25 @@ var crc16 = function(arraybuffer) {
 	return crc;
 };
 
-var ab2str = function(arraybuffer) {
+var ab2hex = function(arraybuffer) {
 	var view = new Uint8Array(arraybuffer);
 	var str = '';
 	for (var v of view)
 		str += ('0' + v.toString(16)).slice(-2);
 	return str;
+};
+
+var ab2str = function(arraybuffer) {
+	return String.fromCharCode.apply(null, new Uint8Array(arraybuffer));
+};
+
+var str2ab = function(str) {
+	var len = str.length;
+	var arraybuffer = new ArrayBuffer(len);
+	var view = new Uint8Array(arraybuffer);
+	for (var i = 0; i < len; i++)
+		view[i] = str.charCodeAt(i);
+	return arraybuffer;
 };
 
 var mm_encode = function(type, opt, idx, cnt, data) {
