@@ -39,6 +39,10 @@ extern "C"
 {
 #endif
 
+#define A3233_TASK_LEN      88
+#define A3233_NONCE_LEN     4
+#define ICA_TASK_LEN        64
+
 #define AVALON_LED_GREEN 	0xff00
 #define AVALON_LED_RED		0xff0000
 #define AVALON_LED_BLUE		0xff

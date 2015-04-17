@@ -33,30 +33,29 @@
 #include "app_usbd_cfg.h"
 #include "hid_uart.h"
 #include "avalon_api.h"
+#include "protocol.h"
 
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
 
 /* Ring buffer size */
-#define UCOM_RX_BUF_SZ		512
-#define UART_RX_BUF_SZ		128
-#define UART_TX_BUF_SZ		512
-#define UCOM_TX_CONNECTED   _BIT(8)		/* connection state is for both RX/Tx */
+#define BUF_CNT             4
+#define UCOM_RX_BUF_SZ      (AVAU_P_COUNT * BUF_CNT)
+#define UCOM_TX_BUF_SZ      (AVAU_P_COUNT * BUF_CNT)
+#define UART_RX_BUF_SZ      (A3233_NONCE_LEN * BUF_CNT)
+#define UART_TX_BUF_SZ      (A3233_TASK_LEN * BUF_CNT)
+#define UCOM_TX_CONNECTED   _BIT(8)
 #define UCOM_TX_BUSY        _BIT(0)
 #define UCOM_RX_BUF_FULL    _BIT(1)
 #define UCOM_RX_BUF_QUEUED  _BIT(2)
 #define UCOM_RX_DB_QUEUED   _BIT(3)
-#define UCOM_REPORT_SIZE     64
-/*
- * uart only use rx ringbuf, tx use send block
- * usb only use rx ringbuf, tx use write ep
- * */
-STATIC RINGBUFF_T uart_rxrb, uart_txrb;
-STATIC RINGBUFF_T usb_rxrb;
 
-static uint8_t uart_rxbuff[UART_RX_BUF_SZ], uart_txbuff[UART_TX_BUF_SZ];
-static uint8_t usb_rxbuff[UCOM_RX_BUF_SZ];
+STATIC RINGBUFF_T uart_rxrb, uart_txrb;
+STATIC RINGBUFF_T usb_rxrb, usb_txrb;
+
+static uint8_t uart_rxdata[UART_RX_BUF_SZ], uart_txdata[UART_TX_BUF_SZ];
+static uint8_t usb_rxdata[UCOM_RX_BUF_SZ], usb_txdata[UCOM_TX_BUF_SZ];
 
 /**
  * Structure containing Virtual Comm port control data
@@ -64,6 +63,7 @@ static uint8_t usb_rxbuff[UCOM_RX_BUF_SZ];
 typedef struct UCOM_DATA {
 	USBD_HANDLE_T hUsb;		/*!< Handle to USB stack */
 	uint16_t usbRx_count;
+	uint8_t *usbTx_buff;
 	uint8_t *usbRx_buff;
 	volatile uint16_t usbTxFlags;	/*!< USB Tx Flag */
 	volatile uint16_t usbRxFlags;	/*!< USB Rx Flag */
@@ -104,9 +104,10 @@ static void UCOM_UartInit(void)
 	Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2));
 	Chip_UART_TXEnable(LPC_USART);
 
-	RingBuffer_Init(&uart_rxrb, uart_rxbuff, 1, UART_RX_BUF_SZ);
-	RingBuffer_Init(&uart_txrb, uart_txbuff, 1, UART_TX_BUF_SZ);
-	RingBuffer_Init(&usb_rxrb, usb_rxbuff, 1, UCOM_RX_BUF_SZ);
+	RingBuffer_Init(&uart_rxrb, uart_rxdata, 1, UART_RX_BUF_SZ);
+	RingBuffer_Init(&uart_txrb, uart_txdata, 1, UART_TX_BUF_SZ);
+	RingBuffer_Init(&usb_rxrb, usb_rxdata, 1, UCOM_RX_BUF_SZ);
+	RingBuffer_Init(&usb_txrb, usb_txdata, 1, UCOM_TX_BUF_SZ);
 
 	/* Enable receive data and line status interrupt */
 	Chip_UART_IntEnable(LPC_USART, (UART_IER_RBRINT | UART_IER_RLSINT));
@@ -141,23 +142,25 @@ static ErrorCode_t UCOM_int_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event)
 		    busy flag for main loop to queue next packet.
 		 */
 		g_uCOM.usbTxFlags &= ~UCOM_TX_BUSY;
+		if (RingBuffer_GetCount(&usb_txrb) >= AVAU_P_COUNT) {
+			g_uCOM.usbTxFlags |= UCOM_TX_BUSY;
+			RingBuffer_PopMult(&usb_txrb, g_uCOM.usbTx_buff, AVAU_P_COUNT);
+			USBD_API->hw->WriteEP(g_uCOM.hUsb, HID_EP_IN, g_uCOM.usbTx_buff, AVAU_P_COUNT);
+		}
 		break;
 
 	case USB_EVT_OUT:
 		g_uCOM.usbRx_count = USBD_API->hw->ReadEP(hUsb, HID_EP_OUT, g_uCOM.usbRx_buff);
-		if(g_uCOM.usbRx_count){
-			if(1 == g_uCOM.usbRx_count){
+		if (g_uCOM.usbRx_count) {
+			if(1 == g_uCOM.usbRx_count)
 				RingBuffer_Insert(&usb_rxrb, g_uCOM.usbRx_buff);
-			}else
-			{
+			else
 				RingBuffer_InsertMult(&usb_rxrb, g_uCOM.usbRx_buff, g_uCOM.usbRx_count);
-			}
 		}
 		if (g_uCOM.usbRxFlags & UCOM_RX_BUF_QUEUED) {
 			g_uCOM.usbRxFlags &= ~UCOM_RX_BUF_QUEUED;
-			if (g_uCOM.usbRx_count != 0) {
+			if (g_uCOM.usbRx_count != 0)
 				g_uCOM.usbRxFlags |= UCOM_RX_BUF_FULL;
-			}
 		}
 		break;
 
@@ -165,13 +168,11 @@ static ErrorCode_t UCOM_int_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event)
 		/* queue free buffer for RX */
 		if ((g_uCOM.usbRxFlags & (UCOM_RX_BUF_FULL | UCOM_RX_BUF_QUEUED)) == 0) {
 			g_uCOM.usbRx_count = USBD_API->hw->ReadReqEP(hUsb, HID_EP_OUT, g_uCOM.usbRx_buff, UCOM_RX_BUF_SZ);
-			if(g_uCOM.usbRx_count){
-				if(1 == g_uCOM.usbRx_count){
+			if (g_uCOM.usbRx_count) {
+				if(1 == g_uCOM.usbRx_count)
 					RingBuffer_Insert(&usb_rxrb, g_uCOM.usbRx_buff);
-				}else
-				{
+				else
 					RingBuffer_InsertMult(&usb_rxrb, g_uCOM.usbRx_buff, g_uCOM.usbRx_count);
-				}
 			}
 			g_uCOM.usbRxFlags |= UCOM_RX_BUF_QUEUED;
 		}
@@ -226,9 +227,13 @@ ErrorCode_t UCOM_init(USBD_HANDLE_T hUsb, USB_INTERFACE_DESCRIPTOR *pIntfDesc, U
 
 	if (ret == LPC_OK) {
 		/* allocate transfer buffers */
-		g_uCOM.usbRx_buff = (uint8_t *) hid_param.mem_base;
+		g_uCOM.usbRx_buff = (uint8_t *)hid_param.mem_base;
 		hid_param.mem_base += UCOM_RX_BUF_SZ;
 		hid_param.mem_size -= UCOM_RX_BUF_SZ;
+
+		g_uCOM.usbTx_buff = (uint8_t *)hid_param.mem_base;
+		hid_param.mem_base += UCOM_TX_BUF_SZ;
+		hid_param.mem_size -= UCOM_TX_BUF_SZ;
 
 		/* Init UART port for bridging */
 		UCOM_UartInit();
@@ -262,20 +267,18 @@ uint32_t UCOM_Read(uint8_t *pBuf, uint32_t buf_len)
 uint32_t UCOM_Write(uint8_t *pBuf, uint32_t len)
 {
 	uint32_t ret = 0;
-	unsigned int timeout;
+
+	if(1 == len)
+		RingBuffer_Insert(&usb_txrb, pBuf);
+	else
+		RingBuffer_InsertMult(&usb_txrb, pBuf, len);
 
 	if (g_uCOM.usbTxFlags & UCOM_TX_CONNECTED) {
-		timeout = 0;
-		while ((g_uCOM.usbTxFlags & UCOM_TX_BUSY) == 1) {
-			AVALON_Delay(20);
-			timeout ++;
-			/*FIXME: busy is not always right,we must send after timeout */
-			if (timeout > 3)
-				break;
+		if (!(g_uCOM.usbTxFlags & UCOM_TX_BUSY) && (RingBuffer_GetCount(&usb_txrb) >= AVAU_P_COUNT)) {
+			g_uCOM.usbTxFlags |= UCOM_TX_BUSY;
+			RingBuffer_PopMult(&usb_txrb, g_uCOM.usbTx_buff, AVAU_P_COUNT);
+			ret = USBD_API->hw->WriteEP(g_uCOM.hUsb, HID_EP_IN, g_uCOM.usbTx_buff, AVAU_P_COUNT);
 		}
-
-		g_uCOM.usbTxFlags |= UCOM_TX_BUSY;
-		ret = USBD_API->hw->WriteEP(g_uCOM.hUsb, HID_EP_IN, pBuf, len);
 	}
 
 	return ret;

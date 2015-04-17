@@ -40,9 +40,6 @@
 #include "sha2.h"
 #include "protocol.h"
 
-#define A3233_TASK_LEN 					88
-#define A3233_NONCE_LEN					4
-#define ICA_TASK_LEN 					64
 #define A3233_TIMER_TIMEOUT				(AVALON_TMR_ID1)
 #define A3233_STAT_IDLE					1
 #define A3233_STAT_WAITICA				2
@@ -343,7 +340,7 @@ int main(void) {
 			}
 
 			if (!timestart) {
-				AVALON_TMR_Set(A3233_TIMER_TIMEOUT, 2000, NULL);
+				AVALON_TMR_Set(A3233_TIMER_TIMEOUT, 500, NULL);
 				timestart = TRUE;
 			}
 
@@ -370,7 +367,6 @@ int main(void) {
 				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
 				a3233_stat = A3233_STAT_CHKICA;
 			}
-
 			break;
 
 		default:
