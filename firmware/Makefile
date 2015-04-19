@@ -12,6 +12,8 @@ SW_VERSION = RELEASE
 
 DATE:=$(shell date +%Y-%m-%d)
 OS:=$(shell uname -s)
+GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-7)
+GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
 
 include make/platform_lpc11u14.mk
 
@@ -21,6 +23,7 @@ OBJS=$(patsubst %.c,%.o,$(SRCS))
 LDCFLAGS += -nostdlib -Xlinker -Map=$(SW_NAME).map -Xlinker --gc-sections -mcpu=cortex-m0 -mthumb -T $(SW_NAME).ld
 LDLIBS += -lnxp_lpcxpresso_11u14_board_lib -llpc_chip_11uxx_lib -lusbd_11uxx_lib
 LIBPATH += -L./nxplib/lpc_chip_11uxx_lib/libs -L./nxplib/nxp_lpcxpresso_11u14_board_lib/libs
+CFLAGS += -DAVAU_VERSION='"3U1504-$(GIT_VERSION)$(GIT_STATUS)"'
 
 all: $(SW_NAME).axf
 	mkdir -p bin/$(DATE)
@@ -43,7 +46,7 @@ nxp_lpcxpresso_11u14_board_lib:
 	make -C nxplib/nxp_lpcxpresso_11u14_board_lib
 
 %.o : %.c
-	$(CC) -c -o $@ $< $(PLATFORM_CFLAGS) $(INCLUDES)
+	$(CC) -c -o $@ $< $(CFLAGS) $(PLATFORM_CFLAGS) $(INCLUDES)
 
 reflash: $(SW_NAME).axf
 	@crt_emu_cm_redlink -flash-load-exec $(SW_NAME).axf -g -2  -vendor=NXP -pLPC11U14/201 -flash-driver=LPC11_12_13_32K_4K.cfx

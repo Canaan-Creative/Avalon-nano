@@ -11,7 +11,7 @@
 /* Avalon nano protocol package type, 40 bytes total
  * HEADER(2) TYPE OPT IDX CNT DATA(32) CRC(2)
  * */
-#define MM_VERSION_LEN	15
+#define AVAU_VERSION_LEN	15
 #define AVAU_H1	'C'
 #define AVAU_H2	'N'
 
