@@ -48,6 +48,8 @@ nxp_lpcxpresso_11u14_board_lib:
 reflash: $(SW_NAME).axf
 	@crt_emu_cm_redlink -flash-load-exec $(SW_NAME).axf -g -2  -vendor=NXP -pLPC11U14/201 -flash-driver=LPC11_12_13_32K_4K.cfx
 
+rungdb:
+	@echo "Find the keypoint at https://en.bitcoin.it/wiki/Avalon_nano#How_to_debug_issues_with_gdb_.28Works_on_OSX.29"
 clean:
 	@make -C nxplib/lpc_chip_11uxx_lib clean
 	@make -C nxplib/nxp_lpcxpresso_11u14_board_lib clean
