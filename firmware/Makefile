@@ -21,6 +21,11 @@ INCLUDES = -I./code/inc -I./nxplib/lpc_chip_11uxx_lib/inc -I./nxplib/nxp_lpcxpre
 SRCS = $(wildcard ./code/src/*.c)
 OBJS=$(patsubst %.c,%.o,$(SRCS))
 LDCFLAGS += -nostdlib -Xlinker -Map=$(SW_NAME).map -Xlinker --gc-sections -mcpu=cortex-m0 -mthumb -T $(SW_NAME).ld
+ifeq "$(SW_VERSION)" "DEBUG"
+LDCFLAGS += -lcr_semihost -lcr_c -lcr_eabihelpers
+else
+LDCFLAGS += -lcr_nohost -lcr_c -lcr_eabihelpers
+endif
 LDLIBS += -lnxp_lpcxpresso_11u14_board_lib -llpc_chip_11uxx_lib -lusbd_11uxx_lib
 LIBPATH += -L./nxplib/lpc_chip_11uxx_lib/libs -L./nxplib/nxp_lpcxpresso_11u14_board_lib/libs
 CFLAGS += -DAVAU_VERSION='"3U1504-$(GIT_VERSION)$(GIT_STATUS)"'
@@ -37,7 +42,7 @@ endif
 	@echo "Ver:$(SW_VERSION) generate finsh"
 
 $(SW_NAME).axf:	$(OBJS) lpc_chip_11uxx_lib nxp_lpcxpresso_11u14_board_lib
-	$(CC) $(LDCFLAGS) $(LIBPATH) $(OBJS) $(LDLIBS) -o $(SW_NAME).axf
+	$(CC) -Wl,--start-group $(LDCFLAGS) $(LIBPATH) $(OBJS) $(LDLIBS) -Wl,--end-group -o $(SW_NAME).axf
 
 lpc_chip_11uxx_lib:
 	make -C nxplib/lpc_chip_11uxx_lib

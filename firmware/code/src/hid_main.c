@@ -137,7 +137,8 @@ void AVALON_Delay(unsigned int ms)
  * @return	Function should not exit.
  */
 
-int main(void) {
+int main(void)
+{
 	unsigned int icarus_buflen = 0;
 	unsigned char work_buf[A3233_TASK_LEN];
 	unsigned char nonce_buf[A3233_NONCE_LEN];
