@@ -7,14 +7,12 @@
 
 SW_NAME = avalon_nano
 
-# RELEASE / DEBUG
-SW_VERSION = RELEASE
-
 DATE:=$(shell date +%Y-%m-%d)
 OS:=$(shell uname -s)
 GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-7)
 GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
 
+include make/fwconfig.mk
 include make/platform_lpc11u14.mk
 
 INCLUDES = -I./code/inc -I./nxplib/lpc_chip_11uxx_lib/inc -I./nxplib/nxp_lpcxpresso_11u14_board_lib/inc -I./nxplib/lpc_chip_11uxx_lib/inc/usbd
