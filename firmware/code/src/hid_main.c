@@ -55,7 +55,6 @@ __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
-static uint8_t gmm_ver[MM_VERSION_LEN] = "3U1504-82418d6+";
 /* http://blockexplorer.com/block/00000000000004b64108a8e4168cfaa890d62b8c061c6b74305b7f6cb2cf9fda */
 static unsigned char golden_ob[] =
 		"\x46\x79\xba\x4e\xc9\x98\x76\xbf\x4b\xfe\x08\x60\x82\xb4\x00\x25\x4d\xf6\xc3\x56\x45\x14\x71\x13\x9a\x3a\xfa\x71\xe4\x8f\x54\x4a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x87\x32\x0b\x1a\x14\x26\x67\x4f\x2f\xa7\x22\xce";
@@ -97,7 +96,7 @@ static unsigned int process_mm_pkg(struct avalon_pkg *pkg)
 	switch (pkg->type) {
 	case AVAU_P_DETECT:
 		memset(gmm_ackpkg, 0, AVAU_P_COUNT);
-		memcpy(gmm_ackpkg + AVAU_P_DATAOFFSET, &gmm_ver, MM_VERSION_LEN);
+		memcpy(gmm_ackpkg + AVAU_P_DATAOFFSET, AVAU_VERSION, AVAU_VERSION_LEN);
 		init_mm_pkg((struct avalon_pkg *)gmm_ackpkg, AVAU_P_ACKDETECT);
 		UCOM_Write(gmm_ackpkg, AVAU_P_COUNT);
 		ret = A3233_STAT_WAITICA;

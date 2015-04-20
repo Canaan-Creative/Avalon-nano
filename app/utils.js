@@ -79,12 +79,25 @@ var crc16 = function(arraybuffer) {
 	return crc;
 };
 
-var ab2str = function(arraybuffer) {
+var ab2hex = function(arraybuffer) {
 	var view = new Uint8Array(arraybuffer);
 	var str = '';
 	for (var v of view)
 		str += ('0' + v.toString(16)).slice(-2);
 	return str;
+};
+
+var ab2str = function(arraybuffer) {
+	return String.fromCharCode.apply(null, new Uint8Array(arraybuffer));
+};
+
+var str2ab = function(str) {
+	var len = str.length;
+	var arraybuffer = new ArrayBuffer(len);
+	var view = new Uint8Array(arraybuffer);
+	for (var i = 0; i < len; i++)
+		view[i] = str.charCodeAt(i);
+	return arraybuffer;
 };
 
 var mm_encode = function(type, opt, idx, cnt, data) {
@@ -159,4 +172,9 @@ var gw_pool2raw = function(midstat, data) {
 	for (i = 0; i < 12; i++)
 		view.setUint8(63 - i, parseInt(data.slice(i * 2, i * 2 + 2), 16), false);
 	return raw;
+};
+
+var sha256 = function(hex) {
+	var shaObj = new jsSHA(hex, "HEX");
+	return shaObj.getHash("SHA-256", "HEX");
 };
