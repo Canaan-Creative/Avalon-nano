@@ -173,3 +173,8 @@ var gw_pool2raw = function(midstat, data) {
 		view.setUint8(63 - i, parseInt(data.slice(i * 2, i * 2 + 2), 16), false);
 	return raw;
 };
+
+var sha256 = function(hex) {
+	var shaObj = new jsSHA(hex, "HEX");
+	return shaObj.getHash("SHA-256", "HEX");
+};
