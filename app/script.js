@@ -19,22 +19,40 @@ chrome.hid.onDeviceRemoved.addListener(function(deviceId) {
 	console.log('onDeviceRemoved' + deviceId.deviceid);
 });
 
-function getWork() {
-	var xhr = new XMLHttpRequest();
-	xhr.open("GET", "http://t.local.com", true);
-	xhr.onreadystatechange = function() {
-		if (xhr.readyState == 4) {
-			console.log('xxxxxx:' + xhr.responseText);
-		}
-	};
-	xhr.send();
-}
 
 function main() {
+
+	setInterval(function(){
+		chrome.storage.local.get('pool' , function(result){
+			if(typeof(result.pool) != "undefined"){
+				pool_address = result.pool.address;
+				pool_worker= result.pool.worker;
+				pool_password = '123456';
+				$.httpRequest._connect(pool_worker, pool_password , pool_address);
+			}else{
+				console.error('Pleace set pool');		
+			}
+		});
+	} , 1000);
+
 	setInterval(function() {
-		for (var nano of nanos)
-			nano.push_data(raw);
-	}, 20);
+		var data = nanos[0].get_data();
+		if(data !== undefined){
+			var work_data = work_list.shift();
+			if (data.type === P_NONCE) {
+				var nonce = data.nonce.toString(16);
+				console.log("nonce : ", nonce );
+				console.log("data : ",  work_data);
+				
+				new_nonce = '';
+				new_nonce = nonce.substr(6,2)+nonce.substr(4,2)+nonce.substr(2,2)+nonce.substr(0,2);
+				var solution = work_data.slice(0,152)+new_nonce+work_data.slice(160,256);
+				console.log('solution :' + solution);
+				$.httpRequest._connect(pool_worker, pool_password , pool_address , solution);
+			}
+			
+		}
+	}, 1000);
 
 	setTimeout(function() {
 		for (var nano of nanos)
@@ -51,6 +69,51 @@ function main() {
 			nano.disconnect();
 	}, 10000 + 10 * 60000 + 1000);
 }
+
+jQuery.httpRequest = {
+	_connect : function (username , password ,  url ,data) {
+		if(!username && !password && !url)
+			return -1;
+
+		var authpair = username + ":" + password;
+		var authhdr = "Basic " + base64encode(authpair);
+		var method = 'getwork';
+
+		var params = data ? [data] : [];
+		var obj = {
+			'version' : '1.1' , 
+			'method' : method , 
+			'id' : 10 , 
+			'params' : params
+		}
+		obj = JSON.stringify(obj);
+		console.log(Date.parse(new Date()) + 'obj : ' + obj);
+	
+		var xhr = new XMLHttpRequest();
+		xhr.open("POST", url, true);
+		xhr.setRequestHeader("Authorization" , authhdr );
+		xhr.setRequestHeader("Content-type" , "application/json");
+
+		xhr.onreadystatechange = function() {
+			if (xhr.readyState == 4) {
+				message = JSON.parse(xhr.responseText);
+				if(message.error == null){
+					if((typeof(message.result.data) != 'undefined') && (typeof(message.result.midstate) != 'undefined')){
+						var raw = gw_pool2raw(message.result.midstate, message.result.data);
+						work_list.push(message.result.data);
+						nanos[0].push_data(raw);
+					}else{
+						console.log('submit ........');	
+					}
+				}else{
+					console.error(message.error);
+				}
+			}
+		};
+		xhr.send(obj);
+	}	
+
+};
 
 var test = {
 	data: (
@@ -101,9 +164,10 @@ var TEST2 = [
     0xce, 0x78, 0x30, 0x55, 0x2c, 0x51, 0xfb, 0xb8
 ];
 
-//var raw = gw_pool1raw(test.midstat, test.data);
-var raw = new Uint8Array(TEST2).buffer;
+var raw = gw_pool2raw(test.midstat, test.data);
+//var raw = new Uint8Array(TEST2).buffer;
 
 var nanos = [];
+var work_list = [];
 init(main);
 //getWork();
