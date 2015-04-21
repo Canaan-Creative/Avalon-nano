@@ -214,6 +214,7 @@ Nano.prototype._decode_loop = function() {
 				nano._get_buffer.push(data);
 			}
 			else if (data.type === P_STATUS) {
+				MHz = data.frequency;
 				nano.log("log2", "Status:  %d MHz", data.frequency);
 				nano._get_buffer.push(data);
 			}

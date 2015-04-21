@@ -19,7 +19,8 @@ $(function () {
                         var series = this.series[0];                                
                         setInterval(function() {                                    
                             var x = (new Date()).getTime(), // current time         
-                                y = Math.random();                                  
+                                //y = Math.random();                                  
+				y = MHz;
                             series.addPoint([x, y], true, true);                    
                         }, 1000);                                                   
                     }                                                               

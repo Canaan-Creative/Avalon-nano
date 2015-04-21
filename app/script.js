@@ -41,13 +41,14 @@ function main() {
 			var work_data = work_list.shift();
 			if (data.type === P_NONCE) {
 				var nonce = data.nonce.toString(16);
-				console.log("nonce : ", nonce );
-				console.log("data : ",  work_data);
-				
+				var pad = "00000000";
+				var nonce = pad.substring(0, pad.length - nonce.length) + nonce;
+				console.log("Nonce : ", nonce );
+				nonce_list.push(nonce);
+					
 				new_nonce = '';
 				new_nonce = nonce.substr(6,2)+nonce.substr(4,2)+nonce.substr(2,2)+nonce.substr(0,2);
 				var solution = work_data.slice(0,152)+new_nonce+work_data.slice(160,256);
-				console.log('solution :' + solution);
 				$.httpRequest._connect(pool_worker, pool_password , pool_address , solution);
 			}
 			
@@ -62,12 +63,12 @@ function main() {
 	setTimeout(function() {
 		for (var nano of nanos)
 			nano.stop();
-	}, 10 * 60000 + 1000);
+	}, 50 * 60000 + 1000);
 
 	setTimeout(function() {
 		for (var nano of nanos)
 			nano.disconnect();
-	}, 10000 + 10 * 60000 + 1000);
+	}, 10000 + 50 * 60000 + 1000);
 }
 
 jQuery.httpRequest = {
@@ -87,7 +88,6 @@ jQuery.httpRequest = {
 			'params' : params
 		}
 		obj = JSON.stringify(obj);
-		console.log(Date.parse(new Date()) + 'obj : ' + obj);
 	
 		var xhr = new XMLHttpRequest();
 		xhr.open("POST", url, true);
@@ -103,7 +103,8 @@ jQuery.httpRequest = {
 						work_list.push(message.result.data);
 						nanos[0].push_data(raw);
 					}else{
-						console.log('submit ........');	
+						var nonce = nonce_list.shift();
+						$("#debug-info").val('Subminting ' + nonce+"\r\n"+$("#debug-info").val());
 					}
 				}else{
 					console.error(message.error);
@@ -169,5 +170,7 @@ var raw = gw_pool2raw(test.midstat, test.data);
 
 var nanos = [];
 var work_list = [];
+var nonce_list = [];
+var MHz = 0;
 init(main);
 //getWork();
