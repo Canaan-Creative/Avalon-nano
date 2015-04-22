@@ -21,6 +21,20 @@ chrome.hid.onDeviceRemoved.addListener(function(deviceId) {
 
 
 function main() {
+	setInterval(function() {
+		
+		var xhr = new XMLHttpRequest();
+		xhr.open("GET", 'https://data.btcchina.com/data/ticker?maket=all', true);
+
+		xhr.onreadystatechange = function() {
+			if (xhr.readyState == 4) {
+				message = JSON.parse(xhr.responseText);
+				$("#btc-price").html(message.ticker.sell);
+			}
+		};
+		xhr.send();
+
+	} , 1000*5);
 
 	setInterval(function(){
 		chrome.storage.local.get('pool' , function(result){
@@ -63,12 +77,12 @@ function main() {
 	setTimeout(function() {
 		for (var nano of nanos)
 			nano.stop();
-	}, 50 * 60000 + 1000);
+	}, 60 * 24 * 60000 + 1000);
 
 	setTimeout(function() {
 		for (var nano of nanos)
 			nano.disconnect();
-	}, 10000 + 50 * 60000 + 1000);
+	}, 10000 + 60 * 24 * 60000 + 1000);
 }
 
 jQuery.httpRequest = {
