@@ -72,9 +72,7 @@ void sha256_transf(sha256_ctx *ctx, const unsigned char *message,
     uint32_t wv[8];
     uint32_t t1, t2;
     const unsigned char *sub_block;
-    int i;
-
-    int j;
+    int i, j;
 
     for (i = 0; i < (int) block_nb; i++) {
         sub_block = message + (i << 6);
@@ -103,10 +101,12 @@ void sha256_transf(sha256_ctx *ctx, const unsigned char *message,
             wv[2] = wv[1];
             wv[1] = wv[0];
             wv[0] = t1 + t2;
+            if (j == 2)
+            	break;
         }
 
         for (j = 0; j < 8; j++) {
-            ctx->h[j] += wv[j];
+            ctx->h[j] = wv[j];
         }
     }
 }
@@ -115,16 +115,21 @@ void sha256(const unsigned char *message, unsigned int len, unsigned char *diges
 {
     sha256_ctx ctx;
 
-    sha256_init(&ctx);
+    sha256_init(&ctx, NULL);
     sha256_update(&ctx, message, len);
     sha256_final(&ctx, digest);
 }
 
-void sha256_init(sha256_ctx *ctx)
+void sha256_init(sha256_ctx *ctx, uint8_t *buf)
 {
     int i;
-    for (i = 0; i < 8; i++) {
-        ctx->h[i] = sha256_h0[i];
+
+    if (!buf) {
+		for (i = 0; i < 8; i++)
+			ctx->h[i] = sha256_h0[i];
+    } else {
+		for (i = 0; i < 8; i++)
+			PACK32(&buf[(7 - i) << 2], &(ctx->h[i]));
     }
 
     ctx->len = 0;
@@ -190,6 +195,7 @@ void sha256_final(sha256_ctx *ctx, unsigned char *digest)
     }
 }
 
+#if 0
 void sha256_loc(const unsigned char *buf, unsigned int *per_a, unsigned int *per_b)
 {
     uint32_t w[64];
@@ -219,10 +225,33 @@ void sha256_loc(const unsigned char *buf, unsigned int *per_a, unsigned int *per
 		per_a[j] = wv[0];
 		per_b[j] = wv[4];
         if (j == 2) {
-    	    break;
+		break;
         }
     }
 }
+#else
+void sha256_loc(const unsigned char *buf, unsigned int *per_a, unsigned int *per_b)
+{
+	sha256_ctx ctx;
+	unsigned char digest[32];
+
+	sha256_init(&ctx, (uint8_t *)buf);
+
+	memcpy(digest + 0, buf + 52 + 8, 4);
+	memcpy(digest + 4, buf + 52 + 4, 4);
+	memcpy(digest + 8, buf + 52 + 0, 4);
+
+	sha256_update(&ctx, digest, 12);
+	sha256_final(&ctx, digest);
+
+	memcpy(&per_a[0], digest + 8, 4);
+	memcpy(&per_a[1], digest + 4, 4);
+	memcpy(&per_a[2], digest + 0, 4);
+	memcpy(&per_b[0], digest + 24, 4);
+	memcpy(&per_b[1], digest + 20, 4);
+	memcpy(&per_b[2], digest + 16, 4);
+}
+#endif
 
 void data_convert(uint8_t *data){
 	uint8_t tmpval,index=0;
@@ -238,51 +267,4 @@ void data_convert(uint8_t *data){
 		data[52+index] = data[52+11-index];
 		data[52+11-index] = tmpval;
 	}
-}
-
-void data_pkg(const uint8_t *data, uint8_t *out)
-{
-	uint8_t work[44];
-	uint8_t *t;
-	unsigned int per_a[3];
-	unsigned int per_b[3];
-	sha256_loc(data , per_a, per_b);
-
-	memcpy(work, data, 32);
-	memcpy(work + 32, data + 52, 12); /* Parser the Icarus protocl data */
-
-	t = out + 12;
-	memcpy(t, work + 32, 12); /* Task data */
-	memcpy(t + 12 + 0, (unsigned char *)&per_a[1], 4);	/* a1 */
-	memcpy(t + 12 + 4, (unsigned char *)&per_a[0], 4);	/* a0 */
-	memcpy(t + 12 + 8, (unsigned char *)&per_b[2], 4);	/* e2 */
-	memcpy(t + 12 + 12, (unsigned char *)&per_b[1], 4);	/* e1 */
-	memcpy(t + 12 + 16, (unsigned char *)&per_b[0], 4);	/* e0 */
-	memcpy(t + 12 + 20, work, 32);	/* Midstate */
-	memcpy(t + 12 + 52, (unsigned char *)&per_a[2], 4);	/* a2 */
-
-	out[0] = 0x11;
-	out[1] = 0x11;
-	out[2] = 0x11;
-	out[3] = 0x11;		/* Head */
-
-	out[4] = 0x1;
-	out[5] = 0x0;
-	out[6] = 0x0;
-	out[7] = 0x0;		/* PLL CFG0 */
-
-	out[8] = 0x0;
-	out[9] = 0x0;
-	out[10] = 0x0;
-	out[11] = 0x0;		/* PLL CFG1 */
-
-	out[80] = 0x0;
-	out[81] = 0x0;
-	out[82] = 0x0;
-	out[83] = 0x0;		/* Nonce */
-
-	out[84] = 0xaa;
-	out[85] = 0xaa;
-	out[86] = 0xaa;
-	out[87] = 0xaa;		/* Tail */
 }

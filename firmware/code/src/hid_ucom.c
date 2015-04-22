@@ -31,30 +31,23 @@
 #include <string.h>
 #include "board.h"
 #include "app_usbd_cfg.h"
-#include "hid_uart.h"
+#include "hid_ucom.h"
 #include "avalon_api.h"
 #include "protocol.h"
 
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
-
 /* Ring buffer size */
-#define BUF_CNT             4
+#define BUF_CNT            12
 #define UCOM_RX_BUF_SZ      (AVAU_P_COUNT * BUF_CNT)
 #define UCOM_TX_BUF_SZ      (AVAU_P_COUNT * BUF_CNT)
-#define UART_RX_BUF_SZ      (A3233_NONCE_LEN * BUF_CNT)
-#define UART_TX_BUF_SZ      (A3233_TASK_LEN * BUF_CNT)
 #define UCOM_TX_CONNECTED   _BIT(8)
 #define UCOM_TX_BUSY        _BIT(0)
 #define UCOM_RX_BUF_FULL    _BIT(1)
 #define UCOM_RX_BUF_QUEUED  _BIT(2)
-#define UCOM_RX_DB_QUEUED   _BIT(3)
 
-STATIC RINGBUFF_T uart_rxrb, uart_txrb;
-STATIC RINGBUFF_T usb_rxrb, usb_txrb;
-
-static uint8_t uart_rxdata[UART_RX_BUF_SZ], uart_txdata[UART_TX_BUF_SZ];
+static RINGBUFF_T usb_rxrb, usb_txrb;
 static uint8_t usb_rxdata[UCOM_RX_BUF_SZ], usb_txdata[UCOM_TX_BUF_SZ];
 
 /**
@@ -81,43 +74,10 @@ extern const uint16_t UCOM_ReportDescSize;
 /*****************************************************************************
  * Private functions
  ****************************************************************************/
-
-static void Init_UART_PinMux(void)
+static void UCOM_BufInit(void)
 {
-#if (defined(BOARD_NXP_XPRESSO_11U14) || defined(BOARD_NGX_BLUEBOARD_11U24))
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 18, IOCON_FUNC1 | IOCON_MODE_INACT | IOCON_MODE_PULLUP);	/* PIO0_18 used for RXD */
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 19, IOCON_FUNC1 | IOCON_MODE_INACT);	/* PIO0_19 used for TXD */
-#else
-#error "No Pin muxing defined for UART operation"
-#endif
-}
-
-/* UART port init routine */
-static void UCOM_UartInit(void)
-{
-	/* Board specific muxing */
-	Init_UART_PinMux();
-
-	Chip_UART_Init(LPC_USART);
-	Chip_UART_SetBaudFDR(LPC_USART, 111111);
-	Chip_UART_ConfigData(LPC_USART, (UART_LCR_WLEN8 | UART_LCR_SBS_1BIT));
-	Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2));
-	Chip_UART_TXEnable(LPC_USART);
-
-	RingBuffer_Init(&uart_rxrb, uart_rxdata, 1, UART_RX_BUF_SZ);
-	RingBuffer_Init(&uart_txrb, uart_txdata, 1, UART_TX_BUF_SZ);
 	RingBuffer_Init(&usb_rxrb, usb_rxdata, 1, UCOM_RX_BUF_SZ);
 	RingBuffer_Init(&usb_txrb, usb_txdata, 1, UCOM_TX_BUF_SZ);
-
-	/* Enable receive data and line status interrupt */
-	Chip_UART_IntEnable(LPC_USART, (UART_IER_RBRINT | UART_IER_RLSINT));
-
-	/* Enable Interrupt for UART channel */
-	/* Priority = 1 */
-	NVIC_SetPriority(UART0_IRQn, 1);
-	/* Enable Interrupt for UART channel */
-	NVIC_EnableIRQ(UART0_IRQn);
-
 	g_uCOM.usbTxFlags |= UCOM_TX_CONNECTED;
 }
 
@@ -185,20 +145,7 @@ static ErrorCode_t UCOM_int_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event)
 	return LPC_OK;
 }
 
-/*****************************************************************************
- * Public functions
- ****************************************************************************/
-
-/**
- * @brief	UART interrupt handler sub-routine
- * @return	Nothing
- */
-void UART_IRQHandler(void)
-{
-	Chip_UART_IRQRBHandler(LPC_USART, &uart_rxrb, &uart_txrb);
-}
-
-/* UART to USB com port init routine */
+/* USB com port init routine */
 ErrorCode_t UCOM_init(USBD_HANDLE_T hUsb, USB_INTERFACE_DESCRIPTOR *pIntfDesc, USBD_API_INIT_PARAM_T *pUsbParam)
 {
 	USBD_HID_INIT_PARAM_T hid_param;
@@ -235,8 +182,7 @@ ErrorCode_t UCOM_init(USBD_HANDLE_T hUsb, USB_INTERFACE_DESCRIPTOR *pIntfDesc, U
 		hid_param.mem_base += UCOM_TX_BUF_SZ;
 		hid_param.mem_size -= UCOM_TX_BUF_SZ;
 
-		/* Init UART port for bridging */
-		UCOM_UartInit();
+		UCOM_BufInit();
 
 		/* update mem_base and size variables for cascading calls. */
 		pUsbParam->mem_base = hid_param.mem_base;
@@ -290,49 +236,3 @@ void UCOM_FlushRxRB(void)
 	RingBuffer_Flush(&usb_rxrb);
 }
 
-/* Gets current read count. */
-uint32_t UART_Read_Cnt(void)
-{
-	return RingBuffer_GetCount(&uart_rxrb);
-}
-
-
-/* Read data from uart */
-uint32_t UART_Read(uint8_t *pBuf, uint32_t buf_len)
-{
-	uint16_t cnt = 0;
-
-	if(pBuf)
-	{
-		cnt = Chip_UART_ReadRB(LPC_USART, &uart_rxrb, pBuf, buf_len);
-	}
-
-	return cnt;
-}
-
-/* Send data to uart */
-uint32_t UART_Write(uint8_t *pBuf, uint32_t len)
-{
-	uint32_t ret = 0;
-
-	if(pBuf)
-	{
-		ret = Chip_UART_SendRB(LPC_USART, &uart_txrb, pBuf, len);
-	}
-
-	return ret;
-}
-
-/* clear UART tx ringbuffer */
-void UART_FlushTxRB(void)
-{
-	Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 | UART_FCR_TX_RS));
-	RingBuffer_Flush(&uart_txrb);
-}
-
-/* clear UART rx ringbuffer */
-void UART_FlushRxRB(void)
-{
-	Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 | UART_FCR_RX_RS));
-	RingBuffer_Flush(&uart_rxrb);
-}

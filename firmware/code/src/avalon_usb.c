@@ -10,7 +10,7 @@
 #include <string.h>
 #include "avalon_api.h"
 #include "app_usbd_cfg.h"
-#include "hid_uart.h"
+#include "hid_ucom.h"
 
 extern const  USBD_HW_API_T hw_api;
 extern const  USBD_CORE_API_T core_api;

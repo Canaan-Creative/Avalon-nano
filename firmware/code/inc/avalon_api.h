@@ -1,32 +1,10 @@
 /*
- * @brief Programming API used with avalon
+ * @brief avalon routines
  *
  * @note
- * Copyright(C) 0xf8, 2014
+ * Copyright(C) canaan creative, 2015
  * All rights reserved.
  *
- * @par
- * Software that is described herein is for illustrative purposes only
- * which provides customers with programming information regarding the
- * LPC products.  This software is supplied "AS IS" without any warranties of
- * any kind, and NXP Semiconductors and its licensor disclaim any and
- * all warranties, express or implied, including all implied warranties of
- * merchantability, fitness for a particular purpose and non-infringement of
- * intellectual property rights.  NXP Semiconductors assumes no responsibility
- * or liability for the use of the software, conveys no license or rights under any
- * patent, copyright, mask work right, or any other intellectual property rights in
- * or to any products. NXP Semiconductors reserves the right to make changes
- * in the software without notification. NXP Semiconductors also makes no
- * representation or warranty that such application will be suitable for the
- * specified use without further testing or modification.
- *
- * @par
- * Permission to use, copy, modify, and distribute this software and its
- * documentation is hereby granted, under NXP Semiconductors' and its
- * licensor's relevant copyrights in the software, without fee, provided that it
- * is used in conjunction with NXP Semiconductors microcontrollers.  This
- * copyright, permission, and disclaimer notice must appear in all copies of
- * this code.
  */
 #ifndef __AVALON_API_H_
 #define __AVALON_API_H_
@@ -39,15 +17,10 @@ extern "C"
 {
 #endif
 
-#define A3233_TASK_LEN      88
-#define A3233_NONCE_LEN     4
-#define ICA_TASK_LEN        64
+#define MM_TASK_LEN        64
 
-#define AVALON_LED_GREEN 	0xff00
-#define AVALON_LED_RED		0xff0000
-#define AVALON_LED_BLUE		0xff
-#define AVALON_LED_BLACK	0
-#define AVALON_LED_WHITE	0xffffff
+#define A3222_REPORT_SIZE       12 /* work_id (8 bytes) + nonce (4bytes) */
+#define A3222_REPORT_NONCE_CNT  55
 
 typedef void (*TMRPROC)(void);
 
@@ -59,33 +32,6 @@ typedef enum {
 	AVALON_TMR_MAX
 } AVALON_TMR_e;
 
-typedef enum {
-	AVALON_PWM_GREEN,
-	AVALON_PWM_BLUE,
-	AVALON_PWM_RED,
-	AVALON_PWM_MAX
-} AVALON_PWM_e;
-
-/** @ingroup EXAMPLES_USBDLIB_11XX_CDC_UART
- * @{
- */
-
-/**
- * @brief	USB to UART bridge port init routine
- * @param	pDesc		: Pointer to configuration descriptor
- * @param	pUsbParam	: Pointer USB param structure returned by previous init call
- * @return	Always returns LPC_OK.
- */
-ErrorCode_t AVALON_A3233_Init (void);
-void AVALON_A3233_PowerEn(Bool On);
-Bool AVALON_A3233_IsPowerEn(void);
-void AVALON_A3233_Reset(void);
-unsigned int AVALON_A3233_PllCfg(unsigned int freq, unsigned int *actfreq);
-unsigned int AVALON_A3233_FreqNeeded(void);
-unsigned int AVALON_A3233_FreqMin(void);
-unsigned int AVALON_A3233_FreqMax(void);
-Bool AVALON_A3233_IsTooHot(void);
-
 /* timer */
 void AVALON_TMR_Init(void);
 void AVALON_TMR_Set(AVALON_TMR_e id, unsigned int interval, TMRPROC tmrcb);
@@ -95,40 +41,22 @@ Bool AVALON_TMR_IsTimeout(AVALON_TMR_e id);
 unsigned int AVALON_TMR_Elapsed(AVALON_TMR_e id);
 void AVALON_TMR_Test(void);
 
-/* pwm */
-void AVALON_PWM_Init(void);
-void AVALON_PWM_SetDuty(AVALON_PWM_e pwm, unsigned char duty);
-void AVALON_PWM_Enable(void);
-void AVALON_PWM_Disable(void);
-void AVALON_PWM_Test(void);
-
-/* led */
-void AVALON_LED_Init(void);
-void AVALON_LED_Rgb(unsigned int rgb);
-void AVALON_LED_Blink(unsigned int rgb);
-void AVALON_LED_Test(void);
-
 /* debug printf */
 void AVALON_USB_Init(void);
 void AVALON_USB_PutChar(char ch);
 void AVALON_USB_PutSTR(char *str);
 void AVALON_USB_Test(void);
 
-/* iic */
-void AVALON_I2C_Init(void);
-unsigned int AVALON_I2C_TemperRd(void);
-
-/* adc */
-void AVALON_ADC_Init(void);
-void AVALON_ADC_Rd(uint8_t channel, uint16_t *data);
-
 /* printf */
 char *m_sprintf(char *dest, const char *format, ...);
 
 void AVALON_Delay(unsigned int ms);
-/**
- * @}
- */
+
+/* A3222 */
+void AVALON_A3222_Init(void);
+void AVALON_A3222_Process(uint8_t *work, const uint32_t *work_id);
+uint8_t AVALON_A3222_ReportCnt(void);
+uint8_t AVALON_A3222_GetReport(uint8_t *report);
 
 #ifdef __cplusplus
 }
