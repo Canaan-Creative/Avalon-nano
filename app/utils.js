@@ -215,11 +215,19 @@ var sha256 = function(hex) {
 var get_blockheader = function(job, nonce1, nonce2) {
 	var coinbase = job.coinbase1 + nonce1 + nonce2 + job.coinbase2;
 	var merkle_root = sha256(sha256(coinbase));
-	for (var branch of job.branch)
+	for (var branch of job.merkle_branch)
 		merkle_root = sha256(sha256(merkle_root + branch));
-	return job.version + job.prevhash + merkle_root + ntime + nbits + '00000000'
-		+ '000000800000000000000000000000000000000000000000'
-		+ '000000000000000000000000000000000000000080020000';
+	var arraybuffer = new ArrayBuffer(76);
+	var view = new DataView(arraybuffer);
+	view.setUint32(0, parseInt(job.version, 16), true);
+	for (var i = 0; i < 8; i++) {
+		view.setUint32((i + 1) * 4, parseInt(job.prevhash.slice(i * 8, i * 8 + 8), 16), true);
+		view.setUint32((i + 9) * 4, parseInt(merkle_root.slice(i * 8, i * 8 + 8), 16), false);
+	}
+	view.setUint32(17 * 4, parseInt(job.ntime, 16), true);
+	view.setUint32(18 * 4, parseInt(job.nbits, 16), true);
+
+	return ab2hex(arraybuffer);
 };
 
 var get_midstate = function(data) {
