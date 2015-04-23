@@ -94,7 +94,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 			AVALON_A3222_Process(g_a3222_pkg, work_id);
 		}
 		break;
-	case AVAU_P_NONCE:
+	case AVAU_P_POLLING:
 		tmp = AVALON_A3222_ReportCnt();
 		memset(g_ackpkg, 0, AVAU_P_COUNT);
 		if (tmp > 0) {
@@ -102,10 +102,9 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 			AVALON_A3222_GetReport(report);
 			memcpy(g_ackpkg + AVAU_P_DATAOFFSET, report, A3222_REPORT_SIZE);
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAU_P_NONCE);
-
 		} else {
 			/*TODO: P_STATUS: temp etc */
-			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAU_P_NONCE);
+			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAU_P_STATUS);
 		}
 		UCOM_Write(g_ackpkg, AVAU_P_COUNT);
 		break;
