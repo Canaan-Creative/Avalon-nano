@@ -180,19 +180,19 @@ Nano.prototype.log = function(level) {
 			break;
 		case "log1":
 			args.unshift("%c[NANO %d] " + arguments[1]);
-			args[1] = LOG1_STYLE;
+			args[1] = NANO_LOG1_STYLE;
 			args[2] = this.id;
 			console.log.apply(console, args);
 			break;
 		case "log2":
 			args.unshift("%c[NANO %d] " + arguments[1]);
-			args[1] = LOG2_STYLE;
+			args[1] = NANO_LOG2_STYLE;
 			args[2] = this.id;
 			console.log.apply(console, args);
 			break;
 		case "debug":
 			args.unshift("%c[NANO %d] " + arguments[1]);
-			args[1] = DEBUG_STYLE;
+			args[1] = NANO_DEBUG_STYLE;
 			args[2] = this.id;
 			console.debug.apply(console, args);
 			break;

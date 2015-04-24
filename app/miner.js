@@ -107,6 +107,7 @@ Miner.prototype.__defineGetter__("getWork", function() {
 Miner.prototype.setPool = function(poolInfo, poolId) {
 	if (this._pools[poolId] !== undefined)
 		this._pools[poolId].disconnect();
+	poolInfo.id = poolId;
 	this._pools[poolId] = new Pool(poolInfo, this);
 	this._pools[poolId].run();
 };
