@@ -136,8 +136,7 @@ Nano.prototype.__defineSetter__("received", function(pkg) {
 			}
 			break;
 	}
-	//if (this._enable) {
-	if (true) {
+	if (this._enable) {
 		this._send(mm_encode(
 			P_POLLING, 0, 0x01, 0x01,
 			new ArrayBuffer(32)
