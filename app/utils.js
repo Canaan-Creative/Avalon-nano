@@ -89,9 +89,13 @@ var NANO_DEBUG_STYLE = 'color: black';
 var POOL_LOG1_STYLE = 'color: orange';
 var POOL_LOG2_STYLE = 'color: yellow';
 var POOL_DEBUG_STYLE = 'color: grey';
+var MINER_LOG1_STYLE = 'color: pink';
+var MINER_LOG2_STYLE = 'color: magenta';
+var MINER_DEBUG_STYLE = 'color: silver';
 
 var check_version = function(version) {
-	return version.slice(0, 15) === '3U1504-88c2f620';
+	//return version.slice(0, 15) === '3U1504-88c2f620';
+	return version.slice(0, 6) === '3U1504';
 };
 
 var crc16 = function(arraybuffer) { var data = new Uint8Array(arraybuffer);

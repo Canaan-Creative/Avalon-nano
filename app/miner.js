@@ -56,7 +56,7 @@ Miner.prototype.__defineSetter__("newJob", function(job) {
 
 Miner.prototype.__defineSetter__("newNano", function(info) {
 	// info: {nanoId, nano}
-	console.log("[Miner] New Nano: " + info.nano);
+	this.log("info", "New Nano: %d", info.nanoId);
 	this._nanos[info.nanoId] = info.nano;
 	info.nano.connect();
 
@@ -64,6 +64,7 @@ Miner.prototype.__defineSetter__("newNano", function(info) {
 });
 
 Miner.prototype.__defineSetter__("nanoDeleted", function(nanoId) {
+	this.log("info", "Nano Deleted: %d", nanoId);
 	this._nanos[nanoId].stop();
 	delete(this._nanos[nanoId]);
 	this.onNanoDeleted.fire(nanoId);
@@ -128,6 +129,41 @@ Miner.prototype.scanNano = function() {
 	});
 };
 
+Miner.prototype.log = function(level) {
+	var args = Array.prototype.slice.call(arguments);
+    args.shift();
+	switch (level) {
+		case "error":
+			args[0] = "[MINER] " + arguments[1];
+			console.error.apply(console, args);
+			break;
+		case "warn":
+			args[0] = "[MINER] " + arguments[1];
+			console.warn.apply(console, args);
+			break;
+		case "info":
+			args[0] = "[MINER] " + arguments[1];
+			console.info.apply(console, args);
+			break;
+		case "log1":
+			args.unshift("%c[MINER] " + arguments[1]);
+			args[1] = MINER_LOG1_STYLE;
+			console.log.apply(console, args);
+			break;
+		case "log2":
+			args.unshift("%c[MINER] " + arguments[1]);
+			args[1] = MINER_LOG2_STYLE;
+			console.log.apply(console, args);
+			break;
+		case "debug":
+			args.unshift("%c[MINER] " + arguments[1]);
+			args[1] = MINER_DEBUG_STYLE;
+			console.debug.apply(console, args);
+			break;
+		default:
+			break;
+	}
+};
 
 var MinerEvent = function() {
 	this._registered = [];
