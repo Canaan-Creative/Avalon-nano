@@ -98,7 +98,7 @@ Miner.prototype.__defineSetter__("newStatus", function(info) {
 
 Miner.prototype.__defineGetter__("getWork", function() {
 	var work = this._works.shift();
-	if (this._thread_pause && this._works.length < this._WORK_BUFFER_SIZE - 10) {
+	if (this._thread_pause && (this._works.length < this._WORK_BUFFER_SIZE - 10)) {
 		this._thread.postMessage("resume");
 		this._thread_pause = false;
 	}

@@ -1,5 +1,5 @@
-// TODO: logging
 // TODO: error handling
+// TODO: onReceive.addListener should not be here
 Pool = function(poolInfo) {
 	this.id = poolInfo.id;
 	this.url = poolInfo.url;
@@ -49,15 +49,13 @@ Pool.prototype.disconnect = function() {
 };
 
 Pool.prototype.decode = function(result) {
-	// TODO: what if data.error !== null
-
 	var data = JSON.parse(result);
 	if (data.id === 1) {
 		if (data.error) {
 			this.log("warn", "Subscription Failed.");
 			return false;
 		}
-		this.log("log1", "Subscibed.");
+		this.log("log1", "Subscribed.");
 		this.nonce1 = data.result[data.result.length - 2];
 		this.nonce2_size = data.result[data.result.length - 1];
 		if (data.result[0][0][0] === 'mining.set_difficulty')
