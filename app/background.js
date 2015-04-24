@@ -3,9 +3,9 @@ chrome.app.runtime.onLaunched.addListener(function() {
 		innerBounds: {
 		//bounds: {
 			width: 870,
-			height: 700,
+			height: 870,
 			minWidth: 870,
-			minHeight: 700
+			minHeight: 870
 		},
 	    id: "Avalon Nano"
 	});

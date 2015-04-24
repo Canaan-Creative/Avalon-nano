@@ -21,10 +21,10 @@ chrome.hid.onDeviceRemoved.addListener(function(deviceId) {
 
 
 function main() {
+	//Get bitcoin price from btcchina
 	setInterval(function() {
 		var xhr = new XMLHttpRequest();
 		xhr.open("GET", 'https://data.btcchina.com/data/ticker?maket=all', true);
-
 		xhr.onreadystatechange = function() {
 			if (xhr.readyState == 4) {
 				message = JSON.parse(xhr.responseText);
@@ -115,7 +115,7 @@ jQuery.httpRequest = {
 						nanos[0].push_data(raw);
 					} else {
 						var nonce = nonce_list.shift();
-						$("#debug-info").val('Subminting ' + nonce+"\r\n"+$("#debug-info").val());
+						//$("#debug-info").val('Subminting ' + nonce+"\r\n"+$("#debug-info").val());
 					}
 				} else
 					console.error(message.error);
