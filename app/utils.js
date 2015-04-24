@@ -83,16 +83,18 @@ var SHA256_INIT = [
 	0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
 ];
 
-var LOG1_STYLE = 'color: green';
-var LOG2_STYLE = 'color: blue';
-var DEBUG_STYLE = 'color: black';
+var NANO_LOG1_STYLE = 'color: green';
+var NANO_LOG2_STYLE = 'color: blue';
+var NANO_DEBUG_STYLE = 'color: black';
+var POOL_LOG1_STYLE = 'color: orange';
+var POOL_LOG2_STYLE = 'color: yellow';
+var POOL_DEBUG_STYLE = 'color: grey';
 
 var check_version = function(version) {
-	return version.slice(0, 15) === '3U1504-82418d6+';
+	return version.slice(0, 15) === '3U1504-88c2f620';
 };
 
-var crc16 = function(arraybuffer) {
-	var data = new Uint8Array(arraybuffer);
+var crc16 = function(arraybuffer) { var data = new Uint8Array(arraybuffer);
 	var crc = 0;
 	var i = 0;
 	var len = data.byteLength;
@@ -194,16 +196,20 @@ var mm_decode = function(pkg) {
 	}
 };
 
-var gw_pool2raw = function(midstat, data) {
+var gw_pool2raw = function(midstat, data, jobId, ntime, poolNo, nonce2) {
 	var raw = new ArrayBuffer(64);
 	var view = new DataView(raw);
 	var i;
 
 	data = data.slice(128, 128 + 24);
 	for (i = 0; i < 32; i++)
-		view.setUint8(31 - i, parseInt(midstat.slice(i * 2, i * 2 + 2), 16), false);
+		view.setUint8(i, parseInt(midstat.slice(i * 2, i * 2 + 2), 16));
+	view.setUint8(32, jobId);
+	view.setUint8(33, ntime);
+	view.setUint16(34, poolNo, false);
+	view.setUint32(36, nonce2, false);
 	for (i = 0; i < 12; i++)
-		view.setUint8(63 - i, parseInt(data.slice(i * 2, i * 2 + 2), 16), false);
+		view.setUint8(i + 52, parseInt(data.slice(i * 2, i * 2 + 2), 16));
 	return raw;
 };
 
@@ -212,8 +218,8 @@ var sha256 = function(hex) {
 	return shaObj.getHash("SHA-256", "HEX");
 };
 
-var get_blockheader = function(job, nonce1, nonce2) {
-	var coinbase = job.coinbase1 + nonce1 + nonce2 + job.coinbase2;
+var get_blockheader = function(job, nonce2) {
+	var coinbase = job.coinbase1 + job.nonce1 + nonce2 + job.coinbase2;
 	var merkle_root = sha256(sha256(coinbase));
 	for (var branch of job.merkle_branch)
 		merkle_root = sha256(sha256(merkle_root + branch));
