@@ -21,8 +21,7 @@
 #define A3222_TIMER_TIMEOUT				(AVALON_TMR_ID1)
 #define A3222_STAT_IDLE					1
 #define A3222_STAT_WAITMM				2
-#define A3222_STAT_CHKMM				3
-#define A3222_STAT_PROCMM				4
+#define A3222_STAT_PROCMM				3
 #ifdef __CODE_RED
 __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 #endif
@@ -146,10 +145,10 @@ int main(void)
 		case A3222_STAT_WAITMM:
 			memset(g_a3222_pkg, 0, MM_TASK_LEN);
 			buflen = UCOM_Read_Cnt();
-			if (buflen > 0) {
+			if (buflen >= AVAU_P_COUNT) {
 				timestart = FALSE;
 				AVALON_TMR_Kill(A3222_TIMER_TIMEOUT);
-				a3233_stat = A3222_STAT_CHKMM;
+				a3233_stat = A3222_STAT_PROCMM;
 				break;
 			}
 
@@ -168,30 +167,8 @@ int main(void)
 		case A3222_STAT_IDLE:
 			/* TODO: power off the asic */
 			buflen = UCOM_Read_Cnt();
-			if (buflen > 0) {
-				a3233_stat = A3222_STAT_CHKMM;
-			}
-			break;
-		case A3222_STAT_CHKMM:
-			buflen = UCOM_Read_Cnt();
-			if (buflen >= AVAU_P_COUNT) {
-				timestart = FALSE;
-				AVALON_TMR_Kill(A3222_TIMER_TIMEOUT);
+			if (buflen >= AVAU_P_COUNT)
 				a3233_stat = A3222_STAT_PROCMM;
-				break;
-			}
-
-			if (!timestart) {
-				AVALON_TMR_Set(A3222_TIMER_TIMEOUT, 80, NULL);
-				timestart = TRUE;
-			}
-
-			if (AVALON_TMR_IsTimeout(A3222_TIMER_TIMEOUT)) {
-				/* data format error */
-				timestart = FALSE;
-				AVALON_TMR_Kill(A3222_TIMER_TIMEOUT);
-				a3233_stat = A3222_STAT_IDLE;
-			}
 			break;
 		case A3222_STAT_PROCMM:
 			if (UCOM_Read_Cnt() >= AVAU_P_COUNT) {

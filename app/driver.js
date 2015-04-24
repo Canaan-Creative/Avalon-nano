@@ -44,12 +44,14 @@ Nano.prototype.run = function(size) {
 		P_POLLING, 0, 0x01, 0x01,
 		new ArrayBuffer(32)
 	);
+	this._send(polling);
+	this._receive();
 
 	var i = 0;
 	(function loop() {
 		var work = nano.miner.getWork;
 		while (work !== undefined) {
-			for (var j in work)
+			for (var j = 0; j < work.length; j++)
 				nano._send(work[j], j);
 			nano._send(polling);
 			nano._receive();
@@ -84,7 +86,7 @@ Nano.prototype._send = function(pkg, index) {
 			nano.log("error", chrome.runtime.lastError.message);
 			return;
 		}
-		nano.log("debug", "Send:    0x%s", ab2hex(pkg));
+		nano.log("debug", "Sent:     0x%s", ab2hex(pkg));
 		if (index === 1)
 			nano.sent = index;
 	});
@@ -97,7 +99,7 @@ Nano.prototype._receive = function() {
 			nano.log("error", chrome.runtime.lastError.message);
 			return;
 		}
-		nano.log("debug", "Receive: 0x%s", ab2hex(pkg));
+		nano.log("debug", "Received: 0x%s", ab2hex(pkg));
 		nano.received = pkg;
 	});
 };
@@ -106,21 +108,21 @@ Nano.prototype.__defineSetter__("received", function(pkg) {
 	var data = mm_decode(pkg);
 	switch (data.type) {
 		case P_NONCE:
-			this.log("log2", "Nonce:   0x%s", data.nonce.toString(16));
+			this.log("log2", "Nonce:    0x%s", data.nonce.toString(16));
 			this.miner.newNonce = {
 				nanoId: this.id,
 				nonce: data
 			};
 			break;
 		case P_STATUS:
-			this.log("log2", "Status:  %d MHz", data.frequency);
+			this.log("log2", "Status:   %d MHz", data.frequency);
 			this.miner.newStatus = {
 				nanoId: this.id,
 				frequency: data.frequency
 			};
 			break;
 		case P_ACKDETECT:
-			this.log("log1", "Version: %s", data.version);
+			this.log("log1", "Version:  %s", data.version);
 			this.version = data.version;
 			if (check_version(this.version))
 				this.miner.nanoDetected = {
@@ -136,8 +138,7 @@ Nano.prototype.__defineSetter__("received", function(pkg) {
 			}
 			break;
 	}
-	//if (this._enable) {
-	if (true) {
+	if (this._enable) {
 		this._send(mm_encode(
 			P_POLLING, 0, 0x01, 0x01,
 			new ArrayBuffer(32)
@@ -152,7 +153,7 @@ Nano.prototype.__defineSetter__("sent", function(info) {
 		(function loop() {
 			var work = nano.miner.getWork;
 			if (work !== undefined)
-				for (var i in work)
+				for (var i = 0; i < work.length; i++)
 					nano._send(work[i], i);
 			else
 				setTimeout(loop, 100);
@@ -180,19 +181,19 @@ Nano.prototype.log = function(level) {
 			break;
 		case "log1":
 			args.unshift("%c[NANO %d] " + arguments[1]);
-			args[1] = LOG1_STYLE;
+			args[1] = NANO_LOG1_STYLE;
 			args[2] = this.id;
 			console.log.apply(console, args);
 			break;
 		case "log2":
 			args.unshift("%c[NANO %d] " + arguments[1]);
-			args[1] = LOG2_STYLE;
+			args[1] = NANO_LOG2_STYLE;
 			args[2] = this.id;
 			console.log.apply(console, args);
 			break;
 		case "debug":
 			args.unshift("%c[NANO %d] " + arguments[1]);
-			args[1] = DEBUG_STYLE;
+			args[1] = NANO_DEBUG_STYLE;
 			args[2] = this.id;
 			console.debug.apply(console, args);
 			break;
