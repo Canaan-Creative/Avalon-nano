@@ -90,7 +90,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 					(g_a3222_pkg[37] << 16) |
 					(g_a3222_pkg[38] << 8) |
 					g_a3222_pkg[39];
-			AVALON_A3222_Process(g_a3222_pkg, work_id);
+			AVALON_A3222_Process(g_a3222_pkg, work_id, 0);
 		}
 		break;
 	case AVAU_P_POLLING:
@@ -103,6 +103,12 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAU_P_NONCE);
 		} else {
 			/*TODO: P_STATUS: temp etc */
+			tmp = UCOM_Read_Cnt();
+			g_ackpkg[AVAU_P_DATAOFFSET] = 0xaa;
+			g_ackpkg[AVAU_P_DATAOFFSET + 1] = tmp >> 16;
+			g_ackpkg[AVAU_P_DATAOFFSET + 2] = tmp >> 8;
+			g_ackpkg[AVAU_P_DATAOFFSET + 3] = tmp & 0xff;
+			g_ackpkg[AVAU_P_DATAOFFSET + 31] = 0x55;
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAU_P_STATUS);
 		}
 		UCOM_Write(g_ackpkg, AVAU_P_COUNT);
@@ -137,6 +143,7 @@ int main(void)
 	Board_Init();
 	SystemCoreClockUpdate();
 
+	/* Initialize avalon chip */
 	AVALON_USB_Init();
 	AVALON_TMR_Init();
 

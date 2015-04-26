@@ -195,41 +195,6 @@ void sha256_final(sha256_ctx *ctx, unsigned char *digest)
     }
 }
 
-#if 0
-void sha256_loc(const unsigned char *buf, unsigned int *per_a, unsigned int *per_b)
-{
-    uint32_t w[64];
-    uint32_t wv[8];
-    uint32_t t1, t2;
-    int j;
-    uint32_t *buf_word_p = (uint32_t *)buf;
-    for(j = 0; j < 3; j++){
-	    w[j] = buf_word_p[13+j];
-    }
-
-    for (j = 0; j < 8; j++) {
-        wv[j] = buf_word_p[j];
-    }
-
-    for (j = 0; j < 64; j++) {
-        t1 = wv[7] + SHA256_F2(wv[4]) + CH(wv[4], wv[5], wv[6]) + sha256_k[j] + w[j];
-        t2 = SHA256_F1(wv[0]) + MAJ(wv[0], wv[1], wv[2]);
-        wv[7] = wv[6];
-        wv[6] = wv[5];
-        wv[5] = wv[4];
-        wv[4] = wv[3] + t1;
-        wv[3] = wv[2];
-        wv[2] = wv[1];
-        wv[1] = wv[0];
-        wv[0] = t1 + t2;
-		per_a[j] = wv[0];
-		per_b[j] = wv[4];
-        if (j == 2) {
-		break;
-        }
-    }
-}
-#else
 void sha256_loc(const unsigned char *buf, unsigned int *per_a, unsigned int *per_b)
 {
 	sha256_ctx ctx;
@@ -250,21 +215,4 @@ void sha256_loc(const unsigned char *buf, unsigned int *per_a, unsigned int *per
 	memcpy(&per_b[0], digest + 24, 4);
 	memcpy(&per_b[1], digest + 20, 4);
 	memcpy(&per_b[2], digest + 16, 4);
-}
-#endif
-
-void data_convert(uint8_t *data){
-	uint8_t tmpval,index=0;
-
-	for(index = 0; index < 16; index++){
-		tmpval = data[index];
-		data[index] = data[31-index];
-		data[31-index] = tmpval;
-	}
-
-	for(index = 0; index < 6; index++){
-		tmpval = data[52+index];
-		data[52+index] = data[52+11-index];
-		data[52+11-index] = tmpval;
-	}
 }

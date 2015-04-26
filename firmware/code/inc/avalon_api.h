@@ -54,7 +54,7 @@ void AVALON_Delay(unsigned int ms);
 
 /* A3222 */
 void AVALON_A3222_Init(void);
-void AVALON_A3222_Process(uint8_t *work, const uint32_t *work_id);
+void AVALON_A3222_Process(uint8_t *work, const uint32_t *work_id, uint8_t test);
 uint8_t AVALON_A3222_ReportCnt(void);
 uint8_t AVALON_A3222_GetReport(uint8_t *report);
 
