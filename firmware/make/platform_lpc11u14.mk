@@ -17,6 +17,7 @@ COMMON_CFLAGS = -D__REDLIB__ -D__CODE_RED -DCORE_M0 -D__REDLIB__ \
 		-specs=redlib.specs
 
 ifeq "$(SW_VERSION)" "DEBUG"
+# -Os -Og will not work with spi, it has a side effect 
 PLATFORM_CFLAGS = -g3 -O0 -ffunction-sections -fdata-sections -DDEBUG -DDEBUG_ENABLE -DDEBUG_SEMIHOSTING $(COMMON_CFLAGS)
 else
 PLATFORM_CFLAGS = -O3 $(COMMON_CFLAGS)
