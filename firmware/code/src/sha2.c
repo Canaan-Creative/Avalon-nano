@@ -195,16 +195,16 @@ void sha256_final(sha256_ctx *ctx, unsigned char *digest)
     }
 }
 
-void sha256_loc(const unsigned char *buf, unsigned int *per_a, unsigned int *per_b)
+void sha256_loc(const unsigned char *midstat, const unsigned char *data, unsigned int *per_a, unsigned int *per_b)
 {
 	sha256_ctx ctx;
 	unsigned char digest[32];
 
-	sha256_init(&ctx, (uint8_t *)buf);
+	sha256_init(&ctx, (uint8_t *)midstat);
 
-	memcpy(digest + 0, buf + 52 + 8, 4);
-	memcpy(digest + 4, buf + 52 + 4, 4);
-	memcpy(digest + 8, buf + 52 + 0, 4);
+	memcpy(digest + 0, data + 8, 4);
+	memcpy(digest + 4, data + 4, 4);
+	memcpy(digest + 8, data + 0, 4);
 
 	sha256_update(&ctx, digest, 12);
 	sha256_final(&ctx, digest);

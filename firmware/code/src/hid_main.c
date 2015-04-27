@@ -20,18 +20,19 @@
 #include "hid_ucom.h"
 
 #include "crc.h"
-#include "sha2.h"
 #include "protocol.h"
 #include "avalon_a3222.h"
 #include "avalon_timer.h"
 
-#define A3222_TIMER_TIMEOUT				(AVALON_TMR_ID1)
-#define A3222_STAT_IDLE					1
-#define A3222_STAT_WAITMM				2
-#define A3222_STAT_PROCMM				3
 #ifdef __CODE_RED
 __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 #endif
+
+#define A3222_TIMER_TIMEOUT				(AVALON_TMR_ID1)
+
+#define A3222_STAT_IDLE					1
+#define A3222_STAT_WAITMM				2
+#define A3222_STAT_PROCMM				3
 
 /*****************************************************************************
  * Private types/enumerations/variables
@@ -77,6 +78,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		UCOM_Write(g_ackpkg, AVAU_P_COUNT);
 		break;
 	case AVAU_P_WORK:
+		DEBUGOUT("%s-%d: xxx failed!\n", pkg->idx, pkg->cnt);
 		if (pkg->idx != 1 || pkg->idx != 2 || pkg->cnt != 2)
 			break;
 
@@ -88,27 +90,21 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		 * */
 		memcpy(g_a3222_pkg + ((pkg->idx - 1) * 32), pkg->data, 32);
 		if (pkg->idx == 2 && pkg->cnt == 2) {
-			uint32_t work_id[2];
-
-			PACK32(g_a3222_pkg + 32, &work_id[0]);
-			PACK32(g_a3222_pkg + 36, &work_id[1]);
-
-			Process(g_a3222_pkg, work_id);
+			a3222_process_work(g_a3222_pkg);
+			a3222_process_finish();
 		}
 		break;
 	case AVAU_P_POLLING:
 		memset(g_ackpkg, 0, AVAU_P_COUNT);
-		if (ReportCnt()) {
+		if (a3222_get_report_count() > 0) {
 			/* P_NONCE: job_id(1)+ntime(1)+pool_no(2)+nonce2(4)+nonce(4) */
-			GetReport(g_ackpkg);
+			a3222_get_report(g_ackpkg);
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAU_P_NONCE);
 		} else {
 			/* P_STATUS: temperature etc */
 			tmp = UCOM_Read_Cnt();
+
 			g_ackpkg[AVAU_P_DATAOFFSET] = 0xaa;
-			g_ackpkg[AVAU_P_DATAOFFSET + 1] = tmp >> 16;
-			g_ackpkg[AVAU_P_DATAOFFSET + 2] = tmp >> 8;
-			g_ackpkg[AVAU_P_DATAOFFSET + 3] = tmp & 0xff;
 			g_ackpkg[AVAU_P_DATAOFFSET + 31] = 0x55;
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAU_P_STATUS);
 		}
@@ -118,11 +114,6 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		break;
 	}
 }
-
-/**
- * @brief	main routine for blinky example
- * @return	Function should not exit.
- */
 
 int main(void)
 {
@@ -136,6 +127,8 @@ int main(void)
 	/* Initialize Avalon chip */
 	AVALON_USB_Init();
 	AVALON_TMR_Init();
+
+	a3222_spi_init();
 
 	while (1) {
 		switch (a3233_stat) {
