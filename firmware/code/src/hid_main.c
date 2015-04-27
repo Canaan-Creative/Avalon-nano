@@ -7,16 +7,20 @@
  *
  */
 #include <string.h>
-#include "board.h"
-#include "app_usbd_cfg.h"
-#include "hid_ucom.h"
-#include "avalon_api.h"
 #ifdef __CODE_RED
 #include <NXP/crp.h>
 #endif
+
+#include "board.h"
+
+#include "app_usbd_cfg.h"
+#include "hid_ucom.h"
+
 #include "crc.h"
 #include "sha2.h"
 #include "protocol.h"
+#include "avalon_a3222.h"
+#include "avalon_timer.h"
 
 #define A3222_TIMER_TIMEOUT				(AVALON_TMR_ID1)
 #define A3222_STAT_IDLE					1
@@ -29,7 +33,7 @@ __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
-static uint8_t g_a3222_pkg[MM_TASK_LEN];
+static uint8_t g_a3222_pkg[AVAU_P_WORKLEN];
 static uint8_t g_reqpkg[AVAU_P_COUNT];
 static uint8_t g_ackpkg[AVAU_P_COUNT];
 
@@ -55,10 +59,8 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	unsigned int expected_crc;
 	unsigned int actual_crc;
 	int ret, tmp;
-	uint8_t report[A3222_REPORT_SIZE];
 
-	expected_crc = (pkg->crc[1] & 0xff)
-			| ((pkg->crc[0] & 0xff) << 8);
+	expected_crc = (pkg->crc[1] & 0xff) | ((pkg->crc[0] & 0xff) << 8);
 	actual_crc = crc16(pkg->data, AVAU_P_DATA_LEN);
 
 	if (expected_crc != actual_crc)
@@ -72,37 +74,33 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		UCOM_Write(g_ackpkg, AVAU_P_COUNT);
 		break;
 	case AVAU_P_WORK:
-		if (pkg->idx > pkg->cnt)
+		if (pkg->idx != 1 || pkg->idx != 2 || pkg->cnt != 2)
 			break;
+
+		if (pkg->idx == 1)
+			memset(g_a3222_pkg, 0, AVAU_P_WORKLEN);
 		/*
 		 * idx-1: midstate(32)
 		 * idx-2: job_id(1)+ntime(1)+pool_no(2)+nonce2(4) + reserved(14) + data(12)
 		 * */
 		memcpy(g_a3222_pkg + ((pkg->idx - 1) * 32), pkg->data, 32);
-		if (pkg->idx == pkg->cnt) {
+		if (pkg->idx == 2 && pkg->cnt == 2) {
 			uint32_t work_id[2];
 
-			work_id[0] = (g_a3222_pkg[32] << 24) |
-					(g_a3222_pkg[33] << 16) |
-					(g_a3222_pkg[34] << 8) |
-					g_a3222_pkg[35];
-			work_id[1] = (g_a3222_pkg[36] << 24) |
-					(g_a3222_pkg[37] << 16) |
-					(g_a3222_pkg[38] << 8) |
-					g_a3222_pkg[39];
-			AVALON_A3222_Process(g_a3222_pkg, work_id, 0);
+			PACK32(g_a3222_pkg + 32, &work_id[0]);
+			PACK32(g_a3222_pkg + 36, &work_id[1]);
+
+			Process(g_a3222_pkg, work_id);
 		}
 		break;
 	case AVAU_P_POLLING:
-		tmp = AVALON_A3222_ReportCnt();
 		memset(g_ackpkg, 0, AVAU_P_COUNT);
-		if (tmp > 0) {
+		if (ReportCnt()) {
 			/* P_NONCE: job_id(1)+ntime(1)+pool_no(2)+nonce2(4)+nonce(4) */
-			AVALON_A3222_GetReport(report);
-			memcpy(g_ackpkg + AVAU_P_DATAOFFSET, report, A3222_REPORT_SIZE);
+			GetReport(g_ackpkg);
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAU_P_NONCE);
 		} else {
-			/*TODO: P_STATUS: temp etc */
+			/* P_STATUS: temperature etc */
 			tmp = UCOM_Read_Cnt();
 			g_ackpkg[AVAU_P_DATAOFFSET] = 0xaa;
 			g_ackpkg[AVAU_P_DATAOFFSET + 1] = tmp >> 16;
@@ -116,17 +114,6 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	default:
 		break;
 	}
-}
-
-void AVALON_Delay(unsigned int ms)
-{
-       unsigned int i;
-       unsigned int msticks = SystemCoreClock/16000; /* FIXME: 16000 is not accurate */
-
-       while (ms && ms--) {
-               for(i = 0; i < msticks; i++)
-                       __NOP();
-       }
 }
 
 /**
@@ -143,14 +130,13 @@ int main(void)
 	Board_Init();
 	SystemCoreClockUpdate();
 
-	/* Initialize avalon chip */
+	/* Initialize Avalon chip */
 	AVALON_USB_Init();
 	AVALON_TMR_Init();
 
 	while (1) {
 		switch (a3233_stat) {
 		case A3222_STAT_WAITMM:
-			memset(g_a3222_pkg, 0, MM_TASK_LEN);
 			buflen = UCOM_Read_Cnt();
 			if (buflen >= AVAU_P_COUNT) {
 				timestart = FALSE;

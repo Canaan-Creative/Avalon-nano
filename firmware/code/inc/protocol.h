@@ -33,7 +33,9 @@
 #define AVAU_P_STATUS    0x24
 #define AVAU_P_TEST_RET  0x25
 
-#define AVAU_P_DATAOFFSET 6
+
+#define AVAU_P_DATAOFFSET	6
+#define AVAU_P_WORKLEN		64
 
 struct avalon_pkg {
     uint8_t head[2];

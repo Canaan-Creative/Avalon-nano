@@ -32,8 +32,10 @@
 #include "board.h"
 #include "app_usbd_cfg.h"
 #include "hid_ucom.h"
-#include "avalon_api.h"
+
 #include "protocol.h"
+#include "avalon_a3222.h"
+
 
 /*****************************************************************************
  * Private types/enumerations/variables

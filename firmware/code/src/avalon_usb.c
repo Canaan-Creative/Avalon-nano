@@ -8,7 +8,7 @@
 ===============================================================================
 */
 #include <string.h>
-#include "avalon_api.h"
+#include "avalon_a3222.h"
 #include "app_usbd_cfg.h"
 #include "hid_ucom.h"
 

@@ -7,7 +7,10 @@
  Description : avalon timer api
 ===============================================================================
 */
-#include "avalon_api.h"
+
+#include <stdio.h>
+#include "board.h"
+#include "avalon_timer.h"
 
 /* 1ms */
 #define TICKRATE_AVALON (1000)
