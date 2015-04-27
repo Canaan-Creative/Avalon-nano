@@ -40,9 +40,11 @@ Pool.prototype.decode = function(result) {
 	var data = JSON.parse(result);
 	if (data.id === 1) {
 		if (data.error) {
+			this.miner.poolSubscribed = {poolId: this.id, success: false};
 			this.log("warn", "Subscription Failed.");
 			return false;
 		}
+		this.miner.poolSubscribed = {poolId: this.id, success: true};
 		this.log("log1", "Subscribed.");
 		this.nonce1 = data.result[data.result.length - 2];
 		this.nonce2_size = data.result[data.result.length - 1];
@@ -51,10 +53,12 @@ Pool.prototype.decode = function(result) {
 		this.upload(this._AUTHORIZE);
 	} else if (data.id === 2) {
 		if (data.error) {
-			this.log("warn", "Authentication Failed.");
+			this.miner.poolAuthorized = {poolId: this.id, success: false};
+			this.log("warn", "Authorization Failed.");
 			return false;
 		}
-		this.log("log1", "Authenticated.");
+		this.miner.poolAuthorized = {poolId: this.id, success: true};
+		this.log("log1", "Authorized.");
 	} else if (data.id === 3) {
 		if (data.error) {
 			this.log("warn", "Submission Failed.");
@@ -63,7 +67,7 @@ Pool.prototype.decode = function(result) {
 		this.log("log2", "Submitted.");
 	} else switch (data.method) {
 		case "mining.set_difficulty":
-			this.difficulty = data.params[0];
+			this.difficulty = data.params[-1];
 			break;
 		case "mining.notify":
 			this.miner.newJob = {

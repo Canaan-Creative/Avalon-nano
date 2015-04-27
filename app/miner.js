@@ -6,6 +6,9 @@ var Miner = function() {
 	this.onNanoDetected = new MinerEvent();
 	this.onNewNonce = new MinerEvent();
 	this.onNewStatus = new MinerEvent();
+	this.onPoolSubscribed = new MinerEvent();
+	this.onPoolAuthorized = new MinerEvent();
+
 	this._JOB_BUFFER_SIZE = 256;
 	this._WORK_BUFFER_SIZE = 1024;
 
@@ -89,8 +92,19 @@ Miner.prototype.__defineSetter__("nanoDetected", function(info) {
 	// info: {nanoId, success}
 	if (info.success)
 		this._nanos[info.nanoId].run(4);
-	this.onNanoConnected.fire(info);
+	this.onNanoDetected.fire(info);
 });
+
+Miner.prototype.__defineSetter__("poolSubscribed", function(info) {
+	// info: {poolId, success}
+	this.onPoolSubscribed.fire(info);
+});
+
+Miner.prototype.__defineSetter__("poolAuthorized", function(info) {
+	// info: {poolId, success}
+	this.onPoolAuthorized.fire(info);
+});
+
 
 Miner.prototype.__defineSetter__("newNonce", function(info) {
 	// info: {nanoId, nonce}
