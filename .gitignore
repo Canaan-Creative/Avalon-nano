@@ -6,4 +6,4 @@ firmware/avalon_nano.axf
 firmware/avalon_nano.map
 firmware/bin/
 firmware/nxplib/lpc_chip_11uxx_lib/libs/liblpc_chip_11uxx_lib.a
-firmware/nxplib/nxp_lpcxpresso_11u14_board_lib/libs
+firmware/nxplib/nxp_lpcxpresso_11u14_board_lib/libs/libnxp_lpcxpresso_11u14_board_lib.a
