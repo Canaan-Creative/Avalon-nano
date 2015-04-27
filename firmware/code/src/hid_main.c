@@ -34,6 +34,7 @@ __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 #define A3222_STAT_WAITMM				2
 #define A3222_STAT_PROCMM				3
 
+#define WDT_FEEDTIME					2
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
@@ -128,8 +129,11 @@ int main(void)
 	AVALON_TMR_Init();
 
 	a3222_spi_init();
+	wdt_init(WDT_FEEDTIME);
+	wdt_enable();
 
 	while (1) {
+		wdt_feed();
 		switch (a3233_stat) {
 		case A3222_STAT_WAITMM:
 			buflen = UCOM_Read_Cnt();
