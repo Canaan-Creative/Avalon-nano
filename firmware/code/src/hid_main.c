@@ -1,10 +1,13 @@
 /*
- * @brief avalon routines
+ * @brief
  *
  * @note
- * Copyright(C) canaan creative, 2015
- * All rights reserved.
+ * Author: Mikeqin Fengling.Qin@gmail.com
+ * 		   Xiangfu@canaan-creative.com
  *
+ * @par
+ * This is free and unencumbered software released into the public domain.
+ * For details see the UNLICENSE file at the root of the source tree.
  */
 #include <string.h>
 #ifdef __CODE_RED

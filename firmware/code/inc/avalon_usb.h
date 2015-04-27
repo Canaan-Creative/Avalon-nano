@@ -1,10 +1,10 @@
 /*
- * avalon_usb.h
+ * @brief A3222 head file
  *
- *  Created on: Apr 27, 2015
- *      Author: xiangfu
+ * @note
+ *
+ * @par
  */
-
 #ifndef AVALON_USB_H_
 #define AVALON_USB_H_
 

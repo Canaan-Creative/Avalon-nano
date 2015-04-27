@@ -1,12 +1,14 @@
 /*
-===============================================================================
- Name        : avalon_timer.c
- Author      : Mikeqin
- Version     : 0.1
- Copyright   : GPL
- Description : avalon timer api
-===============================================================================
-*/
+ * @brief
+ *
+ * @note
+ * Author: Mikeqin Fengling.Qin@gmail.com
+ * 		   Xiangfu@canaan-creative.com
+ *
+ * @par
+ * This is free and unencumbered software released into the public domain.
+ * For details see the UNLICENSE file at the root of the source tree.
+ */
 
 #include <stdio.h>
 #include "board.h"

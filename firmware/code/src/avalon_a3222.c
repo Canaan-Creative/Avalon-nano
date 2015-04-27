@@ -1,11 +1,15 @@
 /*
- * @brief avalon routines
+ * @brief
  *
  * @note
- * Copyright(C) canaan creative, 2015
- * All rights reserved.
+ * Author: Mikeqin Fengling.Qin@gmail.com
+ * 		   Xiangfu@canaan-creative.com
  *
+ * @par
+ * This is free and unencumbered software released into the public domain.
+ * For details see the UNLICENSE file at the root of the source tree.
  */
+#include "board.h"
 #include "avalon_a3222.h"
 #include "protocol.h"
 #include "sha2.h"
@@ -33,9 +37,9 @@ static void Delay(unsigned int ms)
 /* Initialize buffer */
 static void Buffer_Init(void)
 {
-	RingBuffer_Init(&g_a3222_rxrb, g_a3222_report, 1, A3222_REPORT_NONCE_CNT * A3222_REPORT_SIZE);
-	memset(g_txbuf, 0 A3222_WORK_SIZE);
-	memset(g_rxbuf, 0 A3222_WORK_SIZE);
+	RingBuffer_Init(&g_a3222_rxrb, g_a3222_report, 1, A3222_REPORT_CNT * A3222_REPORT_SIZE);
+	memset(g_txbuf, 0, A3222_WORK_SIZE);
+	memset(g_rxbuf, 0, A3222_WORK_SIZE);
 }
 
 static void Init_PinMux(void)
@@ -180,12 +184,4 @@ uint8_t GetReport(uint8_t *pkg)
 	}
 
 	return 1;
-}
-
-void Init(void)
-{
-	Init_PinMux();
-	Buffer_Init();
-	Load_Set(0);
-	SPI_Init();
 }

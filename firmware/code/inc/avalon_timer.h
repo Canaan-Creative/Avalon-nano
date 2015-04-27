@@ -1,8 +1,9 @@
 /*
- * avalon_timer.h
+ * @brief A3222 head file
  *
- *  Created on: Apr 27, 2015
- *      Author: xiangfu
+ * @note
+ *
+ * @par
  */
 
 #ifndef AVALON_TIMER_H_
