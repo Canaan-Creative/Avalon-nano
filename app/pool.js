@@ -1,5 +1,4 @@
 // TODO: error handling
-// TODO: onReceive.addListener should not be here
 Pool = function(poolInfo) {
 	this.id = poolInfo.id;
 	this.url = poolInfo.url;
@@ -23,21 +22,10 @@ Pool = function(poolInfo) {
 Pool.prototype.run = function() {
 	var pool = this;
 
-	var download = function(info) {
-		if (info.socketId !== pool.socketId)
-			return;
-		var results = ab2str(info.data).split("\n");
-
-		for (var i = 0; i < results.length - 1; i++) {
-			pool.log("debug", "Received: %s", results[i]);
-			pool.decode(results[i]);
-		}
-	};
 	chrome.sockets.tcp.create({}, function(createInfo) {
 		pool.socketId = createInfo.socketId;
 		chrome.sockets.tcp.connect(pool.socketId, pool.url, pool.port, function(result) {
 			pool.log("info", "Connected.");
-			chrome.sockets.tcp.onReceive.addListener(download);
 			pool.upload(pool._SUBSCRIBE);
 		});
 	});
@@ -101,6 +89,14 @@ Pool.prototype.upload = function(data) {
 	chrome.sockets.tcp.send(this.socketId, data, function(sendInfo) {
 		//console.log(sendInfo);
 	});
+};
+
+Pool.prototype.download = function(info) {
+	var results = ab2str(info.data).split("\n");
+	for (var i = 0; i < results.length - 1; i++) {
+		pool.log("debug", "Received: %s", results[i]);
+		pool.decode(results[i]);
+	}
 };
 
 Pool.prototype.log = function(level) {

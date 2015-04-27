@@ -31,6 +31,14 @@ var Miner = function() {
 		miner.nanoDeleted = deviceId;
 	});
 
+	chrome.sockets.tcp.onReceive.addListener(function(info) {
+		for (pool of miner._pools)
+			if (info.socketId === pool.socketId) {
+				pool.download(info);
+				return
+			}
+	});
+
 	this._thread = new Worker("thread.js");
 	this._thread.onmessage = function(work) {
 		//console.log("[Miner] New Work:");
