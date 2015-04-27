@@ -98,8 +98,8 @@ Pool.prototype.upload = function(data) {
 Pool.prototype.download = function(info) {
 	var results = ab2str(info.data).split("\n");
 	for (var i = 0; i < results.length - 1; i++) {
-		pool.log("debug", "Received: %s", results[i]);
-		pool.decode(results[i]);
+		this.log("debug", "Received: %s", results[i]);
+		this.decode(results[i]);
 	}
 };
 

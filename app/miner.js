@@ -35,10 +35,10 @@ var Miner = function() {
 	});
 
 	chrome.sockets.tcp.onReceive.addListener(function(info) {
-		for (pool of miner._pools)
-			if (info.socketId === pool.socketId) {
+		for (var pool of miner._pools)
+			if (pool !== undefined && info.socketId === pool.socketId) {
 				pool.download(info);
-				return
+				return;
 			}
 	});
 
@@ -153,7 +153,7 @@ Miner.prototype.scanNano = function() {
 
 Miner.prototype.log = function(level) {
 	var args = Array.prototype.slice.call(arguments);
-    args.shift();
+	args.shift();
 	switch (level) {
 		case "error":
 			args[0] = "[MINER] " + arguments[1];

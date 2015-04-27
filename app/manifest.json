@@ -6,7 +6,12 @@
 	"minimum_chrome_version": "41.0.2215.0",
 	"app": {
 		"background": {
-			"scripts": ["background.js"]
+			"scripts": [
+				"utils.js",
+				"driver.js",
+				"pool.js",
+				"miner.js",
+				"background.js"]
 		}
 	},
 	"permissions": [
