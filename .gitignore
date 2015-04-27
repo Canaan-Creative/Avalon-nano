@@ -1,13 +1,9 @@
+*~
 *.d
 *.o
-*.launch
-*.dep
 
-lpc_chip_11uxx_lib/Debug/
-nxp_lpcxpresso_11u14_board_lib/Debug/
-avalon3_nano/Debug/
-avalon_bsp_testbench/Debug/
-avalon3_nano/keil_output/
-avalon_bsp_testbench/keil_output/
-lpc_chip_11uxx_lib/keil_output/
-nxp_lpcxpresso_11u14_board_lib/keil_output/
+firmware/avalon_nano.axf
+firmware/avalon_nano.map
+firmware/bin/
+firmware/nxplib/lpc_chip_11uxx_lib/libs/liblpc_chip_11uxx_lib.a
+firmware/nxplib/nxp_lpcxpresso_11u14_board_lib/libs
