@@ -103,7 +103,6 @@ Miner.prototype.__defineSetter__("poolAuthorized", function(msg) {
 	this.onPoolAuthorized.fire(msg);
 });
 
-
 Miner.prototype.__defineSetter__("newNonce", function(msg) {
 	// msg: {nanoId, nonce}
 	// TODO: submit

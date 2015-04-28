@@ -118,7 +118,7 @@ Nano.prototype.__defineSetter__("received", function(pkg) {
 			this.log("log2", "Status:   %d MHz", data.frequency);
 			this.miner.newStatus = {
 				nanoId: this.id,
-				frequency: data.frequency
+				stat: {frequency: data.frequency}
 			};
 			break;
 		case P_ACKDETECT:
