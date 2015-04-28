@@ -12,7 +12,7 @@ var Miner = function() {
 	this._JOB_BUFFER_SIZE = 256;
 	this._WORK_BUFFER_SIZE = 1024;
 
-	this._jobId = 0;
+	this._jobId = [];
 	this._poolId = 0;
 
 	this._jobs = [];
@@ -42,27 +42,21 @@ var Miner = function() {
 			}
 	});
 
-	this._thread = new Worker("thread.js");
-	this._thread.onmessage = function(work) {
-		//console.log("[Miner] New Work:");
-		miner._works.push(work.data);
-		if (miner._works.length >= miner._WORK_BUFFER_SIZE) {
-			miner._thread.postMessage("pause");
-			miner._thread_pause = true;
-		}
-	};
+	this._thread = [];
+	this._thread_pause = [];
 };
 
 Miner.prototype.__defineSetter__("newJob", function(job) {
-	this._jobId = (this._jobId + 1) % this._JOB_BUFFER_SIZE;
-	this._jobs[this._jobId] = job;
+	var poolId = job.poolId;
+	this._jobId[poolId] = (this._jobId[poolId] + 1) % this._JOB_BUFFER_SIZE;
+	this._jobs[poolId][this._jobId] = job;
 	
 	// clear work buffer
-	this._works = [];
-	this._thread_pause = false;
+	this._works[poolId] = [];
+	this._thread_pause[poolId] = false;
 
 	//console.log("[Miner] New Job:");
-	this._thread.postMessage({job: job, jobId: this._jobId});
+	this._thread[poolId].postMessage({job: job, jobId: this._jobId[poolId]});
 });
 
 Miner.prototype.__defineSetter__("newNano", function(msg) {
@@ -119,10 +113,13 @@ Miner.prototype.__defineSetter__("newStatus", function(msg) {
 });
 
 Miner.prototype.__defineGetter__("getWork", function() {
-	var work = this._works.shift();
-	if (this._thread_pause && (this._works.length < this._WORK_BUFFER_SIZE - 10)) {
-		this._thread.postMessage("resume");
-		this._thread_pause = false;
+	if (this._active_pool === undefined)
+		return undefined;
+	var work = this._works[this._active_pool].shift();
+	if (this._thread_pause[this._active_pool]
+			&& (this._works[this._active_pool].length < this._WORK_BUFFER_SIZE - 10)) {
+		this._thread[this._active_pool].postMessage("resume");
+		this._thread_pause[this._active_pool] = false;
 	}
 	return work;
 });
@@ -131,8 +128,22 @@ Miner.prototype.setPool = function(poolInfo, poolId) {
 	if (this._pools[poolId] !== undefined)
 		this._pools[poolId].disconnect();
 	poolInfo.id = poolId;
+	this._jobId[poolId] = 0;
+	this._jobs[poolId] = [];
+	this._works[poolId] = [];
 	this._pools[poolId] = new Pool(poolInfo, this);
+
+	this._thread[poolId] = new Worker("thread.js");
+	this._thread[poolId].onmessage = function(work) {
+		miner._works[poolId].push(work.data);
+		if (miner._works[poolId].length >= miner._WORK_BUFFER_SIZE) {
+			miner._thread[poolId].postMessage("pause");
+			miner._thread_pause[poolId] = true;
+		}
+	};
+
 	this._pools[poolId].run();
+	this._active_pool = this._active_pool || poolId;
 };
 
 Miner.prototype.scanNano = function() {
