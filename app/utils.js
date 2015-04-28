@@ -207,13 +207,13 @@ var gw_pool2raw = function(midstat, data, jobId, ntime, poolNo, nonce2) {
 
 	data = data.slice(128, 128 + 24);
 	for (i = 0; i < 32; i++)
-		view.setUint8(i, parseInt(midstat.slice(i * 2, i * 2 + 2), 16));
+		view.setUint8(31 - i, parseInt(midstat.slice(i * 2, i * 2 + 2), 16));
 	view.setUint8(32, jobId);
 	view.setUint8(33, ntime);
 	view.setUint16(34, poolNo, false);
 	view.setUint32(36, nonce2, false);
 	for (i = 0; i < 12; i++)
-		view.setUint8(i + 52, parseInt(data.slice(i * 2, i * 2 + 2), 16));
+		view.setUint8(63 - i, parseInt(data.slice(i * 2, i * 2 + 2), 16));
 	return raw;
 };
 

@@ -56,7 +56,11 @@ Miner.prototype.__defineSetter__("newJob", function(job) {
 	this._thread_pause[poolId] = false;
 
 	//console.log("[Miner] New Job:");
-	this._thread[poolId].postMessage({job: job, jobId: this._jobId[poolId]});
+	this._thread[poolId].postMessage({
+		job: job,
+		jobId: this._jobId[poolId],
+		poolId: poolId
+	});
 });
 
 Miner.prototype.__defineSetter__("newNano", function(msg) {
@@ -128,7 +132,7 @@ Miner.prototype.setPool = function(poolInfo, poolId) {
 	if (this._pools[poolId] !== undefined)
 		this._pools[poolId].disconnect();
 	poolInfo.id = poolId;
-	this._jobId[poolId] = 0;
+	this._jobId[poolId] = -1;
 	this._jobs[poolId] = [];
 	this._works[poolId] = [];
 	this._pools[poolId] = new Pool(poolInfo, this);
