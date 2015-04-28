@@ -29,6 +29,7 @@ var main = function() {
 		chrome.runtime.sendMessage({
 			info: "NanoDetected",
 			nanoId: msg.nanoId,
+            version: msg.version,
 			success: msg.success
 		});
 	});
