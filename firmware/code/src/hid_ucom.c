@@ -41,8 +41,8 @@
  * Private types/enumerations/variables
  ****************************************************************************/
 /* Ring buffer size */
-#define TX_BUF_CNT          12
-#define RX_BUF_CNT          12
+#define TX_BUF_CNT          4
+#define RX_BUF_CNT          4
 #define UCOM_RX_BUF_SZ      (AVAU_P_COUNT * RX_BUF_CNT)
 #define UCOM_TX_BUF_SZ      (AVAU_P_COUNT * TX_BUF_CNT)
 #define UCOM_TX_CONNECTED   _BIT(8)
