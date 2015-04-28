@@ -118,7 +118,7 @@ Nano.prototype.__defineSetter__("received", function(pkg) {
 			this.log("log2", "Status:   %d MHz", data.frequency);
 			this.miner.newStatus = {
 				nanoId: this.id,
-				frequency: data.frequency
+				stat: {frequency: data.frequency}
 			};
 			break;
 		case P_ACKDETECT:
@@ -127,23 +127,18 @@ Nano.prototype.__defineSetter__("received", function(pkg) {
 			if (check_version(this.version))
 				this.miner.nanoDetected = {
 					nanoId: this.id,
+					version: this.version,
 					success: true
 				};
 			else {
 				this.log("info", "Wrong Version.");
 				this.miner.nanoDetected = {
 					nanoId: this.id,
+					version: this.version,
 					success: false
 				};
 			}
 			break;
-	}
-	if (this._enable) {
-		this._send(mm_encode(
-			P_POLLING, 0, 0x01, 0x01,
-			new ArrayBuffer(32)
-		));
-		this._receive();
 	}
 });
 
@@ -152,10 +147,15 @@ Nano.prototype.__defineSetter__("sent", function(info) {
 		var nano = this;
 		(function loop() {
 			var work = nano.miner.getWork;
-			if (work !== undefined)
+			if (work !== undefined) {
 				for (var i = 0; i < work.length; i++)
 					nano._send(work[i], i);
-			else
+				nano._send(mm_encode(
+					P_POLLING, 0, 0x01, 0x01,
+					new ArrayBuffer(32)
+				));
+				nano._receive();
+			} else
 				setTimeout(loop, 100);
 		})();
 	}

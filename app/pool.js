@@ -71,6 +71,7 @@ Pool.prototype.decode = function(result) {
 			break;
 		case "mining.notify":
 			this.miner.newJob = {
+				poolId: this.id,
 				nonce1: this.nonce1,
 				job_id: data.params[0],
 				prevhash: data.params[1],

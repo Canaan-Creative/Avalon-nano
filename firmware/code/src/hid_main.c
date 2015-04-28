@@ -34,6 +34,7 @@ __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 #define A3222_STAT_WAITMM				2
 #define A3222_STAT_PROCMM				3
 
+#define WDT_FEEDTIME					2
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
@@ -78,8 +79,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		UCOM_Write(g_ackpkg, AVAU_P_COUNT);
 		break;
 	case AVAU_P_WORK:
-		DEBUGOUT("%s-%d: xxx failed!\n", pkg->idx, pkg->cnt);
-		if (pkg->idx != 1 || pkg->idx != 2 || pkg->cnt != 2)
+		if (pkg->idx != 1 && pkg->idx != 2 && pkg->cnt != 2)
 			break;
 
 		if (pkg->idx == 1)
@@ -98,7 +98,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		memset(g_ackpkg, 0, AVAU_P_COUNT);
 		if (a3222_get_report_count() > 0) {
 			/* P_NONCE: job_id(1)+ntime(1)+pool_no(2)+nonce2(4)+nonce(4) */
-			a3222_get_report(g_ackpkg);
+			a3222_get_report(g_ackpkg + AVAU_P_DATAOFFSET);
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAU_P_NONCE);
 		} else {
 			/* P_STATUS: temperature etc */
@@ -129,8 +129,11 @@ int main(void)
 	AVALON_TMR_Init();
 
 	a3222_spi_init();
+	wdt_init(WDT_FEEDTIME);
+	wdt_enable();
 
 	while (1) {
+		wdt_feed();
 		switch (a3233_stat) {
 		case A3222_STAT_WAITMM:
 			buflen = UCOM_Read_Cnt();

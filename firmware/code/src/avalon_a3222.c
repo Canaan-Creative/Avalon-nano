@@ -115,7 +115,7 @@ int a3222_process_work(uint8_t *pkg)
 	uint8_t report[A3222_REPORT_SIZE];
 	uint32_t pre_a[3], pre_e[3];
 	uint32_t tmp, ret;
-	static uint32_t last_nonce = 0xbeafbeaf;
+	uint32_t last_nonce = 0xbeafbeaf;
 
 	sha256_loc(pkg, pkg + 52, pre_a, pre_e);
 
@@ -182,7 +182,7 @@ int a3222_get_report(uint8_t *pkg)
 	uint8_t report[A3222_REPORT_SIZE];
 
 	if (A3222_REPORT_SIZE == RingBuffer_PopMult(&g_a3222_rxrb, report, A3222_REPORT_SIZE)) {
-		memcpy(pkg + AVAU_P_DATAOFFSET, report, A3222_REPORT_SIZE);
+		memcpy(pkg, report, A3222_REPORT_SIZE);
 		return 0;
 	}
 

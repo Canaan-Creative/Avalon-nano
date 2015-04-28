@@ -7,11 +7,12 @@ var thread = {
 };
 
 
-thread.newJob = function(job, jobId) {
+thread.newJob = function(job, jobId, poolId) {
 	thread.update = true;
 	thread.enable = true;
 	thread.job = job;
 	thread.jobId = jobId;
+	thread.poolId = poolId;
 	thread.nonce2 = 0;
 	thread.update = false;
 };
@@ -25,7 +26,7 @@ onmessage = function(e) {
 			thread.enable = true;
 			break;
 		default:
-			thread.newJob(e.data.job, e.data.jobId);
+			thread.newJob(e.data.job, e.data.jobId, e.data.poolId);
 			break;
 	}
 };
@@ -41,8 +42,15 @@ onmessage = function(e) {
 				pad.substring(0, pad.length - nonce2.length) + nonce2
 			);
 			var midstate = get_midstate(blockheader);
-			var raw = gw_pool2raw(midstate, blockheader, thread.jobId, 0, 0, thread.nonce2);
-			
+			var raw = gw_pool2raw(
+				midstate,
+				blockheader,
+				thread.jobId,
+				0,
+				thread.poolId,
+				thread.nonce2
+			);
+
 			var work = [];
 			var cnt = Math.ceil(raw.byteLength / 33);
 			for (var idx = 1; idx < cnt + 1; idx++)
