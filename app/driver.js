@@ -140,13 +140,6 @@ Nano.prototype.__defineSetter__("received", function(pkg) {
 			}
 			break;
 	}
-	if (this._enable) {
-		this._send(mm_encode(
-			P_POLLING, 0, 0x01, 0x01,
-			new ArrayBuffer(32)
-		));
-		this._receive();
-	}
 });
 
 Nano.prototype.__defineSetter__("sent", function(info) {
@@ -154,10 +147,15 @@ Nano.prototype.__defineSetter__("sent", function(info) {
 		var nano = this;
 		(function loop() {
 			var work = nano.miner.getWork;
-			if (work !== undefined)
+			if (work !== undefined) {
 				for (var i = 0; i < work.length; i++)
 					nano._send(work[i], i);
-			else
+				nano._send(mm_encode(
+					P_POLLING, 0, 0x01, 0x01,
+					new ArrayBuffer(32)
+				));
+				nano._receive();
+			} else
 				setTimeout(loop, 100);
 		})();
 	}
