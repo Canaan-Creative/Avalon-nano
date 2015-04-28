@@ -93,18 +93,10 @@ void a3222_spi_init(void)
 
 void a3222_process_finish(void)
 {
-	Chip_SSP_DATA_SETUP_T xf_setup;
-
-	xf_setup.length = 8;
-	xf_setup.tx_data = g_spi_txbuf;
-	xf_setup.rx_data = g_spi_rxbuf;
-	xf_setup.rx_cnt = xf_setup.tx_cnt = 0;
-
 	Load_Set(1);
-	Chip_SSP_RWFrames_Blocking(LPC_SSP, &xf_setup);
+	Chip_SSP_WriteFrames_Blocking(LPC_SSP, g_spi_txbuf, 8);
 	Load_Set(0);
-
-	Delay(500);
+	Delay(100);
 }
 
 int a3222_process_work(uint8_t *pkg)
