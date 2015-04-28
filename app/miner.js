@@ -89,7 +89,7 @@ Miner.prototype.__defineSetter__("nanoConnected", function(msg) {
 });
 
 Miner.prototype.__defineSetter__("nanoDetected", function(msg) {
-	// msg: {nanoId, success}
+	// msg: {nanoId, success, version}
 	if (msg.success)
 		this._nanos[msg.nanoId].run(4);
 	this.onNanoDetected.fire(msg);

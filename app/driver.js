@@ -127,12 +127,14 @@ Nano.prototype.__defineSetter__("received", function(pkg) {
 			if (check_version(this.version))
 				this.miner.nanoDetected = {
 					nanoId: this.id,
+					version: this.version,
 					success: true
 				};
 			else {
 				this.log("info", "Wrong Version.");
 				this.miner.nanoDetected = {
 					nanoId: this.id,
+					version: this.version,
 					success: false
 				};
 			}
