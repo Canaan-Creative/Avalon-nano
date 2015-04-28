@@ -6,8 +6,7 @@ var main = function() {
 	miner.onNewNano.addListener(function(msg) {
 		chrome.runtime.sendMessage({
 			info: "NewNano",
-			nanoId: msg.nanoId,
-			nano: msg.nano
+			nanoId: msg.nanoId
 		});
 	});
 
@@ -22,7 +21,7 @@ var main = function() {
 		chrome.runtime.sendMessage({
 			info: "NanoConnected",
 			nanoId: msg.nanoId,
-			succes: msg.success
+			success: msg.success
 		});
 	});
 
@@ -30,7 +29,7 @@ var main = function() {
 		chrome.runtime.sendMessage({
 			info: "NanoDetected",
 			nanoId: msg.nanoId,
-			succes: msg.success
+			success: msg.success
 		});
 	});
 
@@ -128,3 +127,8 @@ chrome.app.runtime.onLaunched.addListener(function() {
 		id: "Avalon Nano"
 	});
 });
+
+// url: 'stratum.btcchina.com',
+// port: 3333,
+// username: "canaan.apptest",
+// password: "1234"

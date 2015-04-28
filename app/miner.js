@@ -65,13 +65,13 @@ Miner.prototype.__defineSetter__("newJob", function(job) {
 	this._thread.postMessage({job: job, jobId: this._jobId});
 });
 
-Miner.prototype.__defineSetter__("newNano", function(info) {
-	// info: {nanoId, nano}
-	this.log("info", "New Nano: %d", info.nanoId);
-	this._nanos[info.nanoId] = info.nano;
-	info.nano.connect();
+Miner.prototype.__defineSetter__("newNano", function(msg) {
+	// msg: {nanoId, nano}
+	this.log("info", "New Nano: %d", msg.nanoId);
+	this._nanos[msg.nanoId] = msg.nano;
+	msg.nano.connect();
 
-	this.onNewNano.fire(info);
+	this.onNewNano.fire(msg);
 });
 
 Miner.prototype.__defineSetter__("nanoDeleted", function(nanoId) {
@@ -81,41 +81,41 @@ Miner.prototype.__defineSetter__("nanoDeleted", function(nanoId) {
 	this.onNanoDeleted.fire(nanoId);
 });
 
-Miner.prototype.__defineSetter__("nanoConnected", function(info) {
-	// info: {nanoId, success}
-	if (info.success)
-		this._nanos[info.nanoId].detect();
-	this.onNanoConnected.fire(info);
+Miner.prototype.__defineSetter__("nanoConnected", function(msg) {
+	// msg: {nanoId, success}
+	if (msg.success)
+		this._nanos[msg.nanoId].detect();
+	this.onNanoConnected.fire(msg);
 });
 
-Miner.prototype.__defineSetter__("nanoDetected", function(info) {
-	// info: {nanoId, success}
-	if (info.success)
-		this._nanos[info.nanoId].run(4);
-	this.onNanoDetected.fire(info);
+Miner.prototype.__defineSetter__("nanoDetected", function(msg) {
+	// msg: {nanoId, success}
+	if (msg.success)
+		this._nanos[msg.nanoId].run(4);
+	this.onNanoDetected.fire(msg);
 });
 
-Miner.prototype.__defineSetter__("poolSubscribed", function(info) {
-	// info: {poolId, success}
-	this.onPoolSubscribed.fire(info);
+Miner.prototype.__defineSetter__("poolSubscribed", function(msg) {
+	// msg: {poolId, success}
+	this.onPoolSubscribed.fire(msg);
 });
 
-Miner.prototype.__defineSetter__("poolAuthorized", function(info) {
-	// info: {poolId, success}
-	this.onPoolAuthorized.fire(info);
+Miner.prototype.__defineSetter__("poolAuthorized", function(msg) {
+	// msg: {poolId, success}
+	this.onPoolAuthorized.fire(msg);
 });
 
 
-Miner.prototype.__defineSetter__("newNonce", function(info) {
-	// info: {nanoId, nonce}
+Miner.prototype.__defineSetter__("newNonce", function(msg) {
+	// msg: {nanoId, nonce}
 	// TODO: submit
-	this.onNewNonce.fire(info);
+	this.onNewNonce.fire(msg);
 });
 
-Miner.prototype.__defineSetter__("newStatus", function(info) {
-	// info: {nanoId, stat}
+Miner.prototype.__defineSetter__("newStatus", function(msg) {
+	// msg: {nanoId, stat}
 	// TODO: update status
-	this.onNewStatus.fire(info);
+	this.onNewStatus.fire(msg);
 });
 
 Miner.prototype.__defineGetter__("getWork", function() {
@@ -199,8 +199,8 @@ MinerEvent.prototype.removeListener = function(id) {
 	delete(this._registered[id]);
 };
 
-MinerEvent.prototype.fire = function(info) {
+MinerEvent.prototype.fire = function(msg) {
 	for (var callback of this._registered)
 		if (callback !== undefined)
-			callback(info);
+			callback(msg);
 };
