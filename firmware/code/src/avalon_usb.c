@@ -129,25 +129,3 @@ void AVALON_USB_Init(void)
 
 	bUsbInit = TRUE;
 }
-/* Sends a character on the USB */
-void AVALON_USB_PutChar(char ch)
-{
-	UCOM_Write((uint8_t*)&ch,1);
-}
-
-/* Outputs a string on the debug USB */
-void AVALON_USB_PutSTR(char *str)
-{
-	UCOM_Write((uint8_t*)str,strlen(str));
-}
-
-void AVALON_USB_Test(void)
-{
-	AVALON_USB_Init();
-
-	AVALON_USB_PutSTR("AVALON_USB_Test Start\n");
-	AVALON_USB_PutSTR("hello");
-	AVALON_USB_PutChar('V');
-	AVALON_USB_PutChar('\n');
-	AVALON_USB_PutSTR("AVALON_USB_Test End\n");
-}
