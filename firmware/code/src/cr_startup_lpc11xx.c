@@ -698,6 +698,7 @@ void NMI_Handler(void)
     {
     }
 }
+/* http://www.lpcware.com/content/faq/lpcxpresso/debugging-hard-fault */
 __attribute__ ((section(".after_vectors")))
 void HardFault_Handler(void)
 {
