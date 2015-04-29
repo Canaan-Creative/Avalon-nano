@@ -22,7 +22,6 @@
 #include "crc.h"
 #include "protocol.h"
 #include "avalon_a3222.h"
-#include "avalon_timer.h"
 
 #ifdef __CODE_RED
 __CRP unsigned int CRP_WORD = CRP_NO_ISP;
@@ -30,8 +29,10 @@ __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 
 #define A3222_TIMER_TIMEOUT				(AVALON_TMR_ID1)
 
-#define A3222_STAT_IDLE					1
-#define A3222_STAT_PROCMM				2
+enum current_stat {
+	CURRENT_STAT_IDLE = 1,
+	CURRENT_STAT_PROCMM
+};
 
 #define WDT_FEEDTIME					2
 /*****************************************************************************
@@ -77,15 +78,14 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		UCOM_Write(g_ackpkg);
 		break;
 	case AVAU_P_WORK:
-		if (pkg->idx != 1 && pkg->idx != 2 && pkg->cnt != 2)
-			break;
-
-		if (pkg->idx == 1)
-			memset(g_a3222_pkg, 0, AVAU_P_WORKLEN);
 		/*
 		 * idx-1: midstate(32)
 		 * idx-2: job_id(1)+ntime(1)+pool_no(2)+nonce2(4) + reserved(14) + data(12)
-		 * */
+		 */
+
+		if (pkg->idx != 1 && pkg->idx != 2 && pkg->cnt != 2)
+			break;
+
 		memcpy(g_a3222_pkg + ((pkg->idx - 1) * 32), pkg->data, 32);
 		if (pkg->idx == 2 && pkg->cnt == 2) {
 			a3222_process_work(g_a3222_pkg);
@@ -94,11 +94,12 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		break;
 	case AVAU_P_POLLING:
 		memset(g_ackpkg, 0, AVAU_P_COUNT);
-		if (a3222_get_report_count() > 0) {
+		if (a3222_get_report_count()) {
 			/* P_NONCE: job_id(1)+ntime(1)+pool_no(2)+nonce2(4)+nonce(4) */
 			a3222_get_report(g_ackpkg + AVAU_P_DATAOFFSET);
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAU_P_NONCE);
 		} else {
+			/* P_STATUS: */
 			g_ackpkg[AVAU_P_DATAOFFSET] = 0xaa;
 			g_ackpkg[AVAU_P_DATAOFFSET + 31] = 0x55;
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAU_P_STATUS);
@@ -114,7 +115,7 @@ int main(void)
 {
 	uint32_t item_count = 0;
 	Bool timestart = FALSE;
-	uint8_t a3233_stat = A3222_STAT_IDLE;
+	enum current_stat stat= CURRENT_STAT_IDLE;
 
 	Board_Init();
 	SystemCoreClockUpdate();
@@ -123,41 +124,19 @@ int main(void)
 	wdt_enable();
 
 	AVALON_USB_Init();
-	AVALON_TMR_Init();
+
 
 	a3222_spi_init();
 
-	while (1) {
+	while (42) {
 		wdt_feed();
 
-		switch (a3233_stat) {
-		case A3222_STAT_IDLE:
-			/* TODO: power off the asic */
-			item_count = UCOM_Read_Cnt();
-			if (item_count)
-				a3233_stat = A3222_STAT_PROCMM;
-			break;
-		case A3222_STAT_PROCMM:
-			item_count = UCOM_Read_Cnt();
-			if (item_count) {
-				memset(g_reqpkg, 0, AVAU_P_COUNT);
-				UCOM_Read(g_reqpkg);
-				process_mm_pkg((struct avalon_pkg*)g_reqpkg);
-				timestart = FALSE;
-				AVALON_TMR_Kill(A3222_TIMER_TIMEOUT);
-			}
+		item_count = UCOM_Read_Cnt();
+		if (item_count) {
+			memset(g_reqpkg, 0, AVAU_P_COUNT);
 
-			if (!timestart) {
-				AVALON_TMR_Set(A3222_TIMER_TIMEOUT, 400, NULL);
-				timestart = TRUE;
-			}
-
-			if (AVALON_TMR_IsTimeout(A3222_TIMER_TIMEOUT)) {
-				timestart = FALSE;
-				AVALON_TMR_Kill(A3222_TIMER_TIMEOUT);
-				a3233_stat = A3222_STAT_IDLE;
-			}
-			break;
+			UCOM_Read(g_reqpkg);
+			process_mm_pkg((struct avalon_pkg*)g_reqpkg);
 		}
 
 		/* Sleep until next IRQ happens */
