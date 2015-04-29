@@ -38,33 +38,22 @@ static inline uint32_t bswap_32(uint32_t value)
         (uint32_t)bswap_16((uint16_t)((value) >> 16)));
 }
 
-static void Delay(unsigned int ms)
+static void init_pinmux(void)
 {
-       unsigned int i;
-       unsigned int msticks = SystemCoreClock / 16000; /* FIXME: 16000 is not accurate */
-
-       while (ms && ms--) {
-               for(i = 0; i < msticks; i++)
-                       __NOP();
-       }
-}
-
-static void Init_PinMux(void)
-{
-	/* Only SSP0 is supported */
 	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 2, (IOCON_FUNC0));	/* LOAD */
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 2);
+
 	Chip_IOCON_PinMuxSet(LPC_IOCON, 1, 29, (IOCON_FUNC1 | IOCON_MODE_PULLUP));	/* SCK0 */
 	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 8, (IOCON_FUNC1 | IOCON_MODE_PULLUP));	/* MISO0 */
 	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 9, (IOCON_FUNC1 | IOCON_MODE_PULLUP));	/* MOSI0 */
 }
 
-static void Load_Set(bool On)
+static void load_set(bool On)
 {
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 2, On);
 }
 
-static void SPI_Init()
+static void spi_init()
 {
 	SSP_ConfigFormat ssp_format;
 
@@ -80,10 +69,10 @@ static void SPI_Init()
 
 void a3222_init(void)
 {
-	Init_PinMux();
-	Load_Set(0);
+	init_pinmux();
+	load_set(0);
 
-	SPI_Init();
+	spi_init();
 
 	RingBuffer_Init(&g_a3222_rxrb, g_a3222_reports, A3222_REPORT_SIZE, A3222_REPORT_CNT);
 	RingBuffer_Init(&g_a3222_txrb, g_a3222_works, A3222_WORK_SIZE, A3222_WORK_CNT);
@@ -91,18 +80,7 @@ void a3222_init(void)
 
 int a3222_push_work(uint8_t *pkg)
 {
-	return RingBuffer_Pop(&g_a3222_txrb, pkg);
-}
-
-int a3222_process_work(uint8_t *pkg)
-{
-	Chip_SSP_DATA_SETUP_T  xf_setup;
-
-	int i;
-	uint8_t report[A3222_REPORT_SIZE];
 	uint32_t pre_a[3], pre_e[3];
-	uint32_t tmp, ret;
-	uint32_t last_nonce = 0xbeafbeaf;
 
 	sha256_loc(pkg, pkg + 52, pre_a, pre_e);
 
@@ -131,10 +109,23 @@ int a3222_process_work(uint8_t *pkg)
 
 	memcpy(g_spi_txbuf + 80, "\x0\x0\x0\x1", 4);
 	memcpy(g_spi_txbuf + 84, "\x0\x0\x0\x1", 4);
-	memcpy(g_spi_txbuf + 88, "\x0\x0\x0\x1", 4);	/* PLL */
+	memcpy(g_spi_txbuf + 88, "\x0\x0\x0\x1", 4);	/* PLL, Voltage: 0.7625 */
+
+	return RingBuffer_Insert(&g_a3222_txrb, g_spi_txbuf);
+}
+
+static int a3222_process_work(uint8_t *spi_txbuf)
+{
+	int i;
+	uint32_t tmp, ret;
+	uint32_t last_nonce = 0xbeafbeaf;
+
+	Chip_SSP_DATA_SETUP_T  xf_setup;
+
+	uint8_t report[A3222_REPORT_SIZE];
 
 	xf_setup.length = A3222_WORK_SIZE;
-	xf_setup.tx_data = g_spi_txbuf;
+	xf_setup.tx_data = spi_txbuf;
 	xf_setup.rx_data = g_spi_rxbuf;
 	xf_setup.rx_cnt = 0;
 	xf_setup.tx_cnt = 0;
@@ -159,12 +150,21 @@ int a3222_process_work(uint8_t *pkg)
 	return 0;
 }
 
-void a3222_process_finish(void)
+void a3222_process(void)
 {
-	Load_Set(1);
-	Chip_SSP_WriteFrames_Blocking(LPC_SSP, g_spi_txbuf, 8);
-	Load_Set(0);
-	Delay(100);
+	int i;
+
+	if (RingBuffer_GetCount(&g_a3222_txrb) < 4)
+		return;
+
+	for (i = 0; i < 4; i++) {
+		RingBuffer_Pop(&g_a3222_txrb, g_spi_txbuf);
+		a3222_process_work(g_spi_txbuf);
+	}
+
+	load_set(1);
+	Chip_SSP_WriteFrames_Blocking(LPC_SSP, g_spi_txbuf, 8);	/* A3222 load needs 8 cycle clocks */
+	load_set(0);
 }
 
 int a3222_get_report_count(void)

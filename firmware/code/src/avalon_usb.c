@@ -82,7 +82,7 @@ USB_INTERFACE_DESCRIPTOR *find_IntfDesc(const uint8_t *pDesc, uint32_t intfClass
 	return pIntfDesc;
 }
 
-void AVALON_USB_Init(void)
+void usb_init(void)
 {
 	static Bool bUsbInit = FALSE;
 	USBD_API_INIT_PARAM_T usb_param;
@@ -94,7 +94,7 @@ void AVALON_USB_Init(void)
 
 	usb_pin_clk_init();
 
-	/* initilize call back structures */
+	/* Initialize call back structures */
 	memset((void *) &usb_param, 0, sizeof(USBD_API_INIT_PARAM_T));
 	usb_param.usb_reg_base = LPC_USB0_BASE;
 	usb_param.max_num_ep = 2;
@@ -115,14 +115,14 @@ void AVALON_USB_Init(void)
 	ret = USBD_API->hw->Init(&g_hUsb, &desc, &usb_param);
 	if (ret == LPC_OK) {
 
-		/* Init UCOM - USB to UART bridge interface */
+		/* Init USB HID bridge interface */
 		ret = UCOM_init(g_hUsb, (USB_INTERFACE_DESCRIPTOR *) &USB_FsConfigDescriptor[sizeof(USB_CONFIGURATION_DESCRIPTOR)], &usb_param);
 		if (ret == LPC_OK) {
-			/* Make sure USB and UART IRQ priorities are same for this example */
+			/* Make sure USB and IRQ priorities are same for this example */
 			NVIC_SetPriority(USB0_IRQn, 1);
-			/*  enable USB interrrupts */
+			/* Enable USB interrrupts */
 			NVIC_EnableIRQ(USB0_IRQn);
-			/* now connect */
+			/* Now connect */
 			USBD_API->hw->Connect(g_hUsb, 1);
 		}
 	}

@@ -27,17 +27,12 @@
 __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 #endif
 
-#define A3222_TIMER_TIMEOUT				(AVALON_TMR_ID1)
 
-enum current_stat {
+static enum current_stat {
 	CURRENT_STAT_IDLE = 1,
 	CURRENT_STAT_PROCMM
 };
 
-#define WDT_FEEDTIME					2
-/*****************************************************************************
- * Private types/enumerations/variables
- ****************************************************************************/
 static uint8_t g_a3222_pkg[AVAU_P_WORKLEN];
 static uint8_t g_reqpkg[AVAU_P_COUNT];
 static uint8_t g_ackpkg[AVAU_P_COUNT];
@@ -88,8 +83,8 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 
 		memcpy(g_a3222_pkg + ((pkg->idx - 1) * 32), pkg->data, 32);
 		if (pkg->idx == 2 && pkg->cnt == 2) {
-			a3222_process_work(g_a3222_pkg);
-			a3222_process_finish();
+			a3222_push_work(g_a3222_pkg);
+			a3222_process();
 		}
 		break;
 	case AVAU_P_POLLING:
@@ -113,25 +108,21 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 
 int main(void)
 {
-	uint32_t item_count = 0;
-	Bool timestart = FALSE;
 	enum current_stat stat= CURRENT_STAT_IDLE;
 
 	Board_Init();
 	SystemCoreClockUpdate();
 
-	wdt_init(WDT_FEEDTIME);
-	wdt_enable();
-
-	AVALON_USB_Init();
-
+	usb_init();
 	a3222_init();
+
+	wdt_init(5);	/* 5 seconds */
+	wdt_enable();
 
 	while (42) {
 		wdt_feed();
 
-		item_count = UCOM_Read_Cnt();
-		if (item_count) {
+		if (UCOM_Read_Cnt()) {
 			memset(g_reqpkg, 0, AVAU_P_COUNT);
 
 			UCOM_Read(g_reqpkg);

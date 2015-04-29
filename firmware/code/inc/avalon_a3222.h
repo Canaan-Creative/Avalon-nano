@@ -15,7 +15,8 @@
 #define A3222_REPORT_CNT	48
 
 void a3222_init(void);
-int a3222_process_work(uint8_t *pkg);
+int a3222_push_work(uint8_t *pkg);
+void a3222_process(void);
 int a3222_get_report_count(void);
 int a3222_get_report(uint8_t *pkg);
 
