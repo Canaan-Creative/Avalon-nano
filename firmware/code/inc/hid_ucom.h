@@ -39,32 +39,20 @@ extern "C"
 {
 #endif
 
-/** @ingroup EXAMPLES_USBDLIB_11XX_HID_UART
- * @{
- */
 
 /**
- * @brief	USB to UART bridge port init routine
+ * @brief	USB to Communication bridge port init routine
  * @param	pDesc		: Pointer to configuration descriptor
  * @param	pUsbParam	: Pointer USB param structure returned by previous init call
  * @return	Always returns LPC_OK.
  */
 ErrorCode_t UCOM_init(USBD_HANDLE_T hUsb, USB_INTERFACE_DESCRIPTOR *pIntfDesc, USBD_API_INIT_PARAM_T *pUsbParam);
 uint32_t UCOM_Read_Cnt(void);
-uint32_t UCOM_Read(uint8_t *pBuf, uint32_t buf_len);
-uint32_t UCOM_Write(uint8_t *pBuf, uint32_t len);
-void UCOM_FlushRxRB(void);
-uint32_t UART_Read_Cnt(void);
-uint32_t UART_Read(uint8_t *pBuf, uint32_t buf_len);
-uint32_t UART_Write(uint8_t *pBuf, uint32_t len);
-void UART_FlushTxRB(void);
-void UART_FlushRxRB(void);
-/**
- * @}
- */
+uint32_t UCOM_Read(uint8_t *pBuf);
+uint32_t UCOM_Write(uint8_t *pBuf);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __CDC_UCOM_H_ */
+#endif /* __HID_UCOM_H_ */
