@@ -15,28 +15,28 @@
 /* Avalon nano protocol package type, 40 bytes total
  * HEADER(2) TYPE OPT IDX CNT DATA(32) CRC(2)
  * */
-#define AVAU_VERSION_LEN	15
-#define AVAU_H1	'C'
-#define AVAU_H2	'N'
+#define AVAU_MM_VER_LEN	15
 
-#define AVAU_P_COUNT	40
-#define AVAU_P_DATA_LEN	(AVAU_P_COUNT - 8)	//32Bytes
+#define AVAU_H1 'C'
+#define AVAU_H2 'N'
 
-#define AVAU_P_DETECT	0x10
-#define AVAU_P_SET_VOLT 0x11
-#define AVAU_P_SET_FREQ 0x12
-#define AVAU_P_WORK		0x13
-#define AVAU_P_POLLING  0x14
-#define AVAU_P_REQUIRE  0x15
-#define AVAU_P_TEST     0x16
+#define AVAU_P_COUNT    40
+#define AVAU_P_DATA_LEN 32
 
-#define AVAU_P_ACKDETECT 0x20
-#define AVAU_P_GET_VOLT  0x21
-#define AVAU_P_GET_FREQ  0x22
-#define AVAU_P_NONCE     0x23
-#define AVAU_P_STATUS    0x24
-#define AVAU_P_TEST_RET  0x25
+#define AVAU_P_DETECT   0x10
 
+#define AVAU_P_SET_VOLT 0x22
+#define AVAU_P_SET_FREQ 0x23
+#define AVAU_P_WORK     0x24
+
+#define AVAU_P_POLLING	0x30
+#define AVAU_P_REQUIRE	0x31
+#define AVAU_P_TEST	0x32
+
+#define AVAU_P_ACKDETECT	0x40
+#define AVAU_P_STATUS		0x41
+#define AVAU_P_NONCE		0x42
+#define AVAU_P_TEST_RET		0x43
 
 #define AVAU_P_DATAOFFSET	6
 #define AVAU_P_WORKLEN		64

@@ -68,7 +68,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	switch (pkg->type) {
 	case AVAU_P_DETECT:
 		memset(g_ackpkg, 0, AVAU_P_COUNT);
-		memcpy(g_ackpkg + AVAU_P_DATAOFFSET, AVAU_VERSION, AVAU_VERSION_LEN);
+		memcpy(g_ackpkg + AVAU_P_DATAOFFSET, AVAU_VERSION, AVAU_MM_VER_LEN);
 		init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAU_P_ACKDETECT);
 		UCOM_Write(g_ackpkg);
 		break;
@@ -95,7 +95,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAU_P_NONCE);
 		} else {
 			/* P_STATUS: */
-			memcpy(g_ackpkg + AVAU_P_DATAOFFSET, AVAU_VERSION, AVAU_VERSION_LEN);
+			memcpy(g_ackpkg + AVAU_P_DATAOFFSET, AVAU_VERSION, AVAU_MM_VER_LEN);
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAU_P_STATUS);
 		}
 		UCOM_Write(g_ackpkg);
@@ -129,6 +129,6 @@ int main(void)
 		}
 
 		/* Sleep until next IRQ happens */
-		__WFI();
+		//__WFI(); /* FIXME: */
 	}
 }
