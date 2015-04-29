@@ -28,7 +28,7 @@ __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 #endif
 
 
-static enum current_stat {
+enum current_stat {
 	CURRENT_STAT_IDLE = 1,
 	CURRENT_STAT_PROCMM
 };
@@ -95,8 +95,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAU_P_NONCE);
 		} else {
 			/* P_STATUS: */
-			g_ackpkg[AVAU_P_DATAOFFSET] = 0xaa;
-			g_ackpkg[AVAU_P_DATAOFFSET + 31] = 0x55;
+			memcpy(g_ackpkg + AVAU_P_DATAOFFSET, AVAU_VERSION, AVAU_VERSION_LEN);
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAU_P_STATUS);
 		}
 		UCOM_Write(g_ackpkg);
