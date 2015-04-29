@@ -183,7 +183,7 @@ const uint8_t USB_StringDescriptor[] = {
 	'0', 0,
 	'4', 0,
 	'2', 0,
-	'3', 0,
+	'9', 0,
 	/* Index 0x04: Interface 0, Alternate Setting 0 */
 	(3 * 2 + 2),					/* bLength (9 Char + Type + lenght) */
 	USB_STRING_DESCRIPTOR_TYPE,		/* bDescriptorType */
