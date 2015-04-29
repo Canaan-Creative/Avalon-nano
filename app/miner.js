@@ -149,6 +149,17 @@ Miner.prototype.setPool = function(poolInfo, poolId) {
 	this._active_pool = this._active_pool || poolId;
 };
 
+Miner.prototype.deletePool = function(poolId) {
+	this._pools[poolId].disconnect();
+	delete(this._works[poolId]);
+	delete(this._thread[poolId]);
+	delete(this._thread_pause[poolId]);
+	delete(this._jobId[poolId]);
+	delete(this._pools[poolId]);
+
+	// TODO: Change this._active_pool
+};
+
 Miner.prototype.scanNano = function() {
 	var miner = this;
 	chrome.hid.getDevices(FILTERS, function(devices) {
