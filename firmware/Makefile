@@ -5,7 +5,7 @@
 # For details see the UNLICENSE file at the root of the source tree.
 #
 
-FIRMWARE = avalon_nano
+FIRMWARE = avalon4_mini
 
 DATE:=$(shell date +%Y-%m-%d)
 OS:=$(shell uname -s)
