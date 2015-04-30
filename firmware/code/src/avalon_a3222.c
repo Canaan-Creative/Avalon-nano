@@ -192,6 +192,7 @@ static int a3222_process_work(uint8_t *spi_txbuf)
 void a3222_process(void)
 {
 	int i;
+	uint8_t load[2];
 
 	if (RingBuffer_GetCount(&a3222_txrb) < ASIC_COUNT)
 		return;
@@ -201,9 +202,8 @@ void a3222_process(void)
 		a3222_process_work(g_spi_txbuf);
 	}
 
-	memset(g_spi_txbuf, 0, 16);
 	load_set(1);
-	Chip_SSP_WriteFrames_Blocking(LPC_SSP, g_spi_txbuf, 16);	/* A3222 load needs 8 cycle clocks */
+	Chip_SSP_WriteFrames_Blocking(LPC_SSP, load, 2);	/* A3222 load needs 8 cycle clocks */
 	load_set(0);
 }
 
