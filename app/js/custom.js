@@ -155,6 +155,7 @@ $(function () {
 		var Pool_port = parseInt(Pool_before[1] || 3333);
 		var t = $.setting._maxPoolId() != undefined ? $.setting._maxPoolId()+1 : 0 ;
 		chrome.runtime.sendMessage({info: "NewPool", data:{url:Pool_url,port:Pool_port,username:Pool_worker,poolId:t}});
+		$.setting._appendPool( t ,{url:Pool_url,port:Pool_port,username:Pool_worker});		
 		$('#myModal').modal('hide');
 	});
 	$('#myModal').on('hidden.bs.modal', function (e) {
@@ -224,21 +225,14 @@ jQuery.setting = {
 		if( data != undefined){
 			for (var id in data)
 				if (data[id] !== undefined && data[id] !== null)
-					poolStr += `
-						<tr data-id="${id}">
-						<td>${data[id].url}:${data[id].port}</td>
-						<td>${data[id].username}</td>
-						<td>Normal</td>
-						<td class="op">
-						 <button class="button button-tiny button-highlight button-small" data-id="${id}" data-type="edit">Edit</button>
-						 <button class="button button-tiny button-caution button-small" data-id="${id}" data-type="remove">Remove</button>
-						</td>
-						</tr>`;
+					poolStr += $.setting._poolHtml(id ,data[id]);
 		} else {
 			poolStr += '<tr><td colspan="4" align="center" style="color:red;">Setting pool</td></tr>';
 		}
 		$("#pool_info").html( poolStr );
-
+		$.setting._bindButton();
+	},
+	_bindButton : function (){
 		$("td").delegate("button","click",function(){
 			switch( $(this).data('type') ) {
 				case 'edit':
@@ -250,9 +244,27 @@ jQuery.setting = {
 			}
 		});
 	},
+	_poolHtml : function (id , data) {
+		var poolStr = '';
+		poolStr += '<tr data-id="'+ id +'" id="pool-tr-id-' + id + '">';
+		poolStr += '<td>' + data.url + ':' + data.port + '</td>';
+		poolStr += '<td>' + data.username + '</td>';
+		poolStr += '<td>Normal</td>';
+		poolStr += '<td class="op">';
+		poolStr += ' <button class="button button-tiny button-highlight button-small" data-id="' + id + '" data-type="edit">Edit</button>';
+		poolStr += ' <button class="button button-tiny button-caution button-small" data-id="' + id + '" data-type="remove">Remove</button>';
+		poolStr += '</td>';
+		poolStr += '</tr>';
+		return poolStr;
+	},
+	_appendPool : function(id , data){
+		$("#pool_info").append($.setting._poolHtml(id, data));
+		$.setting._bindButton();
+	},
 	_removePool : function(poolId) {
 		console.log('removiePool  : ' + poolId);
 		chrome.runtime.sendMessage({info: "DeletePool", data:{poolId:poolId}});
+		$("#pool-tr-id-"+poolId).remove();
 	},
 	_editPool : function(poolId , data) {
 
