@@ -23,6 +23,8 @@
 #define SSP_MODE_MASTER   1
 
 struct a3222_context {
+	uint8_t freqflag;
+	uint32_t freq[ASIC_COUNT][3];
 	RINGBUFF_T a3222_rxrb;
 	RINGBUFF_T a3222_txrb;
 };
@@ -32,6 +34,7 @@ static uint8_t g_a3222_reports[A3222_REPORT_SIZE * A3222_REPORT_CNT];
 static uint8_t g_spi_txbuf[A3222_WORK_SIZE];
 static uint8_t g_spi_rxbuf[A3222_WORK_SIZE];
 static struct a3222_context g_a3222_ctx;
+static uint8_t g_asic_index = 0;
 
 static inline uint16_t bswap_16(uint16_t value)
 {
@@ -75,11 +78,19 @@ static void spi_init(void)
 
 void a3222_init(void)
 {
+	uint8_t i;
+
 	init_pinmux();
 	load_set(0);
 
 	spi_init();
 
+	g_a3222_ctx.freqflag = 0xf;
+	for (i = 0; i < ASIC_COUNT; i++) {
+		g_a3222_ctx.freq[i][0] = A3222_DEFAULT_FREQ;
+		g_a3222_ctx.freq[i][1] = A3222_DEFAULT_FREQ;
+		g_a3222_ctx.freq[i][2] = A3222_DEFAULT_FREQ;
+	}
 	RingBuffer_Init(&g_a3222_ctx.a3222_rxrb, g_a3222_reports, A3222_REPORT_SIZE, A3222_REPORT_CNT);
 	RingBuffer_Init(&g_a3222_ctx.a3222_txrb, g_a3222_works, A3222_WORK_SIZE, A3222_WORK_CNT);
 }
@@ -113,9 +124,19 @@ int a3222_push_work(uint8_t *pkg)
 
 	memcpy(g_spi_txbuf + 72, pkg + 32, 8);	 /* work id */
 
-	memcpy(g_spi_txbuf + 80, "\x0\x0\x0\x1", 4);
-	memcpy(g_spi_txbuf + 84, "\x0\x0\x0\x1", 4);
-	memcpy(g_spi_txbuf + 88, "\x0\x0\x0\x1", 4);	/* PLL, Voltage: 0.7625 */
+	if ((g_a3222_ctx.freqflag >> g_asic_index) & 1) {
+		g_a3222_ctx.freqflag &= ~(1 << g_asic_index);
+		UNPACK32(g_a3222_ctx.freq[g_asic_index][0], g_spi_txbuf + 80);
+		UNPACK32(g_a3222_ctx.freq[g_asic_index][1], g_spi_txbuf + 84);
+		UNPACK32(g_a3222_ctx.freq[g_asic_index][2], g_spi_txbuf + 88);
+	} else {
+		memcpy(g_spi_txbuf + 80, "\x0\x0\x0\x1", 4);
+		memcpy(g_spi_txbuf + 84, "\x0\x0\x0\x1", 4);
+		memcpy(g_spi_txbuf + 88, "\x0\x0\x0\x1", 4);	/* PLL, Voltage: 0.7625 */
+	}
+
+	g_asic_index++;
+	g_asic_index %= ASIC_COUNT;
 
 	return RingBuffer_Insert(&g_a3222_ctx.a3222_txrb, g_spi_txbuf);
 }
@@ -183,3 +204,18 @@ int a3222_get_report(uint8_t *report)
 	return RingBuffer_Pop(&g_a3222_ctx.a3222_rxrb, report);
 }
 
+/* index must <= ASIC_COUNT */
+void a3222_set_freq(uint32_t freq[], uint8_t index)
+{
+	if (!memcmp(freq, g_a3222_ctx.freq[index], sizeof(uint32_t) * 3))
+		return;
+
+	g_a3222_ctx.freqflag |= (1 << index);
+	memcpy(g_a3222_ctx.freq[index], freq, sizeof(uint32_t) * 3);
+}
+
+/* index must <= ASIC_COUNT */
+void a3222_get_freq(uint32_t freq[], uint8_t index)
+{
+	memcpy(freq, g_a3222_ctx.freq[index], sizeof(uint32_t) * 3);
+}

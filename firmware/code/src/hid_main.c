@@ -20,6 +20,8 @@
 #include "hid_ucom.h"
 
 #include "crc.h"
+#include "sha2.h"
+#include "defines.h"
 #include "protocol.h"
 #include "avalon_a3222.h"
 #include "avalon_usb.h"
@@ -54,6 +56,8 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 {
 	unsigned int expected_crc;
 	unsigned int actual_crc;
+	uint8_t i;
+	uint32_t val[3];
 
 	expected_crc = (pkg->crc[1] & 0xff) | ((pkg->crc[0] & 0xff) << 8);
 	actual_crc = crc16(pkg->data, AVAM_P_DATA_LEN);
@@ -95,6 +99,14 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_STATUS);
 		}
 		UCOM_Write(g_ackpkg);
+		break;
+	case AVAM_P_SET_FREQ:
+		UNPACK32(val[2], pkg->data);
+		UNPACK32(val[1], pkg->data + 4);
+		UNPACK32(val[0], pkg->data + 8);
+
+		for (i = 0; i < ASIC_COUNT; i++)
+			a3222_set_freq(val, i);
 		break;
 	default:
 		break;
