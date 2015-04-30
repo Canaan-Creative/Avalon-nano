@@ -32,8 +32,10 @@ Pool.prototype.run = function() {
 };
 
 Pool.prototype.disconnect = function() {
-	chrome.sockets.tcp.disconnect(this.socketId);
-	pool.log("info", "Disconnected.");
+	if (this.socketId !== undefined) {
+		chrome.sockets.tcp.disconnect(this.socketId);
+		this.log("info", "Disconnected.");
+	}
 };
 
 Pool.prototype.decode = function(result) {
