@@ -38,6 +38,7 @@ ifeq "$(OS)" "Darwin"
 else
 	cd bin/$(DATE) && md5sum -b $^ > md5sums
 endif
+	$(SIZE) $^
 
 $(FIRMWARE).axf: $(OBJS) lpc_chip_11uxx_lib nxp_lpcxpresso_11u14_board_lib
 	$(CC) -Wl,--start-group $(LDCFLAGS) $(LIBPATH) $(OBJS) $(LDLIBS) -Wl,--end-group -o $(FIRMWARE).axf
