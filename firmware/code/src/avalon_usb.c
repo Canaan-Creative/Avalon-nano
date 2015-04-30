@@ -9,8 +9,11 @@
  * This is free and unencumbered software released into the public domain.
  * For details see the UNLICENSE file at the root of the source tree.
  */
+
+#include <string.h>
 #include "board.h"
 
+#include "avalon_usb.h"
 #include "avalon_a3222.h"
 #include "app_usbd_cfg.h"
 #include "hid_ucom.h"

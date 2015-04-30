@@ -19,7 +19,7 @@ INCLUDES= -I./code/inc -I./nxplib/lpc_chip_11uxx_lib/inc -I./nxplib/nxp_lpcxpres
 SRCS	= $(wildcard ./code/src/*.c)
 OBJS	= $(patsubst %.c,%.o,$(SRCS))
 
-CFLAGS	+= -DAVAM_VERSION='"3U1504-$(GIT_VERSION)$(GIT_STATUS)"'
+CFLAGS	+= -DAVAM_VERSION='"3U1504-$(GIT_VERSION)$(GIT_STATUS)"' -Wstrict-prototypes -Wmissing-prototypes -Wall
 
 LDCFLAGS += -nostdlib -Xlinker -Map=$(FIRMWARE).map -Xlinker --gc-sections -mcpu=cortex-m0 -mthumb -T $(FIRMWARE).ld
 ifeq "$(SW_VERSION)" "DEBUG"

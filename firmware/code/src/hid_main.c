@@ -22,16 +22,12 @@
 #include "crc.h"
 #include "protocol.h"
 #include "avalon_a3222.h"
+#include "avalon_usb.h"
+#include "avalon_wdt.h"
 
 #ifdef __CODE_RED
 __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 #endif
-
-
-enum current_stat {
-	CURRENT_STAT_IDLE = 1,
-	CURRENT_STAT_PROCMM
-};
 
 static uint8_t g_a3222_pkg[AVAM_P_WORKLEN];
 static uint8_t g_reqpkg[AVAM_P_COUNT];
@@ -107,8 +103,6 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 
 int main(void)
 {
-	enum current_stat stat= CURRENT_STAT_IDLE;
-
 	Board_Init();
 	SystemCoreClockUpdate();
 

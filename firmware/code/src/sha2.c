@@ -65,7 +65,7 @@ uint32_t sha256_k[64] =
 
 /* SHA-256 functions */
 
-void sha256_transf(sha256_ctx *ctx, const unsigned char *message,
+static void sha256_transf(sha256_ctx *ctx, const unsigned char *message,
                    unsigned int block_nb)
 {
     uint32_t w[64];
