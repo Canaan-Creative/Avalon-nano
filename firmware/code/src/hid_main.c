@@ -58,6 +58,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	unsigned int actual_crc;
 	uint8_t i;
 	uint32_t val[3];
+	uint8_t roll_pkg[AVAM_P_WORKLEN];
 
 	expected_crc = (pkg->crc[1] & 0xff) | ((pkg->crc[0] & 0xff) << 8);
 	actual_crc = crc16(pkg->data, AVAM_P_DATA_LEN);
@@ -77,13 +78,20 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		 * idx-1: midstate(32)
 		 * idx-2: job_id(1)+ntime(1)+pool_no(2)+nonce2(4) + reserved(14) + data(12)
 		 */
-
 		if (pkg->idx != 1 && pkg->idx != 2 && pkg->cnt != 2)
 			break;
 
 		memcpy(g_a3222_pkg + ((pkg->idx - 1) * 32), pkg->data, 32);
 		if (pkg->idx == 2 && pkg->cnt == 2) {
-			a3222_push_work(g_a3222_pkg);
+			if (!g_a3222_pkg[32])
+				a3222_push_work(g_a3222_pkg);
+			else {
+				memcpy(roll_pkg, g_a3222_pkg, AVAM_P_WORKLEN);
+				for (i = 0; i < g_a3222_pkg[32]; i++) {
+					a3222_roll_work(roll_pkg, 1);
+					a3222_push_work(roll_pkg);
+				}
+			}
 			a3222_process();
 		}
 		break;

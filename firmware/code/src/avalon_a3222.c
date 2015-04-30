@@ -95,6 +95,15 @@ void a3222_init(void)
 	RingBuffer_Init(&g_a3222_ctx.a3222_txrb, g_a3222_works, A3222_WORK_SIZE, A3222_WORK_CNT);
 }
 
+void a3222_roll_work(uint8_t *pkg, int ntime_offset)
+{
+	uint32_t timev = 0;
+
+	PACK32(pkg + 56, &timev);
+	timev += ntime_offset;
+	UNPACK32(timev, pkg + 56);
+}
+
 int a3222_push_work(uint8_t *pkg)
 {
 	uint32_t pre_a[3], pre_e[3];
