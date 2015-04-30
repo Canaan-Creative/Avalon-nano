@@ -63,11 +63,18 @@ var renderChart = function() {
 
 var poolInit = function(setting) {
 	console.log(setting);
+	$.setting._pool( setting );
+	return;
 	for (var p of setting)
 		if (p !== undefined)
 			// add rows to pool table
 			return;
 };
+
+var nanoList = function(nanoId) {
+	$.setting._addNano(nanoId);
+}
+
 
 $(function () {
 	// render Highchart
@@ -85,21 +92,27 @@ $(function () {
 					break;
 				case "NewNano":
 					console.log("NewNano");
+					nanoList(msg.nanoId);
 					break;
 				case "NanoDeleted":
 					console.log("NanoDeleted");
+					$.setting._removeNano(msg.nanoId);
 					break;
 				case "NanoConnected":
 					console.log("NanoConnected");
+					$.setting._updateNano(msg.nanoId,'status', msg.success);	
 					break;
 				case "NanoDetected":
 					console.log("NanoDetected");
+					$.setting._updateNano(msg.nanoId,'version', msg.success, msg.version);	
 					break;
 				case "NewNonce":
 					console.log("NewNonce");
 					break;
 				case "NewStatus":
 					console.log("NewStatus");
+					//console.log(msg.stat.frequency);
+					$.setting._updateNano(msg.nanoId,'frequency', msg.stat.frequency);	
 					break;
 				case "PoolSubscribed":
 					console.log("PoolSubscribed");
@@ -134,6 +147,8 @@ $(function () {
 			$("#message").html('Pool address or Worker is null').css("color","red");
 			return;
 		}
+
+
 		chrome.storage.local.get('pool' , function(result){
 			if(typeof(result.pool) != "undefined")
 				pool = result.pool;
@@ -189,6 +204,7 @@ jQuery.setting = {
 	_show : function ( id ) {
 		$(id).show();
 	},
+
 	_remove : function ( id  ) {
 		chrome.storage.local.get( 'pool' , function( result ) {
 			if(typeof(result.pool) != "undefined") {
@@ -231,6 +247,45 @@ jQuery.setting = {
 			poolStr += '<tr><td colspan="4" align="center" style="color:red;">Setting pool</td></tr>';
 		}
 		$("#pool_info").html( poolStr );
+	},
+	_addNano : function (nanoId) {
+		var nanoStr = '';	
+		nanoStr += '<tr class="active" id="nano-tr-id-' + nanoId + '">';
+		nanoStr += '<td id="nano-device-id-' + nanoId + '">nano' + nanoId + '</td>';   
+		nanoStr += '<td>55</td>';      
+		nanoStr += '<td id="nano-frequency-"'+ nanoId +'>0</td>';     
+		nanoStr += '<td id="nano-status-' + nanoId + '">Normal</td>';   
+		nanoStr += '<td id="nano-version-' + nanoId + '">12.01</td>';   
+		nanoStr += '</tr>';
+		$("#device").append(nanoStr);
+	},	
+	_updateNano : function (nanoId , type , message ,version){
+		switch(type){
+			case 'status':
+				if( message != true ){
+					$("#nano-tr-id-"+nanoId).removeClass("active").addClass("warning");
+					$("#nano-status-"+nanoId).html('Connect failt');
+				}else{
+					 $("#nano-status-"+nanoId).html('Connect success');
+				}
+				break;
+			case 'version':
+				$("#nano-version-"+nanoId).html(version);
+				if( message != true){
+					$("#nano-tr-id-"+nanoId).removeClass("active").addClass("warning");
+					$("#nano-status-"+nanoId).html('Detect failt');
+				}else{
+					$("#nano-status-"+nanoId).html('Detect pass');
+				}
+				break;
+			case 'frequency':
+				$("#nano-frequency-"+nanoId).html(message);
+				break;
+		}
+	},
+	_removeNano : function(nanoId) {
+		$("#nano-tr-id-"+nanoId).remove();
 	}
+		
 }
 
