@@ -78,6 +78,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		 * idx-1: midstate(32)
 		 * idx-2: job_id(1)+ntime(1)+pool_no(2)+nonce2(4) + reserved(14) + data(12)
 		 */
+
 		if (pkg->idx != 1 && pkg->idx != 2 && pkg->cnt != 2)
 			break;
 
@@ -92,7 +93,6 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 					a3222_push_work(roll_pkg);
 				}
 			}
-			a3222_process();
 		}
 		break;
 	case AVAM_P_POLLING:
@@ -141,6 +141,10 @@ int main(void)
 			UCOM_Read(g_reqpkg);
 			process_mm_pkg((struct avalon_pkg*)g_reqpkg);
 		}
+
+		/* Power off the AISC */
+
+		a3222_process();
 
 		/* Sleep until next IRQ happens */
 		//__WFI(); /* FIXME: */

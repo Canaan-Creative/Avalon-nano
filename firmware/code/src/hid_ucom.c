@@ -136,7 +136,6 @@ static ErrorCode_t UCOM_int_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event)
 			g_usb.usbRxFlags |= UCOM_RX_BUF_QUEUED;
 		}
 		break;
-
 	default:
 		break;
 	}
