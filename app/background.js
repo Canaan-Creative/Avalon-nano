@@ -115,7 +115,8 @@ chrome.app.runtime.onLaunched.addListener(function() {
 					chrome.storage.local.set({"pool": setting});
 					break;
 				case "DeletePool":
-					miner.deletePool(poolId);
+					miner.deletePool(msg.data.poolId);
+					delete(setting[msg.data.poolId]);
 					break;
 			}
 	});
