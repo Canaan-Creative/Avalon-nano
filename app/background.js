@@ -29,7 +29,7 @@ var main = function() {
 		chrome.runtime.sendMessage({
 			info: "NanoDetected",
 			nanoId: msg.nanoId,
-            version: msg.version,
+			version: msg.version,
 			success: msg.success
 		});
 	});
@@ -80,12 +80,6 @@ var main = function() {
 chrome.app.runtime.onLaunched.addListener(function() {
 	chrome.storage.local.get("pool", function(result) {
 		setting = result.pool;
-		setting = [{
-			url: "stratum.btcchina.com",
-			port: 3333,
-			username: "canaan.apptest",
-			password: "1234"
-		}];
 	});
 
 	chrome.runtime.onMessage.addListener(function(msg, sender) {
@@ -117,6 +111,7 @@ chrome.app.runtime.onLaunched.addListener(function() {
 				case "DeletePool":
 					miner.deletePool(msg.data.poolId);
 					delete(setting[msg.data.poolId]);
+					chrome.storage.local.set({"pool": setting});
 					break;
 			}
 	});
