@@ -15,6 +15,7 @@
 #define A3222_DEFAULT_FREQ  0x1e678447  /* 100 Mhz */
 
 void a3222_init(void);
+void a3222_roll_work(uint8_t *pkg, int ntime_offset);
 int a3222_push_work(uint8_t *pkg);
 void a3222_process(void);
 int a3222_get_report_count(void);
