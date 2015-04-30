@@ -10,6 +10,7 @@
  * For details see the UNLICENSE file at the root of the source tree.
  */
 #include "board.h"
+#include "defines.h"
 #include "avalon_a3222.h"
 #include "protocol.h"
 #include "sha2.h"
@@ -157,7 +158,7 @@ void a3222_process(void)
 	if (RingBuffer_GetCount(&g_a3222_txrb) < 4)
 		return;
 
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < ASIC_COUNT; i++) {
 		RingBuffer_Pop(&g_a3222_txrb, g_spi_txbuf);
 		a3222_process_work(g_spi_txbuf);
 	}
