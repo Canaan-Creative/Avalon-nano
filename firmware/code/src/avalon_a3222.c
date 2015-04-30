@@ -19,14 +19,16 @@
 #define SSP_DATA_BITS     SSP_BITS_8
 #define SSP_MODE_MASTER   1
 
+struct a3222_context {
+	RINGBUFF_T a3222_rxrb;
+	RINGBUFF_T a3222_txrb;
+};
+
+static uint8_t g_a3222_works[A3222_REPORT_SIZE * A3222_REPORT_CNT];
+static uint8_t g_a3222_reports[A3222_REPORT_SIZE * A3222_REPORT_CNT];
 static uint8_t g_spi_txbuf[A3222_WORK_SIZE];
 static uint8_t g_spi_rxbuf[A3222_WORK_SIZE];
-
-static uint8_t g_a3222_reports[A3222_REPORT_SIZE * A3222_REPORT_CNT];
-static RINGBUFF_T g_a3222_rxrb;
-
-static uint8_t g_a3222_works[A3222_WORK_SIZE * A3222_WORK_CNT];
-static RINGBUFF_T g_a3222_txrb;
+static struct a3222_context g_a3222_ctx;
 
 static inline uint16_t bswap_16(uint16_t value)
 {
@@ -75,8 +77,8 @@ void a3222_init(void)
 
 	spi_init();
 
-	RingBuffer_Init(&g_a3222_rxrb, g_a3222_reports, A3222_REPORT_SIZE, A3222_REPORT_CNT);
-	RingBuffer_Init(&g_a3222_txrb, g_a3222_works, A3222_WORK_SIZE, A3222_WORK_CNT);
+	RingBuffer_Init(&g_a3222_ctx.a3222_rxrb, g_a3222_reports, A3222_REPORT_SIZE, A3222_REPORT_CNT);
+	RingBuffer_Init(&g_a3222_ctx.a3222_txrb, g_a3222_works, A3222_WORK_SIZE, A3222_WORK_CNT);
 }
 
 int a3222_push_work(uint8_t *pkg)
@@ -112,7 +114,7 @@ int a3222_push_work(uint8_t *pkg)
 	memcpy(g_spi_txbuf + 84, "\x0\x0\x0\x1", 4);
 	memcpy(g_spi_txbuf + 88, "\x0\x0\x0\x1", 4);	/* PLL, Voltage: 0.7625 */
 
-	return RingBuffer_Insert(&g_a3222_txrb, g_spi_txbuf);
+	return RingBuffer_Insert(&g_a3222_ctx.a3222_txrb, g_spi_txbuf);
 }
 
 static int a3222_process_work(uint8_t *spi_txbuf)
@@ -145,7 +147,7 @@ static int a3222_process_work(uint8_t *spi_txbuf)
 			continue;
 
 		last_nonce = tmp;
-		RingBuffer_Insert(&g_a3222_rxrb, report);
+		RingBuffer_Insert(&g_a3222_ctx.a3222_rxrb, report);
 	}
 
 	return 0;
@@ -155,11 +157,11 @@ void a3222_process(void)
 {
 	int i;
 
-	if (RingBuffer_GetCount(&g_a3222_txrb) < 4)
+	if (RingBuffer_GetCount(&g_a3222_ctx.a3222_txrb) < ASIC_COUNT)
 		return;
 
 	for (i = 0; i < ASIC_COUNT; i++) {
-		RingBuffer_Pop(&g_a3222_txrb, g_spi_txbuf);
+		RingBuffer_Pop(&g_a3222_ctx.a3222_txrb, g_spi_txbuf);
 		a3222_process_work(g_spi_txbuf);
 	}
 
@@ -170,11 +172,11 @@ void a3222_process(void)
 
 int a3222_get_report_count(void)
 {
-	return RingBuffer_GetCount(&g_a3222_rxrb);
+	return RingBuffer_GetCount(&g_a3222_ctx.a3222_rxrb);
 }
 
 int a3222_get_report(uint8_t *report)
 {
-	return RingBuffer_Pop(&g_a3222_rxrb, report);
+	return RingBuffer_Pop(&g_a3222_ctx.a3222_rxrb, report);
 }
 
