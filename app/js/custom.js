@@ -111,7 +111,6 @@ $(function () {
 					break;
 				case "NewStatus":
 					console.log("NewStatus");
-					//console.log(msg.stat.frequency);
 					$.setting._updateNano(msg.nanoId,'frequency', msg.stat.frequency);	
 					break;
 				case "PoolSubscribed":
@@ -147,32 +146,25 @@ $(function () {
 			$("#message").html('Pool address or Worker is null').css("color","red");
 			return;
 		}
-
-
-		chrome.storage.local.get('pool' , function(result){
-			if(typeof(result.pool) != "undefined")
-				pool = result.pool;
-			else
-				pool = [];
-			pool.push({'url' : Pool_address , 'worker' : Pool_worker});
-			chrome.storage.local.set({'pool' : pool} , function() {
-				console.log('Set pool success ' );
-				console.log('Start loop pool');
-				$('#myModal').modal('hide');
-				$.setting._init();
-			});
-		});
+		if(Pool_address.indexOf("://") >=0){
+			Pool_f = Pool_address.split("://");
+			Pool_address = Pool_f[1];
+		}
+		Pool_address = Pool_address.indexOf(":") == -1 ? Pool_address+':3333' : Pool_address;
+		var Pool_before = Pool_address.split(":");
+		var Pool_url = Pool_before[0];
+		var Pool_port = Pool_before[1];
+		var t = $.setting._maxPoolId() != undefined ? $.setting._maxPoolId()+1 : 0 ;	
+		chrome.runtime.sendMessage({info: "NewPool", data:{url:Pool_url,port:Pool_port,username:Pool_worker,poolId:t}});
+		$('#myModal').modal('hide');
 	});
 	$('#myModal').on('hidden.bs.modal', function (e) {
 		$("#address").val('');
 		$("#worker").val('');
 		$("#message").html('');
-		chrome.storage.local.get('pool' , function(result){
-			//$("#pool_info_address_1").html(result.pool.address);
-			//$("#pool_info_worker_1").html(result.pool.worker);
-		});
 		console.log('Close modal');
 	});
+
 });
 
 jQuery.setting = {
@@ -233,9 +225,9 @@ jQuery.setting = {
 		poolStr += '</tr>';
 		if( data != undefined){
 			for( var id  in data){
-				poolStr += '<tr> ';
-				poolStr += '<td>'+ data[id].url+'</td>';
-				poolStr += '<td>'+ data[id].worker+'</td>';
+				poolStr += '<tr data-id="'+id+'"> ';
+				poolStr += '<td>'+ data[id].url+':'+ data[id].port+'</td>';
+				poolStr += '<td>'+ data[id].username+'</td>';
 				poolStr += '<td>Normal</td>';
 				poolStr += '<td class="op">';
 				poolStr += ' <button class="button button-tiny button-highlight button-small" data-id="'+ id +'" data-type="edit">Edit</button>';
@@ -247,6 +239,24 @@ jQuery.setting = {
 			poolStr += '<tr><td colspan="4" align="center" style="color:red;">Setting pool</td></tr>';
 		}
 		$("#pool_info").html( poolStr );
+
+		$("td").delegate("button","click",function(){
+			switch( $(this).data('type') ) {
+				case 'edit':
+					console.log('edit...................');
+					break;
+				case 'remove':
+					$.setting._removePool( $(this).data('id') );
+					break;
+			}
+		});
+	},
+	_removePool : function(poolId) {
+		console.log('removiePool  : ' + poolId);
+		chrome.runtime.sendMessage({info: "DeletePool", data:{poolId:poolId}});
+	},
+	_editPool : function(poolId , data) {
+	
 	},
 	_addNano : function (nanoId) {
 		var nanoStr = '';	
@@ -285,7 +295,11 @@ jQuery.setting = {
 	},
 	_removeNano : function(nanoId) {
 		$("#nano-tr-id-"+nanoId).remove();
+	},
+	_maxPoolId : function() {
+		return $("#pool_info tr:last-child").data('id');
 	}
+
 		
 }
 
