@@ -25,6 +25,7 @@ Pool.prototype.run = function() {
 	chrome.sockets.tcp.create({}, function(createInfo) {
 		pool.socketId = createInfo.socketId;
 		chrome.sockets.tcp.connect(pool.socketId, pool.url, pool.port, function(result) {
+			// error handler
 			pool.log("info", "Connected.");
 			pool.upload(pool._SUBSCRIBE);
 		});

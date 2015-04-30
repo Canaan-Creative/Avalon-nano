@@ -67,7 +67,7 @@ var main = function() {
 	});
 
 	for (var i = 0; i < setting.length; i++)
-		if (setting[i] !== undefined)
+		if (setting[i] !== undefined && setting[i] !== null)
 			miner.setPool({
 				url: setting[i].url,
 				port: setting[i].port,

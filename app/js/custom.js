@@ -100,19 +100,18 @@ $(function () {
 					break;
 				case "NanoConnected":
 					console.log("NanoConnected");
-					$.setting._updateNano(msg.nanoId,'status', msg.success);	
+					$.setting._updateNano(msg.nanoId,'status', msg.success);
 					break;
 				case "NanoDetected":
 					console.log("NanoDetected");
-					$.setting._updateNano(msg.nanoId,'version', msg.success, msg.version);	
+					$.setting._updateNano(msg.nanoId,'version', msg.success, msg.version);
 					break;
 				case "NewNonce":
 					console.log("NewNonce");
 					break;
 				case "NewStatus":
 					console.log("NewStatus");
-					//console.log(msg.stat.frequency);
-					$.setting._updateNano(msg.nanoId,'frequency', msg.stat.frequency);	
+					$.setting._updateNano(msg.nanoId,'frequency', msg.stat.frequency);
 					break;
 				case "PoolSubscribed":
 					console.log("PoolSubscribed");
@@ -147,32 +146,24 @@ $(function () {
 			$("#message").html('Pool address or Worker is null').css("color","red");
 			return;
 		}
-
-
-		chrome.storage.local.get('pool' , function(result){
-			if(typeof(result.pool) != "undefined")
-				pool = result.pool;
-			else
-				pool = [];
-			pool.push({'url' : Pool_address , 'worker' : Pool_worker});
-			chrome.storage.local.set({'pool' : pool} , function() {
-				console.log('Set pool success ' );
-				console.log('Start loop pool');
-				$('#myModal').modal('hide');
-				$.setting._init();
-			});
-		});
+		if(Pool_address.indexOf("://") >=0){
+			Pool_f = Pool_address.split("://");
+			Pool_address = Pool_f[1];
+		}
+		var Pool_before = Pool_address.split(":");
+		var Pool_url = Pool_before[0];
+		var Pool_port = parseInt(Pool_before[1] || 3333);
+		var t = $.setting._maxPoolId() != undefined ? $.setting._maxPoolId()+1 : 0 ;
+		chrome.runtime.sendMessage({info: "NewPool", data:{url:Pool_url,port:Pool_port,username:Pool_worker,poolId:t}});
+		$('#myModal').modal('hide');
 	});
 	$('#myModal').on('hidden.bs.modal', function (e) {
 		$("#address").val('');
 		$("#worker").val('');
 		$("#message").html('');
-		chrome.storage.local.get('pool' , function(result){
-			//$("#pool_info_address_1").html(result.pool.address);
-			//$("#pool_info_worker_1").html(result.pool.worker);
-		});
 		console.log('Close modal');
 	});
+
 });
 
 jQuery.setting = {
@@ -224,41 +215,59 @@ jQuery.setting = {
 		});
 	},
 	_pool : function ( data ) {
-		var poolStr = '';
-		poolStr += '<tr>';
-		poolStr += '<th width="25%">Pool address</th>';
-		poolStr += '<th width="25%">worker</th>';
-		poolStr += '<th width="25%">Status</th>';
-		poolStr += '<th width="25%">Operation</th>';
-		poolStr += '</tr>';
+		var poolStr = `<tr>
+			<th width="25%">Pool address</th>
+			<th width="25%">worker</th>
+			<th width="25%">Status</th>
+			<th width="25%">Operation</th>
+			</tr>`;
 		if( data != undefined){
-			for( var id  in data){
-				poolStr += '<tr> ';
-				poolStr += '<td>'+ data[id].url+'</td>';
-				poolStr += '<td>'+ data[id].worker+'</td>';
-				poolStr += '<td>Normal</td>';
-				poolStr += '<td class="op">';
-				poolStr += ' <button class="button button-tiny button-highlight button-small" data-id="'+ id +'" data-type="edit">Edit</button>';
-				poolStr += ' <button class="button button-tiny button-caution button-small" data-id="'+ id +'" data-type="remove">Remove</button>';
-				poolStr += '</td>';
-				poolStr += '</tr>';
-			}
+			for (var id in data)
+				if (data[id] !== undefined && data[id] !== null)
+					poolStr += `
+						<tr data-id="${id}">
+						<td>${data[id].url}:${data[id].port}</td>
+						<td>${data[id].username}</td>
+						<td>Normal</td>
+						<td class="op">
+						 <button class="button button-tiny button-highlight button-small" data-id="${id}" data-type="edit">Edit</button>
+						 <button class="button button-tiny button-caution button-small" data-id="${id}" data-type="remove">Remove</button>
+						</td>
+						</tr>`;
 		} else {
 			poolStr += '<tr><td colspan="4" align="center" style="color:red;">Setting pool</td></tr>';
 		}
 		$("#pool_info").html( poolStr );
+
+		$("td").delegate("button","click",function(){
+			switch( $(this).data('type') ) {
+				case 'edit':
+					console.log('edit...................');
+					break;
+				case 'remove':
+					$.setting._removePool( $(this).data('id') );
+					break;
+			}
+		});
+	},
+	_removePool : function(poolId) {
+		console.log('removiePool  : ' + poolId);
+		chrome.runtime.sendMessage({info: "DeletePool", data:{poolId:poolId}});
+	},
+	_editPool : function(poolId , data) {
+
 	},
 	_addNano : function (nanoId) {
-		var nanoStr = '';	
+		var nanoStr = '';
 		nanoStr += '<tr class="active" id="nano-tr-id-' + nanoId + '">';
-		nanoStr += '<td id="nano-device-id-' + nanoId + '">nano' + nanoId + '</td>';   
-		nanoStr += '<td>55</td>';      
-		nanoStr += '<td id="nano-frequency-"'+ nanoId +'>0</td>';     
-		nanoStr += '<td id="nano-status-' + nanoId + '">Normal</td>';   
-		nanoStr += '<td id="nano-version-' + nanoId + '">12.01</td>';   
+		nanoStr += '<td id="nano-device-id-' + nanoId + '">nano' + nanoId + '</td>';
+		nanoStr += '<td>55</td>';
+		nanoStr += '<td id="nano-frequency-"'+ nanoId +'>0</td>';
+		nanoStr += '<td id="nano-status-' + nanoId + '">Normal</td>';
+		nanoStr += '<td id="nano-version-' + nanoId + '">12.01</td>';
 		nanoStr += '</tr>';
 		$("#device").append(nanoStr);
-	},	
+	},
 	_updateNano : function (nanoId , type , message ,version){
 		switch(type){
 			case 'status':
@@ -285,7 +294,10 @@ jQuery.setting = {
 	},
 	_removeNano : function(nanoId) {
 		$("#nano-tr-id-"+nanoId).remove();
+	},
+	_maxPoolId : function() {
+		return $("#pool_info tr:last-child").data('id');
 	}
-		
+
 }
 

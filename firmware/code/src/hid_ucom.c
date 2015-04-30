@@ -42,7 +42,7 @@
  ****************************************************************************/
 /* Ring buffer size */
 #define TX_BUF_CNT          4
-#define RX_BUF_CNT          4
+#define RX_BUF_CNT          6
 #define UCOM_TX_BUF_SZ		(TX_BUF_CNT * AVAM_P_COUNT)
 #define UCOM_RX_BUF_SZ		(RX_BUF_CNT * AVAM_P_COUNT)
 
