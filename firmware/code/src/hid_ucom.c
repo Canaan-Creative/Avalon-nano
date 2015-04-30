@@ -43,8 +43,8 @@
 /* Ring buffer size */
 #define TX_BUF_CNT          4
 #define RX_BUF_CNT          4
-#define UCOM_TX_BUF_SZ		(TX_BUF_CNT * AVAU_P_COUNT)
-#define UCOM_RX_BUF_SZ		(RX_BUF_CNT * AVAU_P_COUNT)
+#define UCOM_TX_BUF_SZ		(TX_BUF_CNT * AVAM_P_COUNT)
+#define UCOM_RX_BUF_SZ		(RX_BUF_CNT * AVAM_P_COUNT)
 
 #define UCOM_TX_CONNECTED   _BIT(8)
 #define UCOM_TX_BUSY        _BIT(0)
@@ -52,7 +52,7 @@
 #define UCOM_RX_BUF_QUEUED  _BIT(2)
 
 static RINGBUFF_T usb_rxrb, usb_txrb;
-static uint8_t usb_rxdata[RX_BUF_CNT * AVAU_P_COUNT], usb_txdata[TX_BUF_CNT * AVAU_P_COUNT];
+static uint8_t usb_rxdata[RX_BUF_CNT * AVAM_P_COUNT], usb_txdata[TX_BUF_CNT * AVAM_P_COUNT];
 
 /**
  * Structure containing Virtual Comm port control data
@@ -80,8 +80,8 @@ extern const uint16_t UCOM_ReportDescSize;
  ****************************************************************************/
 static void UCOM_BufInit(void)
 {
-	RingBuffer_Init(&usb_rxrb, usb_rxdata, AVAU_P_COUNT, RX_BUF_CNT);
-	RingBuffer_Init(&usb_txrb, usb_txdata, AVAU_P_COUNT, TX_BUF_CNT);
+	RingBuffer_Init(&usb_rxrb, usb_rxdata, AVAM_P_COUNT, RX_BUF_CNT);
+	RingBuffer_Init(&usb_txrb, usb_txdata, AVAM_P_COUNT, TX_BUF_CNT);
 	g_usb.usbTxFlags |= UCOM_TX_CONNECTED;
 }
 
@@ -109,14 +109,14 @@ static ErrorCode_t UCOM_int_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event)
 		if (RingBuffer_GetCount(&usb_txrb) >= 1) {
 			g_usb.usbTxFlags |= UCOM_TX_BUSY;
 			RingBuffer_Pop(&usb_txrb, g_usb.usbTx_buff);
-			USBD_API->hw->WriteEP(g_usb.hUsb, HID_EP_IN, g_usb.usbTx_buff, AVAU_P_COUNT);
+			USBD_API->hw->WriteEP(g_usb.hUsb, HID_EP_IN, g_usb.usbTx_buff, AVAM_P_COUNT);
 		}
 		break;
 	case USB_EVT_OUT:
 		g_usb.usbRx_count = USBD_API->hw->ReadEP(hUsb, HID_EP_OUT, g_usb.usbRx_buff);
-		if (g_usb.usbRx_count >= AVAU_P_COUNT) {
+		if (g_usb.usbRx_count >= AVAM_P_COUNT) {
 			RingBuffer_Insert(&usb_rxrb, g_usb.usbRx_buff);
-			g_usb.usbRx_count -= AVAU_P_COUNT;
+			g_usb.usbRx_count -= AVAM_P_COUNT;
 		}
 
 		if (g_usb.usbRxFlags & UCOM_RX_BUF_QUEUED) {
@@ -129,9 +129,9 @@ static ErrorCode_t UCOM_int_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event)
 		/* queue free buffer for RX */
 		if ((g_usb.usbRxFlags & (UCOM_RX_BUF_FULL | UCOM_RX_BUF_QUEUED)) == 0) {
 			g_usb.usbRx_count = USBD_API->hw->ReadReqEP(hUsb, HID_EP_OUT, g_usb.usbRx_buff, UCOM_RX_BUF_SZ);
-			if (g_usb.usbRx_count >= AVAU_P_COUNT) {
+			if (g_usb.usbRx_count >= AVAM_P_COUNT) {
 					RingBuffer_Insert(&usb_rxrb, g_usb.usbRx_buff);
-					g_usb.usbRx_count -= AVAU_P_COUNT;
+					g_usb.usbRx_count -= AVAM_P_COUNT;
 			}
 			g_usb.usbRxFlags |= UCOM_RX_BUF_QUEUED;
 		}
@@ -219,7 +219,7 @@ uint32_t UCOM_Write(uint8_t *pBuf)
 		if (!(g_usb.usbTxFlags & UCOM_TX_BUSY) && RingBuffer_GetCount(&usb_txrb)) {
 			g_usb.usbTxFlags |= UCOM_TX_BUSY;
 			RingBuffer_Pop(&usb_txrb, g_usb.usbTx_buff);
-			ret = USBD_API->hw->WriteEP(g_usb.hUsb, HID_EP_IN, g_usb.usbTx_buff, AVAU_P_COUNT);
+			ret = USBD_API->hw->WriteEP(g_usb.hUsb, HID_EP_IN, g_usb.usbTx_buff, AVAM_P_COUNT);
 		}
 	}
 
