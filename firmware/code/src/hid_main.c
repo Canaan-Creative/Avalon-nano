@@ -61,6 +61,8 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	uint8_t roll_pkg[AVAM_P_WORKLEN];
 	uint16_t ntime_offset;
 
+	static int s_tmp = 0;
+
 	expected_crc = (pkg->crc[1] & 0xff) | ((pkg->crc[0] & 0xff) << 8);
 	actual_crc = crc16(pkg->data, AVAM_P_DATA_LEN);
 
@@ -69,8 +71,13 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 
 	switch (pkg->type) {
 	case AVAM_P_DETECT:
+		a3222_sw_init();
+
 		memset(g_ackpkg, 0, AVAM_P_COUNT);
 		memcpy(g_ackpkg + AVAM_P_DATAOFFSET, AVAM_VERSION, AVAM_MM_VER_LEN);
+		g_ackpkg[37] = a3222_get_report_count();
+		g_ackpkg[36] = s_tmp;
+		g_ackpkg[35] = UCOM_Read_Cnt();
 		init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_ACKDETECT);
 		UCOM_Write(g_ackpkg);
 		break;
@@ -79,6 +86,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		 * idx-1: midstate(32)
 		 * idx-2: job_id(2) + pool_no(2) + nonce2(4) + ntime_offset(2) + reserved(12) + data(12)
 		 */
+
 		if (pkg->idx != 1 && pkg->idx != 2 && pkg->cnt != 2)
 			break;
 
@@ -87,7 +95,8 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 			ntime_offset = (g_a3222_pkg[40] << 8) | g_a3222_pkg[41];
 			if (!ntime_offset)
 				a3222_push_work(g_a3222_pkg);
-			else {
+				s_tmp = a3222_get_works_count();
+			} else {
 				memcpy(roll_pkg, g_a3222_pkg, AVAM_P_WORKLEN);
 				for (i = 0; i < ntime_offset; i++) {
 					a3222_roll_work(roll_pkg, 1);
@@ -102,14 +111,14 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 			/* P_NONCE: job_id(2) + pool_no(2) + nonce2(4) + nonce(4) */
 			a3222_get_report(g_ackpkg + AVAM_P_DATAOFFSET);
 			g_ackpkg[37] = a3222_get_report_count();
-			g_ackpkg[36] = a3222_get_works_count();
+			g_ackpkg[36] = s_tmp;
 			g_ackpkg[35] = UCOM_Read_Cnt();
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_NONCE);
 		} else {
 			/* P_STATUS: */
 			memcpy(g_ackpkg + AVAM_P_DATAOFFSET, AVAM_VERSION, AVAM_MM_VER_LEN);
 			g_ackpkg[37] = a3222_get_report_count();
-			g_ackpkg[36] = a3222_get_works_count();
+			g_ackpkg[36] = s_tmp;
 			g_ackpkg[35] = UCOM_Read_Cnt();
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_STATUS);
 		}
@@ -134,7 +143,8 @@ int main(void)
 	SystemCoreClockUpdate();
 
 	usb_init();
-	a3222_init();
+	a3222_hw_init();
+	a3222_sw_init();
 
 	wdt_init(5);	/* 5 seconds */
 	wdt_enable();
