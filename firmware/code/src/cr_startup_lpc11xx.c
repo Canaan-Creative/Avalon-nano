@@ -663,7 +663,6 @@ ResetISR(void) {
 	bss_init ((unsigned int)ExeAddr, SectionLen);
 #endif
 
-	extern void SystemInit(void);
 	SystemInit();
 
 #if defined (__cplusplus)

@@ -10,4 +10,6 @@
 
 void usb_init(void);
 
+void USB_IRQHandler(void);
+
 #endif /* AVALON_USB_H_ */

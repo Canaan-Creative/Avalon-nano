@@ -12,5 +12,7 @@ void wdt_init(uint8_t second);
 void wdt_enable(void);
 void wdt_feed(void);
 
+void WDT_IRQHandler(void);
+
 #endif /* __AVALON_WDT_H_ */
 

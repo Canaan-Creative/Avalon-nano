@@ -83,6 +83,8 @@ extern "C" {
 
 #include "board_api.h"
 
+void SystemInit(void);
+
 #ifdef __cplusplus
 }
 #endif
