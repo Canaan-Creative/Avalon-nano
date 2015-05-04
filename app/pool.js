@@ -90,6 +90,15 @@ Pool.prototype.decode = function(result) {
 	}
 };
 
+Pool.prototype.submit = function() {
+	var data = {
+		params: [this.username, jobId, nonce2, ntime, nonce],
+		id: 4,
+		method: "mining.submit"
+	};
+	this.upload(this.upload(data));
+};
+
 Pool.prototype.upload = function(data) {
 	data = JSON.stringify(data);
 	this.log("debug", "Sent:     %s", data);
