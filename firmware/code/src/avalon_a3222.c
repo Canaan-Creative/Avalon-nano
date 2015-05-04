@@ -24,7 +24,7 @@
 #define A3222_REPORT_SIZE	12 /* work_id (8bytes) + nonce (4bytes) */
 #define A3222_REPORT_CNT	12
 
-static uint8_t g_asic_index = 0;
+static uint8_t g_asic_index;
 static uint8_t g_freqflag;
 static uint32_t g_freq[ASIC_COUNT][3];
 
@@ -32,17 +32,6 @@ static uint8_t g_a3222_works[A3222_WORK_SIZE * A3222_WORK_CNT];
 static uint8_t g_a3222_reports[A3222_REPORT_SIZE * A3222_REPORT_CNT];
 RINGBUFF_T a3222_txrb;
 RINGBUFF_T a3222_rxrb;
-
-static inline uint16_t bswap_16(uint16_t value)
-{
-        return ((((value) & 0xff) << 8) | ((value) >> 8));
-}
-
-static inline uint32_t bswap_32(uint32_t value)
-{
-	return (((uint32_t)bswap_16((uint16_t)((value) & 0xffff)) << 16) | \
-        (uint32_t)bswap_16((uint16_t)((value) >> 16)));
-}
 
 static void load_init(void)
 {
@@ -65,28 +54,36 @@ static void spi_init(void)
 
 	Chip_SSP_SetFormat(LPC_SSP0, SSP_BITS_8, SSP_FRAMEFORMAT_SPI, SSP_CLOCK_MODE0);
 	Chip_SSP_SetMaster(LPC_SSP0, 1);
-	Chip_SSP_SetBitRate(LPC_SSP0, 2*1000*1000);
+	Chip_SSP_SetBitRate(LPC_SSP0, 1*1000*1000);
 	Chip_SSP_Enable(LPC_SSP0);
 }
 
-void a3222_init(void)
+void a3222_hw_init(void)
 {
-	uint8_t i;
-
 	load_init();
 	spi_init();
 
 	load_set(0);
 
-	g_freqflag = 0xf;
+	RingBuffer_Init(&a3222_txrb, g_a3222_works, A3222_WORK_SIZE, A3222_WORK_CNT);
+	RingBuffer_Init(&a3222_rxrb, g_a3222_reports, A3222_REPORT_SIZE, A3222_REPORT_CNT);
+}
+void a3222_sw_init(void)
+{
+	uint8_t i;
+
+	load_set(0);
+
+	g_freqflag = 0;
+
 	for (i = 0; i < ASIC_COUNT; i++) {
 		g_freq[i][0] = A3222_DEFAULT_FREQ;
 		g_freq[i][1] = A3222_DEFAULT_FREQ;
 		g_freq[i][2] = A3222_DEFAULT_FREQ;
 	}
 
-	RingBuffer_Init(&a3222_txrb, g_a3222_works, A3222_WORK_SIZE, A3222_WORK_CNT);
-	RingBuffer_Init(&a3222_rxrb, g_a3222_reports, A3222_REPORT_SIZE, A3222_REPORT_CNT);
+	RingBuffer_Flush(&a3222_txrb);
+	RingBuffer_Flush(&a3222_rxrb);
 }
 
 void a3222_roll_work(uint8_t *pkg, int ntime_offset)
@@ -144,16 +141,16 @@ int a3222_push_work(uint8_t *pkg)
 
 	memset(awork, 0, A3222_WORK_SIZE);
 
-	pre_a[2] = bswap_32(pre_a[2]);
+	pre_a[2] = __REV(pre_a[2]);
 	UNPACK32(pre_a[2], awork + 4);    /* a2 */
 
 	memcpy(awork + 8, pkg, 32);		/* midstate */
 
-	pre_e[0] = bswap_32(pre_e[0]);
-	pre_e[1] = bswap_32(pre_e[1]);
-	pre_e[2] = bswap_32(pre_e[2]);
-	pre_a[0] = bswap_32(pre_a[0]);
-	pre_a[1] = bswap_32(pre_a[1]);
+	pre_e[0] = __REV(pre_e[0]);
+	pre_e[1] = __REV(pre_e[1]);
+	pre_e[2] = __REV(pre_e[2]);
+	pre_a[0] = __REV(pre_a[0]);
+	pre_a[1] = __REV(pre_a[1]);
 	UNPACK32(pre_e[0], awork + 40);	/* e0 */
 	UNPACK32(pre_e[1], awork + 44);	/* e1 */
 	UNPACK32(pre_e[2], awork + 48);	/* e2 */
@@ -185,11 +182,13 @@ int a3222_process(void)
 {
 	int i;
 	uint8_t awork[A3222_WORK_SIZE];
-	uint8_t load[2];
+	uint8_t load[4];
 	load[0] = 0;
 	load[1] = 0;
+	load[2] = 0;
+	load[3] = 0;
 
-	if (a3222_get_report_count() < ASIC_COUNT)
+	if (a3222_get_works_count() < ASIC_COUNT)
 		return 0;
 
 	for (i = 0; i < ASIC_COUNT; i++) {
@@ -199,7 +198,7 @@ int a3222_process(void)
 	}
 
 	load_set(1);
-	Chip_SSP_WriteFrames_Blocking(LPC_SSP0, load, 2);	/* A3222 load needs 8 cycle clocks, 1B */
+	Chip_SSP_WriteFrames_Blocking(LPC_SSP0, load, 1);	/* A3222 load needs 8 cycle clocks, 1B */
 	load_set(0);
 
 	return 0;
