@@ -98,12 +98,18 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	case AVAM_P_POLLING:
 		memset(g_ackpkg, 0, AVAM_P_COUNT);
 		if (a3222_get_report_count()) {
-			/* P_NONCE: job_id(1)+ntime(1)+pool_no(2)+nonce2(4)+nonce(4) */
+			/* P_NONCE: job_id(2)+pool_no(2)+nonce2(4)+nonce(4) */
 			a3222_get_report(g_ackpkg + AVAM_P_DATAOFFSET);
+			g_ackpkg[37] = a3222_get_report_count();
+			g_ackpkg[36] = a3222_get_works_count();
+			g_ackpkg[35] = UCOM_Read_Cnt();
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_NONCE);
 		} else {
 			/* P_STATUS: */
 			memcpy(g_ackpkg + AVAM_P_DATAOFFSET, AVAM_VERSION, AVAM_MM_VER_LEN);
+			g_ackpkg[37] = a3222_get_report_count();
+			g_ackpkg[36] = a3222_get_works_count();
+			g_ackpkg[35] = UCOM_Read_Cnt();
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_STATUS);
 		}
 		UCOM_Write(g_ackpkg);
