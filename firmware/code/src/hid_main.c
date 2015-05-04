@@ -93,7 +93,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		memcpy(g_a3222_pkg + ((pkg->idx - 1) * 32), pkg->data, 32);
 		if (pkg->idx == 2 && pkg->cnt == 2) {
 			ntime_offset = (g_a3222_pkg[40] << 8) | g_a3222_pkg[41];
-			if (!ntime_offset)
+			if (!ntime_offset) {
 				a3222_push_work(g_a3222_pkg);
 				s_tmp = a3222_get_works_count();
 			} else {
