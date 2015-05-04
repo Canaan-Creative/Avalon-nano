@@ -180,6 +180,7 @@ jQuery.setting = {
 		$(id).show();
 	},
 	_pool : function ( data ) {
+		var poolHandel = true;
 		var poolStr = `<tr>
 			<th width="25%">Pool address</th>
 			<th width="25%">worker</th>
@@ -187,11 +188,15 @@ jQuery.setting = {
 			<th width="25%">Operation</th>
 			</tr>`;
 		if( data !== undefined || data !==null){
-			for (var id in data)
-				if (data[id] !== undefined && data[id] !== null)
+			for (var id in data){
+				if (data[id] !== undefined && data[id] !== null){
 					poolStr += $.setting._poolHtml(id ,data[id]);
-		} else {
-			poolStr += '<tr><td colspan="4" align="center" style="color:red;">Setting pool</td></tr>';
+					poolHandel = false;
+				}
+			}
+		}
+		if(poolHandel){
+			poolStr += '<tr id="pool-info-footer"><td colspan="4" align="center" style="color:red;">Setting pool</td></tr>';
 		}
 		$("#pool_info").html( poolStr );
 		$.setting._bindButton();
@@ -210,7 +215,7 @@ jQuery.setting = {
 	},
 	_poolHtml : function (id , data) {
 		var poolStr = '';
-		poolStr += '<tr data-id="'+ id +'" id="pool-tr-id-' + id + '">';
+		poolStr += '<tr data-id="'+ id +'" id="pool-tr-id-' + id + '" class="pool-tr-line">';
 		poolStr += '<td id="pool-address-'+ id +'">' + data.url + ':' + data.port + '</td>';
 		poolStr += '<td id="pool-worker-'+ id +'">' + data.username + '</td>';
 		poolStr += '<td>Normal</td>';
@@ -222,14 +227,15 @@ jQuery.setting = {
 		return poolStr;
 	},
 	_appendPool : function(id , data){
+		if($("#pool-info-footer").html()!==undefined)	
+			$("#pool-info-footer").remove();
 		$("#pool_info").append($.setting._poolHtml(id, data));
 		$.setting._bindButton();
 	},
 	_removePool : function(poolId) {
-		console.log('removiePool  : ' + poolId);
 		chrome.runtime.sendMessage({info: "DeletePool", data:{poolId:poolId}});
 		$("#pool-tr-id-"+poolId).hide('slow' , function(){
-			$("#pool-tr-id"+poolId).remove();
+			$("#pool-tr-id-"+poolId).remove();
 		});
 	},
 	_editPool : function(poolId) {
