@@ -90,7 +90,7 @@ Pool.prototype.decode = function(result) {
 	}
 };
 
-Pool.prototype.submit = function() {
+Pool.prototype.submit = function(jobId, nonce2, ntime, nonce) {
 	var data = {
 		params: [this.username, jobId, nonce2, ntime, nonce],
 		id: 4,
