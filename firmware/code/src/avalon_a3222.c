@@ -182,11 +182,7 @@ int a3222_process(void)
 {
 	int i;
 	uint8_t awork[A3222_WORK_SIZE];
-	uint8_t load[4];
-	load[0] = 0;
-	load[1] = 0;
-	load[2] = 0;
-	load[3] = 0;
+	uint8_t load = 0xff;
 
 	if (a3222_get_works_count() < ASIC_COUNT)
 		return 0;
@@ -198,7 +194,7 @@ int a3222_process(void)
 	}
 
 	load_set(1);
-	Chip_SSP_WriteFrames_Blocking(LPC_SSP0, load, 1);	/* A3222 load needs 8 cycle clocks, 1B */
+	Chip_SSP_WriteFrames_Blocking(LPC_SSP0, &load, 1);	/* A3222 load needs 8 cycle clocks, 1B */
 	load_set(0);
 
 	return 0;
