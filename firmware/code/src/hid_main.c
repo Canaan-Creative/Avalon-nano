@@ -126,9 +126,9 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		UCOM_Write(g_ackpkg);
 		break;
 	case AVAM_P_SET_FREQ:
-		UNPACK32(val[2], pkg->data);
-		UNPACK32(val[1], pkg->data + 4);
-		UNPACK32(val[0], pkg->data + 8);
+		PACK32(pkg->data, &val[2]);
+		PACK32(pkg->data + 4, &val[1]);
+		PACK32(pkg->data + 8, &val[0]);
 
 		for (i = 0; i < ASIC_COUNT; i++)
 			a3222_set_freq(val, i);
