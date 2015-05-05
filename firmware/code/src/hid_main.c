@@ -26,6 +26,7 @@
 #include "avalon_a3222.h"
 #include "avalon_usb.h"
 #include "avalon_wdt.h"
+#include "avalon_shifter.h"
 
 #ifdef __CODE_RED
 __CRP unsigned int CRP_WORD = CRP_NO_ISP;
@@ -132,6 +133,10 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		for (i = 0; i < ASIC_COUNT; i++)
 			a3222_set_freq(val, i);
 		break;
+	case AVAM_P_SET_VOLT:
+		val[0] = (pkg->data[0] << 8) | pkg->data[1];
+		set_voltage(val[0]);
+		break;
 	default:
 		break;
 	}
@@ -145,7 +150,9 @@ int main(void)
 	usb_init();
 	a3222_hw_init();
 	a3222_sw_init();
+	shifter_init();
 
+	set_voltage(ASIC_0V);
 	wdt_init(5);	/* 5 seconds */
 	wdt_enable();
 
