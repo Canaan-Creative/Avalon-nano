@@ -1,0 +1,167 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+A3222_REPORT_CNT	avalon_a3222.c	25;"	d	file:
+A3222_REPORT_SIZE	avalon_a3222.c	24;"	d	file:
+A3222_WORK_CNT	avalon_a3222.c	22;"	d	file:
+A3222_WORK_SIZE	avalon_a3222.c	21;"	d	file:
+ALIAS	cr_startup_lpc11xx.c	46;"	d	file:
+CRP_WORD	hid_main.c	/^__CRP unsigned int CRP_WORD = CRP_NO_ISP;$/;"	v
+HID_INPUT_REPORT_BYTES	hid_desc.c	41;"	d	file:
+HID_OUTPUT_REPORT_BYTES	hid_desc.c	42;"	d	file:
+HardFault_Handler	cr_startup_lpc11xx.c	/^void HardFault_Handler(void)$/;"	f
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void ACMP_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void ADCA_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void ADCB_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void ADC_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void BOD_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void CAN_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void DAC_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void FLEX_INT0_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void FLEX_INT1_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void FLEX_INT2_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void FLEX_INT3_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void FLEX_INT4_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void FLEX_INT5_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void FLEX_INT6_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void FLEX_INT7_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void FMC_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void GINT0_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void GINT1_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void I2C_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void IntDefaultHandler(void)$/;"	f
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void PIN_INT0_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void PIN_INT1_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void PIN_INT2_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void PIN_INT3_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void PIN_INT4_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void PIN_INT5_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void PIN_INT6_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void PIN_INT7_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void PIOINT0_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void PIOINT1_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void PIOINT2_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void PIOINT3_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void SSP0_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void SSP1_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void TIMER16_0_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void TIMER16_1_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void TIMER32_0_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void TIMER32_1_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void UART1_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void UART2_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void UART_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void USART_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void USBWakeup_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void USB_FIQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void USB_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void WAKEUP_IRQHandler  (void) ALIAS(IntDefaultHandler);$/;"	v
+IntDefaultHandler	cr_startup_lpc11xx.c	/^void WDT_IRQHandler (void) ALIAS(IntDefaultHandler);$/;"	v
+NMI_Handler	cr_startup_lpc11xx.c	/^void NMI_Handler(void)$/;"	f
+PIN_DS	avalon_shifter.c	18;"	d	file:
+PIN_OE	avalon_shifter.c	17;"	d	file:
+PIN_SHCP	avalon_shifter.c	19;"	d	file:
+PIN_STCP	avalon_shifter.c	20;"	d	file:
+PendSV_Handler	cr_startup_lpc11xx.c	/^void PendSV_Handler(void)$/;"	f
+RX_BUF_CNT	hid_ucom.c	45;"	d	file:
+ResetISR	cr_startup_lpc11xx.c	/^ResetISR(void) {$/;"	f
+SHA256_SCR	sha2.c	38;"	d	file:
+SVC_Handler	cr_startup_lpc11xx.c	/^void SVC_Handler(void)$/;"	f
+SysTick_Handler	cr_startup_lpc11xx.c	/^void SysTick_Handler(void)$/;"	f
+SystemInit	sysinit.c	/^void SystemInit(void)$/;"	f
+TX_BUF_CNT	hid_ucom.c	44;"	d	file:
+UCOM_BufInit	hid_ucom.c	/^static void UCOM_BufInit(void)$/;"	f	file:
+UCOM_DATA	hid_ucom.c	/^typedef struct UCOM_DATA {$/;"	s	file:
+UCOM_DATA_T	hid_ucom.c	/^} UCOM_DATA_T;$/;"	t	typeref:struct:UCOM_DATA	file:
+UCOM_GetReport	hid_ucom.c	/^static ErrorCode_t UCOM_GetReport(USBD_HANDLE_T hHid, USB_SETUP_PACKET *pSetup, uint8_t * *pBuffer, uint16_t *plength)$/;"	f	file:
+UCOM_RX_BUF_FULL	hid_ucom.c	51;"	d	file:
+UCOM_RX_BUF_QUEUED	hid_ucom.c	52;"	d	file:
+UCOM_RX_BUF_SZ	hid_ucom.c	47;"	d	file:
+UCOM_Read	hid_ucom.c	/^uint32_t UCOM_Read(uint8_t *pBuf)$/;"	f
+UCOM_Read_Cnt	hid_ucom.c	/^uint32_t UCOM_Read_Cnt(void)$/;"	f
+UCOM_ReportDescSize	hid_desc.c	/^const uint16_t UCOM_ReportDescSize = sizeof(UCOM_ReportDescriptor);$/;"	v
+UCOM_ReportDescriptor	hid_desc.c	/^const uint8_t UCOM_ReportDescriptor[] = {$/;"	v
+UCOM_SetReport	hid_ucom.c	/^static ErrorCode_t UCOM_SetReport(USBD_HANDLE_T hHid, USB_SETUP_PACKET *pSetup, uint8_t * *pBuffer, uint16_t length)$/;"	f	file:
+UCOM_TX_BUF_SZ	hid_ucom.c	46;"	d	file:
+UCOM_TX_BUSY	hid_ucom.c	50;"	d	file:
+UCOM_TX_CONNECTED	hid_ucom.c	49;"	d	file:
+UCOM_Write	hid_ucom.c	/^uint32_t UCOM_Write(uint8_t *pBuf)$/;"	f
+UCOM_init	hid_ucom.c	/^ErrorCode_t UCOM_init(USBD_HANDLE_T hUsb, USB_INTERFACE_DESCRIPTOR *pIntfDesc, USBD_API_INIT_PARAM_T *pUsbParam)$/;"	f
+UCOM_int_hdlr	hid_ucom.c	/^static ErrorCode_t UCOM_int_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event)$/;"	f	file:
+USB_DeviceDescriptor	hid_desc.c	/^ALIGNED(4) const uint8_t USB_DeviceDescriptor[] = {$/;"	v
+USB_FsConfigDescriptor	hid_desc.c	/^ALIGNED(4) uint8_t USB_FsConfigDescriptor[] = {$/;"	v
+USB_IRQHandler	avalon_usb.c	/^void USB_IRQHandler(void)$/;"	f
+USB_StringDescriptor	hid_desc.c	/^const uint8_t USB_StringDescriptor[] = {$/;"	v
+VOLTAGE_DELAY	avalon_shifter.c	21;"	d	file:
+WDT_IRQHandler	avalon_wdt.c	/^void WDT_IRQHandler(void)$/;"	f
+WEAK	cr_startup_lpc11xx.c	45;"	d	file:
+a3222_get_freq	avalon_a3222.c	/^void a3222_get_freq(uint32_t freq[], uint8_t index)$/;"	f
+a3222_get_report	avalon_a3222.c	/^int a3222_get_report(uint8_t *report)$/;"	f
+a3222_get_report_count	avalon_a3222.c	/^int a3222_get_report_count(void)$/;"	f
+a3222_get_works_count	avalon_a3222.c	/^int a3222_get_works_count(void)$/;"	f
+a3222_hw_init	avalon_a3222.c	/^void a3222_hw_init(void)$/;"	f
+a3222_process	avalon_a3222.c	/^int a3222_process(void)$/;"	f
+a3222_process_spi	avalon_a3222.c	/^static int a3222_process_spi(uint8_t *spi_txbuf)$/;"	f	file:
+a3222_push_work	avalon_a3222.c	/^int a3222_push_work(uint8_t *pkg)$/;"	f
+a3222_roll_work	avalon_a3222.c	/^void a3222_roll_work(uint8_t *pkg, int ntime_offset)$/;"	f
+a3222_rxrb	avalon_a3222.c	/^RINGBUFF_T a3222_rxrb;$/;"	v
+a3222_set_freq	avalon_a3222.c	/^void a3222_set_freq(uint32_t *freq, uint8_t index)$/;"	f
+a3222_sw_init	avalon_a3222.c	/^void a3222_sw_init(void)$/;"	f
+a3222_txrb	avalon_a3222.c	/^RINGBUFF_T a3222_txrb;$/;"	v
+bss_init	cr_startup_lpc11xx.c	/^void bss_init(unsigned int start, unsigned int len) {$/;"	f
+crc16	crc16.c	/^unsigned short crc16(const unsigned char *buffer, int len)$/;"	f
+crc16_table	crc16.c	/^unsigned int crc16_table[256] = {$/;"	v
+data_init	cr_startup_lpc11xx.c	/^void data_init(unsigned int romstart, unsigned int start, unsigned int len) {$/;"	f
+delay	libfunctions.c	/^void delay(unsigned int ms)$/;"	f
+find_IntfDesc	avalon_usb.c	/^USB_INTERFACE_DESCRIPTOR *find_IntfDesc(const uint8_t *pDesc, uint32_t intfClass)$/;"	f
+g_a3222_pkg	hid_main.c	/^static uint8_t g_a3222_pkg[AVAM_P_WORKLEN];$/;"	v	file:
+g_a3222_reports	avalon_a3222.c	/^static uint8_t g_a3222_reports[A3222_REPORT_SIZE * A3222_REPORT_CNT];$/;"	v	file:
+g_a3222_works	avalon_a3222.c	/^static uint8_t g_a3222_works[A3222_WORK_SIZE * A3222_WORK_CNT];$/;"	v	file:
+g_ackpkg	hid_main.c	/^static uint8_t g_ackpkg[AVAM_P_COUNT];$/;"	v	file:
+g_asic_index	avalon_a3222.c	/^static uint8_t g_asic_index;$/;"	v	file:
+g_freq	avalon_a3222.c	/^static uint32_t g_freq[ASIC_COUNT][3];$/;"	v	file:
+g_freqflag	avalon_a3222.c	/^static uint8_t g_freqflag;$/;"	v	file:
+g_hUsb	avalon_usb.c	/^static USBD_HANDLE_T g_hUsb;$/;"	v	file:
+g_pUsbApi	avalon_usb.c	/^const  USBD_API_T *g_pUsbApi = &g_usbApi;$/;"	v
+g_pfnVectors	cr_startup_lpc11xx.c	/^void (* const g_pfnVectors[])(void) = {$/;"	v
+g_reqpkg	hid_main.c	/^static uint8_t g_reqpkg[AVAM_P_COUNT];$/;"	v	file:
+g_usb	hid_ucom.c	/^static UCOM_DATA_T g_usb;$/;"	v	file:
+g_usbApi	avalon_usb.c	/^static const  USBD_API_T g_usbApi = {$/;"	v	file:
+g_voltage	avalon_shifter.c	/^static uint16_t g_voltage = ASIC_0V;$/;"	v	file:
+get_voltage	avalon_shifter.c	/^uint16_t get_voltage(void)$/;"	f
+hUsb	hid_ucom.c	/^	USBD_HANDLE_T hUsb;		\/*!< Handle to USB stack *\/$/;"	m	struct:UCOM_DATA	file:
+init_mm_pkg	hid_main.c	/^static int init_mm_pkg(struct avalon_pkg *pkg, uint8_t type)$/;"	f	file:
+init_mux	avalon_shifter.c	/^static void init_mux(void)$/;"	f	file:
+load_init	avalon_a3222.c	/^static void load_init(void)$/;"	f	file:
+load_set	avalon_a3222.c	/^static void load_set(bool On)$/;"	f	file:
+main	hid_main.c	/^int main(void)$/;"	f
+process_mm_pkg	hid_main.c	/^static void process_mm_pkg(struct avalon_pkg *pkg)$/;"	f	file:
+set_voltage	avalon_shifter.c	/^void set_voltage(uint16_t vol)$/;"	f
+sha256	sha2.c	/^void sha256(const unsigned char *message, unsigned int len, unsigned char *digest)$/;"	f
+sha256_final	sha2.c	/^void sha256_final(sha256_ctx *ctx, unsigned char *digest)$/;"	f
+sha256_h0	sha2.c	/^uint32_t sha256_h0[8] =$/;"	v
+sha256_init	sha2.c	/^void sha256_init(sha256_ctx *ctx, uint8_t *buf)$/;"	f
+sha256_k	sha2.c	/^uint32_t sha256_k[64] =$/;"	v
+sha256_loc	sha2.c	/^void sha256_loc(const unsigned char *midstat, const unsigned char *data, unsigned int *per_a, unsigned int *per_b)$/;"	f
+sha256_transf	sha2.c	/^static void sha256_transf(sha256_ctx *ctx, const unsigned char *message,$/;"	f	file:
+sha256_update	sha2.c	/^void sha256_update(sha256_ctx *ctx, const unsigned char *message,$/;"	f
+shifter_byte	avalon_shifter.c	/^static void shifter_byte(uint8_t ch)$/;"	f	file:
+shifter_init	avalon_shifter.c	/^void shifter_init(void)$/;"	f
+spi_init	avalon_a3222.c	/^static void spi_init(void)$/;"	f	file:
+usbRxFlags	hid_ucom.c	/^	volatile uint16_t usbRxFlags;	\/*!< USB Rx Flag *\/$/;"	m	struct:UCOM_DATA	file:
+usbRx_buff	hid_ucom.c	/^	uint8_t *usbRx_buff;$/;"	m	struct:UCOM_DATA	file:
+usbRx_count	hid_ucom.c	/^	uint16_t usbRx_count;$/;"	m	struct:UCOM_DATA	file:
+usbTxFlags	hid_ucom.c	/^	volatile uint16_t usbTxFlags;	\/*!< USB Tx Flag *\/$/;"	m	struct:UCOM_DATA	file:
+usbTx_buff	hid_ucom.c	/^	uint8_t *usbTx_buff;$/;"	m	struct:UCOM_DATA	file:
+usb_init	avalon_usb.c	/^void usb_init(void)$/;"	f
+usb_pin_clk_init	avalon_usb.c	/^static void usb_pin_clk_init(void)$/;"	f	file:
+usb_rxdata	hid_ucom.c	/^static uint8_t usb_rxdata[RX_BUF_CNT * AVAM_P_COUNT], usb_txdata[TX_BUF_CNT * AVAM_P_COUNT];$/;"	v	file:
+usb_rxrb	hid_ucom.c	/^static RINGBUFF_T usb_rxrb, usb_txrb;$/;"	v	file:
+usb_txdata	hid_ucom.c	/^static uint8_t usb_rxdata[RX_BUF_CNT * AVAM_P_COUNT], usb_txdata[TX_BUF_CNT * AVAM_P_COUNT];$/;"	v	file:
+usb_txrb	hid_ucom.c	/^static RINGBUFF_T usb_rxrb, usb_txrb;$/;"	v	file:
+wdt_enable	avalon_wdt.c	/^void wdt_enable(void)$/;"	f
+wdt_feed	avalon_wdt.c	/^void wdt_feed(void)$/;"	f
+wdt_init	avalon_wdt.c	/^void wdt_init(uint8_t second)$/;"	f
