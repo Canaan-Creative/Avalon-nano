@@ -27,6 +27,7 @@
 #include "avalon_usb.h"
 #include "avalon_wdt.h"
 #include "avalon_shifter.h"
+#include "avalon_timer.h"
 
 #ifdef __CODE_RED
 __CRP unsigned int CRP_WORD = CRP_NO_ISP;
@@ -35,6 +36,7 @@ __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 static uint8_t g_a3222_pkg[AVAM_P_WORKLEN];
 static uint8_t g_reqpkg[AVAM_P_COUNT];
 static uint8_t g_ackpkg[AVAM_P_COUNT];
+static uint32_t g_freq[ASIC_COUNT][3];
 
 static int init_mm_pkg(struct avalon_pkg *pkg, uint8_t type)
 {
@@ -83,6 +85,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		UCOM_Write(g_ackpkg);
 		break;
 	case AVAM_P_WORK:
+		timer_set(TIMER_ID1, IDLE_TIME);
 		/*
 		 * idx-1: midstate(32)
 		 * idx-2: job_id(2) + pool_no(2) + nonce2(4) + ntime_offset(2) + reserved(12) + data(12)
@@ -130,8 +133,10 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		PACK32(pkg->data + 4, &val[1]);
 		PACK32(pkg->data + 8, &val[0]);
 
-		for (i = 0; i < ASIC_COUNT; i++)
+		for (i = 0; i < ASIC_COUNT; i++) {
+			memcpy(g_freq[i], val, sizeof(uint32_t) * 3);
 			a3222_set_freq(val, i);
+		}
 		break;
 	case AVAM_P_SET_VOLT:
 		val[0] = (pkg->data[0] << 8) | pkg->data[1];
@@ -144,6 +149,9 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 
 int main(void)
 {
+	uint16_t lastvoltage;
+	uint8_t i;
+
 	Board_Init();
 	SystemCoreClockUpdate();
 
@@ -151,10 +159,12 @@ int main(void)
 	a3222_hw_init();
 	a3222_sw_init();
 	shifter_init();
+	timer_init();
 
 	set_voltage(ASIC_0V);
 	wdt_init(5);	/* 5 seconds */
 	wdt_enable();
+	timer_set(TIMER_ID1, IDLE_TIME);
 
 	while (42) {
 		wdt_feed();
@@ -166,7 +176,20 @@ int main(void)
 			process_mm_pkg((struct avalon_pkg*)g_reqpkg);
 		}
 
-		/* Power off the AISC */
+		if (timer_istimeout(TIMER_ID1)) {
+			/* Power off the AISC */
+			lastvoltage = get_voltage();
+			set_voltage(ASIC_0V);
+			/* TODO led */
+			continue;
+		} else {
+			/* power on then reset the pll */
+			if (set_voltage(lastvoltage)) {
+				for (i = 0; i < ASIC_COUNT; i++)
+					a3222_set_freq(g_freq[i], i);
+			}
+			/* TODO led */
+		}
 
 		a3222_process();
 

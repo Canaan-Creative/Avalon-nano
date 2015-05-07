@@ -51,12 +51,12 @@ void shifter_init(void)
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_STCP, 0);
 }
 
-void set_voltage(uint16_t vol)
+int set_voltage(uint16_t vol)
 {
 	uint8_t poweron = 0;
 
 	if (vol == g_voltage)
-		return;
+		return 0;
 
 	if (g_voltage == ASIC_0V)
 		poweron = 1;
@@ -71,6 +71,7 @@ void set_voltage(uint16_t vol)
 		delay(VOLTAGE_DELAY);
 
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_STCP, 1);
+	return poweron;
 }
 
 uint16_t get_voltage(void)
