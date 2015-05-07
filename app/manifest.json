@@ -1,7 +1,7 @@
 {
-	"name": "Avalon Nano",
-	"version": "0.8",
-	"description": "Chrome Miner for Avalon Nano",
+	"name": "Avalon miner",
+	"version": "0.9",
+	"description": "Chrome Miner for Avalon miners",
 	"manifest_version": 2,
 	"minimum_chrome_version": "42.0.2311.90",
 	"app": {
@@ -16,7 +16,7 @@
 	},
 	"permissions": [
 		"http://*/",
-		"storage",
+	w"storage",
 		"hid",
 		{
 			"usbDevices": [{

@@ -105,7 +105,13 @@ Miner.prototype.__defineSetter__("poolAuthorized", function(msg) {
 
 Miner.prototype.__defineSetter__("newNonce", function(msg) {
 	// msg: {nanoId, nonce}
-	// TODO: submit
+	var job = this._jobs[msg.poolId][msg.jobId];
+	this._pools[msg.poolId].submit(
+		job.job_id,
+		uInt2LeHex(msg.nonce2, job.nonce2_size),
+		(msg.ntime + parseInt(job.ntime, 16)).toString(16),
+		uInt2LeHex(msg.nonce, 4)
+	);
 	this.onNewNonce.fire(msg);
 });
 

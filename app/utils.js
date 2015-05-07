@@ -6,20 +6,17 @@ var FILTERS = {
 		productId: AVALON_NANO_PRODUCT_ID
 	}]};
 
-var P_DETECT = 0x10;
-var P_SET_VOLT = 0x11;
-var P_SET_FREQ = 0x12;
-var P_WORK = 0x13;
-var P_POLLING = 0x14;
-var P_REQUIRE = 0x15;
-var P_TEST = 0x16;
-
-var P_ACKDETECT = 0x20;
-var P_GET_VOLT = 0x21;
-var P_GET_FREQ = 0x22;
-var P_NONCE = 0x23;
-var P_STATUS = 0x24;
-var P_TEST_RET = 0x25;
+var P_DETECT = 0x10
+var P_SET_VOLT = 0x22
+var P_SET_FREQ = 0x23
+var P_WORK = 0x24
+var P_POLLING = 0x30
+var P_REQUIRE = 0x31
+var P_TEST = 0x32
+var P_ACKDETECT = 0x40
+var P_STATUS = 0x41
+var P_NONCE = 0x42
+var P_TEST_RET = 0x43
 
 var CANAAN_HEAD1 = 0x43;
 var CANAAN_HEAD2 = 0x4e;
@@ -190,8 +187,20 @@ var mm_decode = function(pkg) {
 				version += String.fromCharCode(c);
 			return {type: P_ACKDETECT, version: version};
 		case P_NONCE:
-			var nonce = new DataView(data).getUint32(0, false);
-			return {type: P_NONCE, nonce: nonce};
+			var view = new DataView(data);
+			var poolId = view.getUint8(0);
+			var ntime = view.getUint8(1);
+			var jobId = view.getUint16(2, false);
+			var nonce2 = view.getUint32(4, false);
+			var nonce = view.getUint32(8, false) - 0x4000;
+			return {
+				type: P_NONCE,
+				nonce: nonce,
+				nonce2: nonce2,
+				jobId: jobId,
+				poolId: poolId,
+				ntime: ntime
+			};
 		case P_STATUS:
 			var frequency = new DataView(data).getUint32(0, false);
 			return {type: P_STATUS, frequency: frequency};
@@ -200,7 +209,7 @@ var mm_decode = function(pkg) {
 	}
 };
 
-var gw_pool2raw = function(midstat, data, jobId, ntime, poolNo, nonce2) {
+var gw_pool2raw = function(midstat, data, poolId, jobId, ntime, nonce2) {
 	var raw = new ArrayBuffer(64);
 	var view = new DataView(raw);
 	var i;
@@ -208,9 +217,9 @@ var gw_pool2raw = function(midstat, data, jobId, ntime, poolNo, nonce2) {
 	data = data.slice(128, 128 + 24);
 	for (i = 0; i < 32; i++)
 		view.setUint8(31 - i, parseInt(midstat.slice(i * 2, i * 2 + 2), 16));
-	view.setUint8(32, jobId);
+	view.setUint8(32, poolId);
 	view.setUint8(33, ntime);
-	view.setUint16(34, poolNo, false);
+	view.setUint16(34, jobId, false);
 	view.setUint32(36, nonce2, false);
 	for (i = 0; i < 12; i++)
 		view.setUint8(63 - i, parseInt(data.slice(i * 2, i * 2 + 2), 16));
@@ -229,13 +238,13 @@ var get_blockheader = function(job, nonce2) {
 		merkle_root = sha256(sha256(merkle_root + branch));
 	var arraybuffer = new ArrayBuffer(76);
 	var view = new DataView(arraybuffer);
-	view.setUint32(0, parseInt(job.version, 16), true);
+	view.setUint32(0, parseInt(job.version, 16), false);
 	for (var i = 0; i < 8; i++) {
-		view.setUint32((i + 1) * 4, parseInt(job.prevhash.slice(i * 8, i * 8 + 8), 16), true);
-		view.setUint32((i + 9) * 4, parseInt(merkle_root.slice(i * 8, i * 8 + 8), 16), false);
+		view.setUint32((i + 1) * 4, parseInt(job.prevhash.slice(i * 8, i * 8 + 8), 16), false);
+		view.setUint32((i + 9) * 4, parseInt(merkle_root.slice(i * 8, i * 8 + 8), 16), true);
 	}
-	view.setUint32(17 * 4, parseInt(job.ntime, 16), true);
-	view.setUint32(18 * 4, parseInt(job.nbits, 16), true);
+	view.setUint32(17 * 4, parseInt(job.ntime, 16), false);
+	view.setUint32(18 * 4, parseInt(job.nbits, 16), false);
 
 	return ab2hex(arraybuffer);
 };
@@ -252,17 +261,18 @@ var get_midstate = function(data) {
 		s0 = _rotateright(v[0], 2) ^ _rotateright(v[0], 13) ^ _rotateright(v[0], 22);
 		s1 = _rotateright(v[4], 6) ^ _rotateright(v[4], 11) ^ _rotateright(v[4], 25);
 		ma = (v[0] & v[1]) ^ (v[0] & v[2]) ^ (v[1] & v[2]);
-		ch = (v[4] & v[5]) ^ ((~v[4]) & v[5]);
+		ch = (v[4] & v[5]) ^ ((~v[4]) & v[6]);
 
 		v[7] = _addu32(v[7], w[0], k, ch, s1);
 		v[3] = _addu32(v[3], v[7]);
 		v[7] = _addu32(v[7], ma, s0);
 
-		for (i = 0; i < 8; i++)
-			v[i] = v[(i + 7) % 8];
+		v.unshift(v[7]);
+		v.pop();
 
-		s0 = _rotateright(w[1], 7) ^ _rotateright(w[1], 18) ^ (w[1] >> 3);
-		s1 = _rotateright(w[14], 17) ^ _rotateright(w[14], 19) ^ (w[14] >> 10);
+		s0 = _rotateright(w[1], 7) ^ _rotateright(w[1], 18) ^ (w[1] >>> 3);
+		s1 = _rotateright(w[14], 17) ^ _rotateright(w[14], 19) ^ (w[14] >>> 10);
+
 		w.push(_addu32(w[0], s0, w[9], s1));
 		w.shift();
 	}
@@ -276,12 +286,28 @@ var get_midstate = function(data) {
 
 var _rotateright = function(i, p) {
 	p &= 0x1f;
-	return i >> p | ((i << (32 - p)) & 0xffffffff);
+	return i >>> p | ((i << (32 - p)) & 0xffffffff);
 };
 
 var _addu32 = function() {
 	var sum = 0;
-	for (var i of arguments)
-		sum += i;
+	for (var i of arguments) {
+		sum = (sum + i) & 0xffffffff;
+	}
 	return sum & 0xffffffff;
+};
+
+var padLeft = function(str, len) {
+	len = len || 4;
+	len *= 2;
+	while (str.length < len)
+		str = "0" + str;
+	return str;
+};
+
+var uInt2LeHex = function(integar, size) {
+	var arraybuffer = new ArrayBuffer(4);
+	var view = new DataView(arraybuffer);
+	view.setUint32(0, integar, true);
+	return ab2hex(arraybuffer).slice(0, size * 2);
 };

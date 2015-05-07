@@ -15,6 +15,7 @@ thread.newJob = function(job, jobId, poolId) {
 	thread.poolId = poolId;
 	thread.nonce2 = 0;
 	thread.update = false;
+	thread.nonce2_limit = Math.pow(2, thread.job.nonce2_size * 8);
 };
 
 onmessage = function(e) {
@@ -32,22 +33,20 @@ onmessage = function(e) {
 };
 
 (function loop() {
-	var pad = "00000000";
-
 	if (thread.enable && (!thread.update) && thread.job !== undefined) {
-		if (thread.nonce2 < 0xffffffff) {
-			var nonce2 = thread.nonce2.toString(16);
+		if (thread.nonce2 < thread.nonce2_limit) {
 			var blockheader = get_blockheader(
 				thread.job,
-				pad.substring(0, pad.length - nonce2.length) + nonce2
+				uInt2LeHex(thread.nonce2, thread.job.nonce2_size)
 			);
+
 			var midstate = get_midstate(blockheader);
 			var raw = gw_pool2raw(
 				midstate,
 				blockheader,
+				thread.poolId,
 				thread.jobId,
 				0,
-				thread.poolId,
 				thread.nonce2
 			);
 
@@ -59,7 +58,7 @@ onmessage = function(e) {
 					raw.slice((idx - 1) * 32, idx * 32)
 				));
 			postMessage(work);
-			(thread.nonce2)++;
+			thread.nonce2 = (thread.nonce2 + 1) % thread.nonce2_limit;
 		}
 	}
 	setTimeout(loop, 10);

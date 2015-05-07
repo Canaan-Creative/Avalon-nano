@@ -44,17 +44,15 @@ Nano.prototype.run = function(size) {
 		P_POLLING, 0, 0x01, 0x01,
 		new ArrayBuffer(32)
 	);
-	this._send(polling);
-	this._receive();
 
 	var i = 0;
 	(function loop() {
 		var work = nano.miner.getWork;
 		while (work !== undefined) {
+			//nano._send(polling);
+			//nano._receive();
 			for (var j = 0; j < work.length; j++)
 				nano._send(work[j], j);
-			nano._send(polling);
-			nano._receive();
 			i++;
 			if (size === i)
 				break;
@@ -88,7 +86,9 @@ Nano.prototype._send = function(pkg, index) {
 		}
 		nano.log("debug", "Sent:     0x%s", ab2hex(pkg));
 		if (index === 1)
-			nano.sent = index;
+			setTimeout(function() {
+				nano.sent = index;
+			}, 175);
 	});
 };
 
@@ -111,7 +111,11 @@ Nano.prototype.__defineSetter__("received", function(pkg) {
 			this.log("log2", "Nonce:    0x%s", data.nonce.toString(16));
 			this.miner.newNonce = {
 				nanoId: this.id,
-				nonce: data
+				nonce: data.nonce,
+				nonce2: data.nonce2,
+				jobId: data.jobId,
+				poolId: data.poolId,
+				ntime: data.ntime
 			};
 			break;
 		case P_STATUS:
@@ -148,13 +152,13 @@ Nano.prototype.__defineSetter__("sent", function(info) {
 		(function loop() {
 			var work = nano.miner.getWork;
 			if (work !== undefined) {
-				for (var i = 0; i < work.length; i++)
-					nano._send(work[i], i);
 				nano._send(mm_encode(
 					P_POLLING, 0, 0x01, 0x01,
 					new ArrayBuffer(32)
 				));
 				nano._receive();
+				for (var i = 0; i < work.length; i++)
+					nano._send(work[i], i);
 			} else
 				setTimeout(loop, 100);
 		})();

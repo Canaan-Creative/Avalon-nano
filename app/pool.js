@@ -62,6 +62,7 @@ Pool.prototype.decode = function(result) {
 		}
 		this.miner.poolAuthorized = {poolId: this.id, success: true};
 		this.log("log1", "Authorized.");
+		this.submit_id = 0;
 	} else if (data.id === 3) {
 		if (data.error) {
 			this.log("warn", "Submission Failed.");
@@ -76,6 +77,7 @@ Pool.prototype.decode = function(result) {
 			this.miner.newJob = {
 				poolId: this.id,
 				nonce1: this.nonce1,
+				nonce2_size: this.nonce2_size,
 				job_id: data.params[0],
 				prevhash: data.params[1],
 				coinbase1: data.params[2],
@@ -93,10 +95,11 @@ Pool.prototype.decode = function(result) {
 Pool.prototype.submit = function(jobId, nonce2, ntime, nonce) {
 	var data = {
 		params: [this.username, jobId, nonce2, ntime, nonce],
-		id: 4,
+		id: 4 + this.submit_id,
 		method: "mining.submit"
 	};
-	this.upload(this.upload(data));
+	this.submit_id = (this.submit_id + 1) % 1021;
+	this.upload(data);
 };
 
 Pool.prototype.upload = function(data) {
