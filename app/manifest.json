@@ -16,7 +16,7 @@
 	},
 	"permissions": [
 		"http://*/",
-	w"storage",
+		"storage",
 		"hid",
 		{
 			"usbDevices": [{
