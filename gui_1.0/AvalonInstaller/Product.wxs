@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"  xmlns:netfx="http://schemas.microsoft.com/wix/NetFxExtension">
+  <Product Id="*" Name="Avalon Nano" Codepage="936" Language="2052" Version="1.0.0.0" Manufacturer="avalon" UpgradeCode="9c3d5b8b-613a-41fc-af6e-95b6f4d257c4">
+    <Package InstallerVersion="300" Compressed="yes" InstallScope="perMachine" />
+
+    <MajorUpgrade DowngradeErrorMessage="已经安装了更新版本的 [ProductName]。" />
+    <Media Id="1" Cabinet="avalonsys.cab" EmbedCab="yes" />
+
+    <Upgrade Id="9c3d5b8b-613a-41fc-af6e-95b6f4d257c4">
+      <UpgradeVersion OnlyDetect="yes" Property="FOUND_RELATED_PACAKGE" Minimum="1.0.0.0" IncludeMinimum="yes" />
+    </Upgrade>
+
+    <Condition Message="[ProductName] 已经安装到了你的计算机上。">
+      <![CDATA[Installed OR (NOT FOUND_RELATED_PACAKGE)]]>
+    </Condition>
+
+    <Icon Id="logo.ico" SourceFile="logo.ico"/>
+    <Property Id="ARPPRODUCTICON" Value="logo.ico" />
+
+    <Condition Message="本应用程序需要Windows 7, Windows 8, 或者更高版本才能使用。">
+      <![CDATA[Installed OR (VersionNT >= 601)]]>
+    </Condition>
+
+    <Property Id="NETFRAMEWORK40">
+      <RegistrySearch Id="NetFramework40"
+         Root="HKLM"
+         Key="Software\Microsoft\NET Framework Setup\NDP\v4\Full"
+         Name="Install"
+         Type="raw" />
+    </Property>
+
+    <Condition Message="本应用程序需要.NET Framework 4.0以上版本。请先安装.NET Framework，然后再运行本安装程序。">
+      <![CDATA[Installed OR NETFRAMEWORK40]]>
+    </Condition>
+
+    <Property Id="WixShellExecTarget" Value="[#AvalonGui.exe]" />
+    <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
+
+    <InstallExecuteSequence>
+        <Custom Action='LaunchApplication' After='InstallFinalize'><![CDATA[NOT Installed]]></Custom>
+    </InstallExecuteSequence>
+
+    <UIRef Id="WixUI_Minimal" />
+
+    <Feature Id="AvalonGUIFeature" Title="Avalon GUI" Level="1">
+      <ComponentGroupRef Id="AvalonGUIComponents" />
+      <ComponentGroupRef Id="ShortcutComponentGroup" />
+    </Feature>
+    <Feature Id="AvalonServiceFeature" Title="Avalon Service" Level="1">
+      <ComponentGroupRef Id="AvalonServiceComponents" />
+    </Feature>
+    <Feature Id="BfgMinerFeature" Title="BfgMiner" Level="1">
+      <ComponentGroupRef Id="BfgMinerComponents" />
+    </Feature>
+    <Feature Id="BfgMinerOpenclFeature" Title="BfgMiner" Level="1">
+      <ComponentGroupRef Id="BfgMinerOpenclComponents" />
+    </Feature>
+    <Feature Id="USBDriverFeature" Title="USB Driver" Level="1">
+      <ComponentGroupRef Id="USBDriverComponents" />
+    </Feature>
+    <Feature Id="USBDriverX86Feature" Title="USB Driver x86" Level="1">
+      <ComponentGroupRef Id="USBDriverX86Components" />
+    </Feature>
+    <Feature Id="USBDriverX64Feature" Title="USB Driver x64" Level="1">
+      <ComponentGroupRef Id="USBDriverX64Components" />
+    </Feature>
+  </Product>
+
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="AvalonSystemFolder" Name="Avalon Nano">
+          <Directory Id="AvalonGUIFolder" Name="AvalonGUI"/>
+          <Directory Id="GUIWORKINGDIRECTORY" Name="AvalonGUI"/>
+          <Directory Id="AvalonServiceFolder" Name="Service"/>
+          <Directory Id="BfgMinerFolder" Name="BfgMiner">
+            <Directory Id="BfgMinerOpenclFolder" Name="opencl"/>
+          </Directory>
+        </Directory>
+      </Directory>
+      <Directory Id="WindowsFolder">
+        <Directory Id="Inf" Name="inf">
+          <Directory Id="USBDRIVERFOLDER" Name="Avalon Nano USB Driver">
+            <Directory Id="USBDriverX86Folder" Name="x86"/>
+            <Directory Id="USBDriverX64Folder" Name="x64"/>
+          </Directory>
+        </Directory>
+      </Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="Avalon Nano"/>
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="AvalonGUIComponents" Directory="AvalonGUIFolder">
+      <Component Id="AvalonGui.exe" Guid="50093DFD-AF10-482D-BEF2-425F5EDDEB4A">
+        <File Id="AvalonGui.exe" Source="$(var.AvalonGui.TargetDir)AvalonGui.exe" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="AutoStart" Guid="4F460C9C-BF14-416A-8E78-240705BB8BD2">
+        <RegistryValue Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\Run" Name="Avalon Nano" Type="string" Value="[#AvalonGui.exe]" KeyPath="yes"/>
+      </Component>
+      <Component Id="AvalonGui.exe.config" Guid="AF76090D-27F0-4BFC-B122-A853993BF310">
+        <File Id="AvalonGui.exe.config" Source="$(var.AvalonGui.TargetDir)AvalonGui.exe.config" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="avalon.ini" Guid="57A5AB93-8F5A-4752-AA9A-70B856318491">
+        <File Id="avalon.ini" Source="$(var.AvalonGui.TargetDir)avalon.ini" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="log4net.dll" Guid="98219B5B-1BBC-41FD-B039-D690E0B1D61C">
+        <File Id="log4net.dll" Source="$(var.AvalonGui.TargetDir)log4net.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="log4net.xml" Guid="D1B06FD2-8A06-4037-AEB7-101BA2B4F841">
+        <File Id="log4net.xml" Source="$(var.AvalonGui.TargetDir)log4net.xml" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="NamedPipeWrapper.dll" Guid="2A7C49D0-568E-45E4-A226-811E6B12FA36">
+        <File Id="NamedPipeWrapper.dll" Source="$(var.AvalonGui.TargetDir)NamedPipeWrapper.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="Newtonsoft.Json.Net35.dll" Guid="E84F8BB2-0425-45D3-8852-C476A2A0017B">
+        <File Id="Newtonsoft.Json.Net35.dll" Source="$(var.AvalonGui.TargetDir)Newtonsoft.Json.Net35.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="AvalonDevice.dll" Guid="8A3D70A8-A53C-4E28-92A2-3ACBA0869AFE">
+        <File Id="AvalonDevice.dll" Source="$(var.AvalonGui.TargetDir)AvalonDevice.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="ShortcutComponentGroup" Directory="ApplicationProgramsFolder">
+      <Component Id="ApplicationShortcut" Guid="7620EA4E-6F47-48E5-82B4-BC77E1A17260">
+        <Shortcut Id="ApplicationStartMenuShortcut"
+                  Name="Avalon Nano"
+                  Description="Avalon Nano"
+                  Target="[#AvalonGui.exe]"
+                  WorkingDirectory="GUIWORKINGDIRECTORY"/>
+        <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
+        <RegistryValue Root="HKCU" Key="Software\Microsoft\Avalon Nano" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </ComponentGroup>
+    <ComponentGroup Id="AvalonServiceComponents" Directory="AvalonServiceFolder">
+      <Component Id="AvalonService.exe" Guid="61D73111-8C81-43DF-998F-3E82833E131A">
+        <File Id="AvalonService.exe" Source="$(var.AvalonService.TargetDir)AvalonService.exe" KeyPath="yes" Checksum="yes"/>
+        <ServiceInstall
+              Id="ServiceInstaller"
+              Type="ownProcess"
+              Vital="yes"
+              Name="AvalonNano"
+              DisplayName="Avalon Monitor Service"
+              Description="Monitor Avalon Nano USB plugin/out events."
+              Start="auto"
+              Account="LocalSystem"
+              ErrorControl="ignore"
+              Interactive="no"
+              >
+        </ServiceInstall>
+        <ServiceControl Id="StartService" Start="install" Stop="both" Remove="uninstall" Name="AvalonNano" Wait="yes" />
+      </Component>
+      <Component Id="AvalonService.exe.config" Guid="573A5686-279C-4059-A2A1-D6AD102F4096">
+        <File Id="AvalonService.exe.config" Source="$(var.AvalonService.TargetDir)AvalonService.exe.config" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="service_log4net.dll" Guid="F9787B82-C160-48DB-9E07-BF423AA999CC">
+        <File Id="service_log4net.dll" Source="$(var.AvalonService.TargetDir)log4net.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="service_log4net.xml" Guid="81E9A8FA-3EA1-4648-8AA3-4325D3174EBD">
+        <File Id="service_log4net.xml" Source="$(var.AvalonService.TargetDir)log4net.xml" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="service_NamedPipeWrapper.dll" Guid="2755F63F-F76D-41DD-A810-F657576A019A">
+        <File Id="service_NamedPipeWrapper.dll" Source="$(var.AvalonService.TargetDir)NamedPipeWrapper.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="service_AvalonDevice.dll" Guid="0502B507-7243-405B-B00C-2412F74E9545">
+        <File Id="service_AvalonDevice.dll" Source="$(var.AvalonService.TargetDir)AvalonDevice.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="BfgMinerComponents" Directory="BfgMinerFolder">
+      <Component Id="AUTHORS.txt" Guid="16D09A5C-521E-4089-8E5C-854180CE7F74">
+        <File Id="AUTHORS.txt" Source="$(var.bfgminer.ProjectDir)AUTHORS.txt" KeyPath="yes" Checksum="yes"/>
+      </Component>
+
+      <Component Id="backtrace.dll" Guid="0FF5F7E7-E1AB-4188-BD77-EC98697DCDC0">
+        <File Id="backtrace.dll" Source="$(var.bfgminer.ProjectDir)backtrace.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="bfgminer_rpc.exe" Guid="1B27E026-A818-4877-A2BC-25A75C332054">
+        <File Id="bfgminer_rpc.exe" Source="$(var.bfgminer.ProjectDir)bfgminer-rpc.exe" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="bfgminer.exe" Guid="8BBA357D-EF70-4EEB-9EF6-47BA8A2AB0B5">
+        <File Id="bfgminer.exe" Source="$(var.bfgminer.ProjectDir)bfgminer.exe" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="COPYING.txt" Guid="83C85D73-2812-4A38-9ADE-1550EFE5BBA5">
+        <File Id="COPYING.txt" Source="$(var.bfgminer.ProjectDir)COPYING.txt" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="example.conf" Guid="9CB9C931-DE1E-43CE-B13B-DA5CA8B7EA66">
+        <File Id="example.conf" Source="$(var.bfgminer.ProjectDir)example.conf" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="icadbg.cmd" Guid="8E7372CF-F326-4B49-A5F9-136D70936EBD">
+        <File Id="icadbg.cmd" Source="$(var.bfgminer.ProjectDir)icadbg.cmd" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="libblkmaker_0.1_0.dll" Guid="06220B07-A4AE-4BA2-8C26-F3B4ECEC79BA">
+        <File Id="libblkmaker_0.1_0.dll" Source="$(var.bfgminer.ProjectDir)libblkmaker-0.1-0.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="libblkmaker_jansson_0.1_0.dll" Guid="E15FECED-35BA-4589-ACA1-65E72972338D">
+        <File Id="libblkmaker_jansson_0.1_0.dll" Source="$(var.bfgminer.ProjectDir)libblkmaker_jansson-0.1-0.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="libcurl_4.dll" Guid="88230D91-8ED5-4A19-8556-159DE67C6BD6">
+        <File Id="libcurl_4.dll" Source="$(var.bfgminer.ProjectDir)libcurl-4.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="libevent_2_0_5.dll" Guid="C2CD3911-E687-4FD9-92A5-7A4699D7E692">
+        <File Id="libevent_2_0_5.dll" Source="$(var.bfgminer.ProjectDir)libevent-2-0-5.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="libhidapi_0.dll" Guid="7C67CFFE-567F-4BCD-8897-7DC6D2916846">
+        <File Id="libhidapi_0.dll" Source="$(var.bfgminer.ProjectDir)libhidapi-0.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="libjansson_4.dll" Guid="00686D93-24C1-42B7-8002-1E4DB7C142C7">
+        <File Id="libjansson_4.dll" Source="$(var.bfgminer.ProjectDir)libjansson-4.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="libmicrohttpd_10.dll" Guid="805D15DD-487D-42B7-8831-BAA97F5CCDDD">
+        <File Id="libmicrohttpd_10.dll" Source="$(var.bfgminer.ProjectDir)libmicrohttpd-10.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="libusb_1.0.dll" Guid="E79F3842-DA3D-41E6-B221-735FC2685BB1">
+        <File Id="libusb_1.0.dll" Source="$(var.bfgminer.ProjectDir)libusb-1.0.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="miner.php" Guid="9ED9C33E-06AB-41F5-8552-8FA8489A7B0D">
+        <File Id="miner.php" Source="$(var.bfgminer.ProjectDir)miner.php" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="NEWS.txt" Guid="38A74073-FA08-472C-A194-E7745CADF0FC">
+        <File Id="NEWS.txt" Source="$(var.bfgminer.ProjectDir)NEWS.txt" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="pdcurses.dll" Guid="347B3BC8-73CC-4980-AC17-661C475E11DB">
+        <File Id="pdcurses.dll" Source="$(var.bfgminer.ProjectDir)pdcurses.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="pthreadGC2.dll" Guid="12267A7E-6EC8-4EFE-AD2D-40303B4B9119">
+        <File Id="pthreadGC2.dll" Source="$(var.bfgminer.ProjectDir)pthreadGC2.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="README.ASIC.txt" Guid="D400E8D3-642F-4D71-BA5A-F05577F8BAF8">
+        <File Id="README.ASIC.txt" Source="$(var.bfgminer.ProjectDir)README.ASIC.txt" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="README.FPGA.txt" Guid="84C014FF-0223-46E6-BE5D-E1EE417CFF69">
+        <File Id="README.FPGA.txt" Source="$(var.bfgminer.ProjectDir)README.FPGA.txt" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="README.GPU.txt" Guid="07D0DB63-9A33-4783-B4C1-7465D859DB5D">
+        <File Id="README.GPU.txt" Source="$(var.bfgminer.ProjectDir)README.GPU.txt" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="README.RPC.txt" Guid="063B7443-6881-4D55-B86D-86565505DFEC">
+        <File Id="README.RPC.txt" Source="$(var.bfgminer.ProjectDir)README.RPC.txt" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="README.scrypt.txt" Guid="B30CDFE3-7B4B-42EA-8FB5-FE856FFA4134">
+        <File Id="README.scrypt.txt" Source="$(var.bfgminer.ProjectDir)README.scrypt.txt" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="README.txt" Guid="B0522366-0002-4306-B85E-CF70943DBAFE">
+        <File Id="README.txt" Source="$(var.bfgminer.ProjectDir)README.txt" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="windows_build.txt" Guid="B47AB084-5AC8-48AB-A0F2-A17E40CA3EE9">
+        <File Id="windows_build.txt" Source="$(var.bfgminer.ProjectDir)windows-build.txt" KeyPath="yes" Checksum="yes"/>
+      </Component>
+
+      <Component Id="zlib1.dll" Guid="4D2D08CB-D1E1-4F31-B4C3-F1966E606A9B">
+        <File Id="zlib1.dll" Source="$(var.bfgminer.ProjectDir)zlib1.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="BfgMinerOpenclComponents" Directory="BfgMinerOpenclFolder">
+      <Component Id="diablo.cl" Guid="4EE760A6-682F-430B-9C3A-DADACADDF9C6">
+        <File Id="diablo.cl" Source="$(var.bfgminer.ProjectDir)opencl\diablo.cl" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      
+      <Component Id="diakgcn.cl" Guid="0B5FC668-6188-40E3-8374-42E5BEE8C914">
+        <File Id="diakgcn.cl" Source="$(var.bfgminer.ProjectDir)opencl\diakgcn.cl" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      
+      <Component Id="phatk.cl" Guid="0BA79155-D2F9-4233-A133-F41E19A51820">
+        <File Id="phatk.cl" Source="$(var.bfgminer.ProjectDir)opencl\phatk.cl" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      
+      <Component Id="poclbm.cl" Guid="63DCF53B-B102-4031-A7DF-81BACAC11EBF">
+        <File Id="poclbm.cl" Source="$(var.bfgminer.ProjectDir)opencl\poclbm.cl" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      
+      <Component Id="psw.cl" Guid="9074258B-5C03-4760-958A-50E02D282CDD">
+        <File Id="psw.cl" Source="$(var.bfgminer.ProjectDir)opencl\psw.cl" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      
+      <Component Id="scrypt.cl" Guid="949F4CB4-1728-401A-88D0-35ED00DB2CD1">
+        <File Id="scrypt.cl" Source="$(var.bfgminer.ProjectDir)opencl\scrypt.cl" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      
+      <Component Id="zuikkis.cl" Guid="93A1B2C0-8E29-4EB6-91E0-37F8628872D5">
+        <File Id="zuikkis.cl" Source="$(var.bfgminer.ProjectDir)opencl\zuikkis.cl" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      
+    </ComponentGroup>
+
+    <ComponentGroup Id="USBDriverComponents" Directory="USBDRIVERFOLDER">
+      <Component Id="lpc_composite_vcom.cat" Guid="2F09E943-5ED5-483F-88EC-F8D53CC2162A">
+        <File Id="lpc_composite_vcom.cat" Source="$(var.USBDriver.ProjectDir)lpc-composite-vcom.cat" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="lpc_composite_vcom.inf" Guid="A1C08B95-D340-4A78-A23D-3C939C3F6568">
+        <File Id="lpc_composite_vcom.inf" Source="$(var.USBDriver.ProjectDir)lpc-composite-vcom.inf" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="lpc_composite89_dfu.cat" Guid="1B6D9AB2-CBB4-44A4-9A93-8F859854DCC3">
+        <File Id="lpc_composite89_dfu.cat" Source="$(var.USBDriver.ProjectDir)lpc-composite89-dfu.cat" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="lpc_composite89_dfu.inf" Guid="5805E938-DBF8-40BB-9949-B298FFC2E7CE">
+        <File Id="lpc_composite89_dfu.inf" Source="$(var.USBDriver.ProjectDir)lpc-composite89-dfu.inf" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="lpc_composite89_vcom.cat" Guid="3D6563A5-5A7A-4D1B-A08D-576E1E7D4683">
+        <File Id="lpc_composite89_vcom.cat" Source="$(var.USBDriver.ProjectDir)lpc-composite89-vcom.cat" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="lpc_composite89_vcom.inf" Guid="FF7CE1FB-E7B1-4CA2-A469-B91E8FB865B3">
+        <File Id="lpc_composite89_vcom.inf" Source="$(var.USBDriver.ProjectDir)lpc-composite89-vcom.inf" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="lpc_ucom_vcom.cat" Guid="6DE4AE33-9212-45C2-B478-39C85F44A5A7">
+        <File Id="lpc_ucom_vcom.cat" Source="$(var.USBDriver.ProjectDir)lpc-ucom-vcom.cat" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="lpc_ucom_vcom.inf" Guid="96F23F5A-4387-49DA-9C40-D8C3FFCFF142">
+        <File Id="lpc_ucom_vcom.inf" Source="$(var.USBDriver.ProjectDir)lpc-ucom-vcom.inf" KeyPath="yes" Checksum="yes"/>
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="USBDriverX86Components" Directory="USBDriverX86Folder">
+      <Component Id="WdfCoInstaller01011.dll.x86" Guid="C1D4639F-E01C-490E-ACD7-9DFCDAD3FFC7">
+        <File Id="WdfCoInstaller01011.dll.x86" Source="$(var.USBDriver.ProjectDir)x86\WdfCoInstaller01011.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="winusbcoinstaller2.dll.x86" Guid="B74966FD-11E4-4211-B86C-6127C380A5D0">
+        <File Id="winusbcoinstaller2.dll.x86" Source="$(var.USBDriver.ProjectDir)x86\winusbcoinstaller2.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="USBDriverX64Components" Directory="USBDriverX64Folder">
+      <Component Id="WdfCoInstaller01011.dll.x64" Guid="98732AD7-F981-41CD-9FF1-D7B3CFCF2004">
+        <File Id="WdfCoInstaller01011.dll.x64" Source="$(var.USBDriver.ProjectDir)x64\WdfCoInstaller01011.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Id="winusbcoinstaller2.dll.x64" Guid="9AAAFCE3-B479-450F-859A-D9427DFA5DD8">
+        <File Id="winusbcoinstaller2.dll.x64" Source="$(var.USBDriver.ProjectDir)x64\winusbcoinstaller2.dll" KeyPath="yes" Checksum="yes"/>
+      </Component>
+    </ComponentGroup>
+    
+  </Fragment>
+</Wix>

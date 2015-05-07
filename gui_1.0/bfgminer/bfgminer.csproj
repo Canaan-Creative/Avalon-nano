@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <UpgradeBackupLocation />
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <ProjectGuid>{231483FB-2123-407E-A27B-766E9E2EAEF8}</ProjectGuid>
+  </PropertyGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.0">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="AUTHORS.txt" />
+    <Content Include="backtrace.dll" />
+    <Content Include="bfgminer-rpc.exe" />
+    <Content Include="bfgminer.exe" />
+    <Content Include="COPYING.txt" />
+    <Content Include="libblkmaker-0.1-0.dll" />
+    <Content Include="libblkmaker_jansson-0.1-0.dll" />
+    <Content Include="libcurl-4.dll" />
+    <Content Include="libevent-2-0-5.dll" />
+    <Content Include="libhidapi-0.dll" />
+    <Content Include="libjansson-4.dll" />
+    <Content Include="libmicrohttpd-10.dll" />
+    <Content Include="libusb-1.0.dll" />
+    <Content Include="NEWS.txt" />
+    <Content Include="pdcurses.dll" />
+    <Content Include="pthreadGC2.dll" />
+    <Content Include="README.ASIC.txt" />
+    <Content Include="README.FPGA.txt" />
+    <Content Include="README.GPU.txt" />
+    <Content Include="README.RPC.txt" />
+    <Content Include="README.scrypt.txt" />
+    <Content Include="README.txt" />
+    <Content Include="windows-build.txt" />
+    <Content Include="zlib1.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="example.conf" />
+    <None Include="icadbg.cmd" />
+    <None Include="miner.php" />
+    <None Include="opencl\diablo.cl" />
+    <None Include="opencl\diakgcn.cl" />
+    <None Include="opencl\phatk.cl" />
+    <None Include="opencl\poclbm.cl" />
+    <None Include="opencl\psw.cl" />
+    <None Include="opencl\scrypt.cl" />
+    <None Include="opencl\zuikkis.cl" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Target Name="Build">
+  </Target>
+  <Target Name="Clean">
+  </Target>
+  <Target Name="ReBuild" DependsOnTargets="Clean;Build">
+  </Target>
+</Project>

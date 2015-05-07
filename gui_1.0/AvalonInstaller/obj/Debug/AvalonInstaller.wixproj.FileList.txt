@@ -1,0 +1,4 @@
+C:\Users\Administrator\Desktop\avalon\AvalonInstaller\bin\Debug\AvalonInstaller.msi
+C:\Users\Administrator\Desktop\avalon\AvalonInstaller\bin\Debug\AvalonInstaller.wixpdb
+C:\Users\Mikeqin\Desktop\avalon2\AvalonInstaller\bin\Debug\AvalonInstaller.msi
+C:\Users\Mikeqin\Desktop\avalon2\AvalonInstaller\bin\Debug\AvalonInstaller.wixpdb

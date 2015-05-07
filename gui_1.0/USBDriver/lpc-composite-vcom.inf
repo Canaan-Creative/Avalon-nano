@@ -1,0 +1,52 @@
+; 
+; NXP  Communication Device Class driver installation file
+; (C)2012 Copyright 
+;
+
+[Version] 
+Signature="$Windows NT$" 
+Class=Ports
+ClassGuid={4D36E978-E325-11CE-BFC1-08002BE10318} 
+Provider=%NXP% 
+CatalogFile=lpc-composite-vcom.cat
+DriverVer=09/12/2013,1.0.0.0
+
+[Manufacturer] 
+%NXP%=DeviceList, NTx86, NTamd64, NTARM
+
+[DeviceList.NTx86] 
+%DESCRIPTION%=LPCVCOM,USB\VID_1FC9&PID_0087 
+%COMPOSITE%=LPCVCOM,USB\VID_1FC9&PID_0087&MI_01
+
+[DeviceList.NTamd64] 
+%DESCRIPTION%=LPCVCOM,USB\VID_1FC9&PID_0087 
+%COMPOSITE%=LPCVCOM,USB\VID_1FC9&PID_0087&MI_01
+
+[DeviceList.NTARM] 
+%DESCRIPTION%=LPCVCOM,USB\VID_1FC9&PID_0087 
+%COMPOSITE%=LPCVCOM,USB\VID_1FC9&PID_0087&MI_01
+
+;------------------------------------------------------------------------------
+;  Windows 2000/XP Sections
+;------------------------------------------------------------------------------
+[LPCVCOM]
+include=mdmcpq.inf
+CopyFiles=FakeModemCopyFileSection
+AddReg=LowerFilterAddReg,SerialPropPageAddReg
+[LPCVCOM.Services]
+include = mdmcpq.inf
+AddService = usbser, 0x00000002, LowerFilter_Service_Inst
+; This adds the serial port property tab to the device properties dialog
+[SerialPropPageAddReg]
+HKR,,EnumPropPages32,,"MsPorts.dll,SerialPortPropPageProvider"
+;------------------------------------------------------------------------------
+;  String Definitions
+;------------------------------------------------------------------------------
+
+[Strings] 
+NXP="NXP"
+DESCRIPTION="LPC USB VCom Port" 
+COMPOSITE="LPC USB VCom Port"
+
+
+
