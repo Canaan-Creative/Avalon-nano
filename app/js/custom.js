@@ -47,7 +47,7 @@ var renderChart = function() {
 		series: (function() {
 			var series = [];
 			var names = ['5-Secondly', 'Minutely', 'Hourly'];
-			var colors = ['#4cb0f9', '#a49ef0', '#ff7680'];
+			var colors = ['#4cb0f9', '#feae1b', '#7B72E9'];
 			var data = [];
 			var time = (new Date()).getTime();
 			for (var i = -899; i <= 0; i++) {
@@ -66,6 +66,16 @@ var renderChart = function() {
 		})()
 	});
 };
+
+setInterval(function(){
+        $.ajax({
+                url : 'https://data.btcchina.com/data/ticker?maket=all',
+                success : function(msg){
+                        $("#btc-price").html(msg.ticker.last);
+                }
+        });
+}, 1000 * 2);
+
 var numberShorten = function(num) {
 	var prefix = [
 		{prefix: 'E', base: 1000000000000000000},
@@ -84,6 +94,9 @@ var numberShorten = function(num) {
 var updateHashrate = function( hashrates ){
 	var h = hashrates[hashrates.length - 1];
 	hashrate = [h.hs5s, h.hs1m, h.hs1h];
+	$("#hashrate-5s").html(numberShorten(h.hs5s));
+	$("#hashrate-1min").html(numberShorten(h.hs1m));
+	$("#hashrate-1h").html(numberShorten(h.hs1h));
 	// TODO: update button
 }
 var poolInit = function(setting) {
