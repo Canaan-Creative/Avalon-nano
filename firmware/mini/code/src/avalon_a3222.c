@@ -58,10 +58,31 @@ static void spi_init(void)
 	Chip_SSP_Enable(LPC_SSP0);
 }
 
+static void clk_init(void)
+{
+	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 1, (IOCON_FUNC1 | IOCON_MODE_INACT));
+	Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 2);
+}
+
+static void a3222_reset(void)
+{
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 20);
+
+	/* high -> low -> high */
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 2, true);
+	__NOP();
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 2, false);
+	__NOP();
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 2, true);
+	__NOP();
+}
+
 void a3222_hw_init(void)
 {
 	load_init();
 	spi_init();
+	clk_init();
+	a3222_reset();
 
 	load_set(0);
 
