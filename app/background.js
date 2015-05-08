@@ -34,14 +34,6 @@ var main = function() {
 		});
 	});
 
-	miner.onNewNonce.addListener(function(msg) {
-		chrome.runtime.sendMessage({
-			info: "NewNonce",
-			nanoId: msg.nanoId,
-			nonce: msg.nonce
-		});
-	});
-
 	miner.onNewStatus.addListener(function(msg) {
 		chrome.runtime.sendMessage({
 			info: "NewStatus",

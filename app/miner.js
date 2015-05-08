@@ -4,7 +4,6 @@ var Miner = function() {
 	this.onNanoDeleted = new MinerEvent();
 	this.onNanoConnected = new MinerEvent();
 	this.onNanoDetected = new MinerEvent();
-	this.onNewNonce = new MinerEvent();
 	this.onNewStatus = new MinerEvent();
 	this.onPoolSubscribed = new MinerEvent();
 	this.onPoolAuthorized = new MinerEvent();
@@ -149,7 +148,6 @@ Miner.prototype.__defineSetter__("newNonce", function(msg) {
 		uInt2LeHex(msg.nonce, 4)
 	);
 	this._hashrates[msg.nanoId][0]++;
-	this.onNewNonce.fire(msg);
 });
 
 Miner.prototype.__defineSetter__("newStatus", function(msg) {
