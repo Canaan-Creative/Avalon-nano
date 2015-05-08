@@ -16,14 +16,16 @@
 
 #define PIN_OE	14
 #define PIN_DS	20
-#define PIN_SHCP	16
-#define PIN_STCP	17
+#define PIN_SHCP	17
+#define PIN_STCP	16
 #define PIN_PG	7
 #define VOLTAGE_DELAY   100
 static uint16_t g_voltage = ASIC_0V;
 
 static void init_mux(void)
 {
+	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, PIN_OE, IOCON_FUNC1);
+
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, PIN_OE);
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, PIN_DS);
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, PIN_SHCP);
@@ -41,6 +43,7 @@ static void shifter_byte(uint8_t ch)
 		Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_DS, (ch >> (7 - i)) & 1);
 		Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_SHCP, 1);
 	}
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_SHCP, 0);
 }
 
 void shifter_init(void)
@@ -63,9 +66,9 @@ int set_voltage(uint16_t vol)
 	if (g_voltage == ASIC_0V)
 		poweron = 1;
 
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_OE, 0);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_OE, 1);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_STCP, 0);
-	shifter_byte(vol >> 8);
+
 	shifter_byte(vol & 0xff);
 
 	g_voltage = vol;
@@ -73,6 +76,12 @@ int set_voltage(uint16_t vol)
 		delay(VOLTAGE_DELAY);
 
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_STCP, 1);
+	__NOP();
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_STCP, 0);
+	__NOP();
+	__NOP();
+	__NOP();
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_OE, 0);
 	return poweron;
 }
 
