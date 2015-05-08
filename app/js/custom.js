@@ -1,5 +1,5 @@
+var MHz = 0;
 var renderChart = function() {
-	var MHz = 0;
 	Highcharts.setOptions({
 		global: {useUTC: false}
 	});
@@ -22,13 +22,14 @@ var renderChart = function() {
 				}
 			}
 		},
-		title: {text: 'Live random data'},
+		title: {text: 'Live Hashrate'},
 		xAxis: {
 			type: 'datetime',
 			tickPixelInterval: 150
 		},
 		yAxis: {
-			title: {text: 'Value'},
+			title: {text: 'Hash/s'},
+			min:0,
 			plotLines: [{value: 0, width: 1, color: '#808080'}]
 		},
 		tooltip: {
@@ -52,7 +53,7 @@ var renderChart = function() {
 				for (i = -19; i <= 0; i++) {
 					data.push({
 						x: time + i * 1000,
-						y: Math.random()
+						y: 0
 					});
 				}
 				return data;
@@ -60,7 +61,13 @@ var renderChart = function() {
 		}]
 	});
 };
-
+var updateHashrate = function( hashrates ){
+	var totalHashrate = 0;
+	for (var i of hashrates){
+		totalHashrate +=i.mhs1s;	
+	}	
+	MHz = totalHashrate * 1000000;
+}
 var poolInit = function(setting) {
 	console.log(setting);
 	$.setting._pool( setting );
@@ -106,11 +113,9 @@ $(function () {
 					console.log("NanoDetected");
 					$.setting._updateNano(msg.nanoId,'version', msg.success, msg.version);
 					break;
-				case "NewNonce":
-					console.log("NewNonce");
-					break;
 				case "NewStatus":
 					console.log("NewStatus");
+					console.log(msg);
 					$.setting._updateNano(msg.nanoId,'frequency', msg.stat.frequency);
 					break;
 				case "PoolSubscribed":
@@ -118,6 +123,9 @@ $(function () {
 					break;
 				case "PoolAuthorized":
 					console.log("PoolAuthorized");
+					break;
+				case "Hashrate":
+					updateHashrate(msg.hashrate);
 					break;
 			}
 	});
@@ -249,13 +257,14 @@ jQuery.setting = {
 		nanoStr += '<tr class="active" id="nano-tr-id-' + nanoId + '">';
 		nanoStr += '<td id="nano-device-id-' + nanoId + '">nano' + nanoId + '</td>';
 		nanoStr += '<td>55</td>';
-		nanoStr += '<td id="nano-frequency-"'+ nanoId +'>0</td>';
+		nanoStr += '<td id="nano-frequency-'+ nanoId +'">0</td>';
 		nanoStr += '<td id="nano-status-' + nanoId + '">Normal</td>';
 		nanoStr += '<td id="nano-version-' + nanoId + '">12.01</td>';
 		nanoStr += '</tr>';
 		$("#device").append(nanoStr);
 	},
 	_updateNano : function (nanoId , type , message ,version){
+		console.log(nanoId + '----' + type +'----' + message );
 		switch(type){
 			case 'status':
 				if( message != true ){
