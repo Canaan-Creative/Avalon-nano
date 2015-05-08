@@ -1,9 +1,13 @@
-var AVALON_NANO_VENDOR_ID = 10737; //0x29f1;
-var AVALON_NANO_PRODUCT_ID = 13297; //0x33f1;
+var AVALON_VENDOR_ID = 10737; //0x29f1;
+var AVALON_PRODUCT_ID_NANO = 13297; //0x33f1;
+var AVALON_PRODUCT_ID_MINI = 16625; //0x40f1;
 var FILTERS = {
 	filters: [{
-		vendorId: AVALON_NANO_VENDOR_ID,
-		productId: AVALON_NANO_PRODUCT_ID
+		vendorId: AVALON_VENDOR_ID,
+		productId: AVALON_PRODUCT_ID_NANO
+	}, {
+		vendorId: AVALON_VENDOR_ID,
+		productId: AVALON_PRODUCT_ID_MINI
 	}]};
 
 var P_DETECT = 0x10
@@ -92,7 +96,8 @@ var MINER_DEBUG_STYLE = 'color: silver';
 
 var check_version = function(version) {
 	//return version.slice(0, 15) === '3U1504-88c2f620';
-	return version.slice(0, 6) === '3U1504';
+	return version.slice(0, 6) === '3U1504' ||
+		version.slice(0, 6) === '4M1505';
 };
 
 var crc16 = function(arraybuffer) { var data = new Uint8Array(arraybuffer);
@@ -310,4 +315,8 @@ var uInt2LeHex = function(integar, size) {
 	var view = new DataView(arraybuffer);
 	view.setUint32(0, integar, true);
 	return ab2hex(arraybuffer).slice(0, size * 2);
+};
+
+var arraySum = function(array) {
+	return array.reduce(function(a, b) {return a + b;});
 };

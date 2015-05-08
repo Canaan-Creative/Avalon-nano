@@ -22,6 +22,9 @@
 			"usbDevices": [{
 				"vendorId": 10737,
 				"productId": 13297
+			}, {
+				"vendorId": 10737,
+				"productId": 16625
 			}]
 		}
 	],

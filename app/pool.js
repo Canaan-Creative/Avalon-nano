@@ -107,7 +107,12 @@ Pool.prototype.upload = function(data) {
 	this.log("debug", "Sent:     %s", data);
 	data = str2ab(data + "\n");
 	chrome.sockets.tcp.send(this.socketId, data, function(sendInfo) {
-		//console.log(sendInfo);
+		if (chrome.runtime.lastError) {
+			// TODO: net::ERR_SOCKET_NOT_CONNECTED
+			//       alert somebody !!!
+			pool.log("error", chrome.runtime.lastError.message);
+			return;
+		}
 	});
 };
 
