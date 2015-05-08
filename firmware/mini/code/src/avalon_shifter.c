@@ -14,10 +14,11 @@
 #include "libfunctions.h"
 #include "avalon_shifter.h"
 
-#define PIN_OE		14
-#define PIN_DS		20
+#define PIN_OE	14
+#define PIN_DS	20
 #define PIN_SHCP	16
 #define PIN_STCP	17
+#define PIN_PG	7
 #define VOLTAGE_DELAY   100
 static uint16_t g_voltage = ASIC_0V;
 
@@ -27,6 +28,7 @@ static void init_mux(void)
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, PIN_DS);
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, PIN_SHCP);
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, PIN_STCP);
+	Chip_GPIO_SetPinDIRInput(LPC_GPIO, 0, PIN_PG);
 }
 
 static void shifter_byte(uint8_t ch)
@@ -77,5 +79,10 @@ int set_voltage(uint16_t vol)
 uint16_t get_voltage(void)
 {
 	return g_voltage;
+}
+
+uint8_t read_power_good(void)
+{
+	return Chip_GPIO_ReadPortBit(LPC_GPIO, 0, PIN_PG);
 }
 
