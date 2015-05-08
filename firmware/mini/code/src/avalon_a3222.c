@@ -24,38 +24,44 @@
 #define A3222_REPORT_SIZE	12 /* work_id (8bytes) + nonce (4bytes) */
 #define A3222_REPORT_CNT	12
 
+#define PIN_LOAD	19
+#define PIN_SCK	15
+#define PIN_MISO	22
+#define PIN_MOSI	21
+#define PIN_FPGARESET	2
+
 static uint8_t g_asic_index;
 static uint8_t g_freqflag;
 static uint32_t g_freq[ASIC_COUNT][3];
 
 static uint8_t g_a3222_works[A3222_WORK_SIZE * A3222_WORK_CNT];
 static uint8_t g_a3222_reports[A3222_REPORT_SIZE * A3222_REPORT_CNT];
-RINGBUFF_T a3222_txrb;
-RINGBUFF_T a3222_rxrb;
+static RINGBUFF_T a3222_txrb;
+static RINGBUFF_T a3222_rxrb;
 
 static void load_init(void)
 {
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 2, (IOCON_FUNC0));	/* LOAD */
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 2);
+	Chip_IOCON_PinMuxSet(LPC_IOCON, 1, PIN_LOAD, IOCON_FUNC0);	/* LOAD */
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 1, PIN_LOAD);
 
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 1, 29, (IOCON_FUNC1 | IOCON_MODE_PULLUP));	/* SCK0 */
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 8, (IOCON_FUNC1 | IOCON_MODE_PULLUP));	/* MISO0 */
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 9, (IOCON_FUNC1 | IOCON_MODE_PULLUP));	/* MOSI0 */
+	Chip_IOCON_PinMuxSet(LPC_IOCON, 1, PIN_SCK, (IOCON_FUNC3 | IOCON_MODE_PULLUP));	/* SCK0 */
+	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, PIN_MISO, (IOCON_FUNC3 | IOCON_MODE_PULLUP));	/* MISO0 */
+	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, PIN_MOSI, (IOCON_FUNC2 | IOCON_MODE_PULLUP));	/* MOSI0 */
 }
 
 static void load_set(bool On)
 {
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 2, On);
+	Chip_GPIO_SetPinState(LPC_GPIO, 1, PIN_LOAD, On);
 }
 
 static void spi_init(void)
 {
-	Chip_SSP_Init(LPC_SSP0);
+	Chip_SSP_Init(LPC_SSP1);
 
-	Chip_SSP_SetFormat(LPC_SSP0, SSP_BITS_8, SSP_FRAMEFORMAT_SPI, SSP_CLOCK_MODE0);
-	Chip_SSP_SetMaster(LPC_SSP0, 1);
-	Chip_SSP_SetBitRate(LPC_SSP0, 1*1000*1000);
-	Chip_SSP_Enable(LPC_SSP0);
+	Chip_SSP_SetFormat(LPC_SSP1, SSP_BITS_8, SSP_FRAMEFORMAT_SPI, SSP_CLOCK_MODE0);
+	Chip_SSP_SetMaster(LPC_SSP1, 1);
+	Chip_SSP_SetBitRate(LPC_SSP1, 1*1000*1000);
+	Chip_SSP_Enable(LPC_SSP1);
 }
 
 static void clk_init(void)
@@ -66,14 +72,14 @@ static void clk_init(void)
 
 static void a3222_reset(void)
 {
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 20);
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, PIN_FPGARESET);
 
 	/* high -> low -> high */
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 2, true);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_FPGARESET, true);
 	__NOP();
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 2, false);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_FPGARESET, false);
 	__NOP();
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 2, true);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_FPGARESET, true);
 	__NOP();
 }
 
@@ -89,6 +95,7 @@ void a3222_hw_init(void)
 	RingBuffer_Init(&a3222_txrb, g_a3222_works, A3222_WORK_SIZE, A3222_WORK_CNT);
 	RingBuffer_Init(&a3222_rxrb, g_a3222_reports, A3222_REPORT_SIZE, A3222_REPORT_CNT);
 }
+
 void a3222_sw_init(void)
 {
 	uint8_t i;
@@ -132,7 +139,7 @@ static int a3222_process_spi(uint8_t *spi_txbuf)
 	xf_setup.rx_data = spi_rxbuf;
 	xf_setup.rx_cnt = 0;
 	xf_setup.tx_cnt = 0;
-	ret = Chip_SSP_RWFrames_Blocking(LPC_SSP0, &xf_setup);
+	ret = Chip_SSP_RWFrames_Blocking(LPC_SSP1, &xf_setup);
 	if (ret == ERROR) {
 		DEBUGOUT("%s-%d: Chip_SSP_RWFrames_Blocking %d failed!\n", __FUNCTION__, __LINE__, ret);
 		return 1;
@@ -215,7 +222,7 @@ int a3222_process(void)
 	}
 
 	load_set(1);
-	Chip_SSP_WriteFrames_Blocking(LPC_SSP0, &load, 1);	/* A3222 load needs 8 cycle clocks, 1B */
+	Chip_SSP_WriteFrames_Blocking(LPC_SSP1, &load, 1);	/* A3222 load needs 8 cycle clocks, 1B */
 	load_set(0);
 
 	return 0;
