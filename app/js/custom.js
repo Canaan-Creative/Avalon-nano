@@ -98,20 +98,15 @@ var updateHashrate = function( hashrates ){
 	$("#hashrate-1min").html(numberShorten(h.hs1m));
 	$("#hashrate-1h").html(numberShorten(h.hs1h));
 	// TODO: update button
-}
+};
 var poolInit = function(setting) {
 	console.log(setting);
 	$.setting._pool( setting );
-	return;
-	for (var p of setting)
-		if (p !== undefined)
-			// add rows to pool table
-			return;
 };
 
 var nanoList = function(nanoId) {
 	$.setting._addNano(nanoId);
-}
+};
 
 
 $(function () {
@@ -290,15 +285,14 @@ jQuery.setting = {
 		nanoStr += '<td>55</td>';
 		nanoStr += '<td id="nano-frequency-'+ nanoId +'">0</td>';
 		nanoStr += '<td id="nano-status-' + nanoId + '">Normal</td>';
-		nanoStr += '<td id="nano-version-' + nanoId + '">12.01</td>';
+		nanoStr += '<td id="nano-version-' + nanoId + '">Null</td>';
 		nanoStr += '</tr>';
 		$("#device").append(nanoStr);
 	},
 	_updateNano : function (nanoId , type , message ,version){
-		console.log(nanoId + '----' + type +'----' + message );
 		switch(type){
 			case 'status':
-				if( message != true ){
+				if( message !== true ){
 					$("#nano-tr-id-"+nanoId).removeClass("active").addClass("warning");
 					$("#nano-status-"+nanoId).html('Connect failt');
 				}else{
@@ -307,7 +301,7 @@ jQuery.setting = {
 				break;
 			case 'version':
 				$("#nano-version-"+nanoId).html(version);
-				if( message != true){
+				if( message !== true){
 					$("#nano-tr-id-"+nanoId).removeClass("active").addClass("warning");
 					$("#nano-status-"+nanoId).html('Detect failt');
 				}else{
