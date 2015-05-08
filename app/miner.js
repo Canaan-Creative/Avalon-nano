@@ -21,7 +21,7 @@ var Miner = function() {
 	this._nanos = [];
 	this._pools = [];
 	this._hashrates = [];
-
+	this._total_hashrate = Array.apply(null, new Array(3600)).map(Number.prototype.valueOf, 0);
 	var miner = this;
 
 	this.scanNano();
@@ -49,8 +49,9 @@ var Miner = function() {
 	this._stop = false;
 	(function loop() {
 		var hashrate = [];
+        var h;
 		for (var i in miner._hashrates) {
-			var h = miner._hashrates[i];
+			h = miner._hashrates[i];
 			if (h !== undefined) {
 				h.unshift(0);
 				hashrate.push({
@@ -66,18 +67,30 @@ var Miner = function() {
 				h.pop();
 			}
 		}
-		if (hashrate.length !== 0)
-			miner.hashrate = hashrate;
-		if (!miner._stop)
-			setTimeout(loop, 1000);
-	})();
+        h = miner._total_hashrate;
+        h.unshift(0);
+        hashrate.push({
+            nanoId: null,
+            hs1h: arraySum(h.slice(1)) / 3600 * 4294967296,
+            hs15m: arraySum(h.slice(1, 901)) / 900 * 4294967296,
+            hs5m: arraySum(h.slice(1, 301)) / 300 * 4294967296,
+            hs1m: arraySum(h.slice(1, 61)) / 60 * 4294967296,
+            hs15s: arraySum(h.slice(1, 16))/ 15 * 4294967296,
+            hs5s: arraySum(h.slice(1, 6)) / 5 * 4294967296,
+            hs1s: h[1] * 4294.967296
+        });
+        h.pop();
+        miner.hashrate = hashrate;
+        if (!miner._stop)
+            setTimeout(loop, 1000);
+    })();
 };
 
 Miner.prototype.__defineSetter__("newJob", function(job) {
 	var poolId = job.poolId;
 	this._jobId[poolId] = (this._jobId[poolId] + 1) % this._JOB_BUFFER_SIZE;
 	this._jobs[poolId][this._jobId] = job;
-	
+
 	// clear work buffer
 	this._works[poolId] = [];
 	this._thread_pause[poolId] = false;
@@ -148,6 +161,7 @@ Miner.prototype.__defineSetter__("newNonce", function(msg) {
 		uInt2LeHex(msg.nonce, 4)
 	);
 	this._hashrates[msg.nanoId][0]++;
+	this._total_hashrate[0]++;
 });
 
 Miner.prototype.__defineSetter__("newStatus", function(msg) {

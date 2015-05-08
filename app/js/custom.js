@@ -82,13 +82,9 @@ var numberShorten = function(num) {
 };
 
 var updateHashrate = function( hashrates ){
-	var totalHashrate = [0, 0, 0];
-	for (var h of hashrates){
-		totalHashrate[0] += h.hs5s;
-		totalHashrate[1] += h.hs1m;
-		totalHashrate[2] += h.hs1h;
-	}
-	hashrate = totalHashrate;
+	var h = hashrates[hashrates.length - 1];
+	hashrate = [h.hs5s, h.hs1m, h.hs1h];
+	// TODO: update button
 }
 var poolInit = function(setting) {
 	console.log(setting);
