@@ -10,17 +10,17 @@ var FILTERS = {
 		productId: AVALON_PRODUCT_ID_MINI
 	}]};
 
-var P_DETECT = 0x10
-var P_SET_VOLT = 0x22
-var P_SET_FREQ = 0x23
-var P_WORK = 0x24
-var P_POLLING = 0x30
-var P_REQUIRE = 0x31
-var P_TEST = 0x32
-var P_ACKDETECT = 0x40
-var P_STATUS = 0x41
-var P_NONCE = 0x42
-var P_TEST_RET = 0x43
+var P_DETECT = 0x10;
+var P_SET_VOLT = 0x22;
+var P_SET_FREQ = 0x23;
+var P_WORK = 0x24;
+var P_POLLING = 0x30;
+var P_REQUIRE = 0x31;
+var P_TEST = 0x32;
+var P_ACKDETECT = 0x40;
+var P_STATUS = 0x41;
+var P_NONCE = 0x42;
+var P_TEST_RET = 0x43;
 
 var CANAAN_HEAD1 = 0x43;
 var CANAAN_HEAD2 = 0x4e;
@@ -193,7 +193,7 @@ var mm_decode = function(pkg) {
 				version += String.fromCharCode(c);
 			return {type: P_ACKDETECT, version: version};
 		case P_NONCE:
-			var view = new DataView(data);
+			view = new DataView(data);
 			var poolId = view.getUint8(0);
 			var ntime = view.getUint8(1);
 			var jobId = view.getUint16(2, false);

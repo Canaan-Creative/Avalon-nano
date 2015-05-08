@@ -99,10 +99,6 @@ var updateHashrate = function( hashrates ){
 	$("#hashrate-1h").html(numberShorten(h.hs1h));
 	// TODO: update button
 };
-var poolInit = function(setting) {
-	console.log(setting);
-	$.setting._pool( setting );
-};
 
 var nanoList = function(nanoId) {
 	$.setting._addNano(nanoId);
@@ -121,7 +117,7 @@ $(function () {
 			switch (msg.info) {
 				case "PoolInit":
 					console.log("PoolInit");
-					poolInit(msg.setting);
+					$.setting._pool(msg.setting);
 					break;
 				case "NewNano":
 					console.log("NewNano");
@@ -157,7 +153,7 @@ $(function () {
 	});
 
 	$("#pool_info_edit_1").click(function() {
-		var pool_address = pool_worker = '';
+		var pool_address = '', pool_worker = '';
 		chrome.storage.local.get('pool' , function(result){
 			pool_address = result.pool.address;
 			pool_worker= result.pool.worker;
@@ -319,6 +315,5 @@ jQuery.setting = {
 	_maxPoolId : function() {
 		return $("#pool_info tr:last-child").data('id');
 	}
-
-}
+};
 
