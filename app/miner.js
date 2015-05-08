@@ -55,13 +55,13 @@ var Miner = function() {
 				h.unshift(0);
 				hashrate.push({
 					nanoId: i,
-					mhs1h: arraySum(h.slice(1)) / 3600 * 4294.967296,
-					mhs15m: arraySum(h.slice(1, 901)) / 900 * 4294.967296,
-					mhs5m: arraySum(h.slice(1, 301)) / 300 * 4294.967296,
-					mhs1m: arraySum(h.slice(1, 61)) / 60 * 4294.967296,
-					mhs15s: arraySum(h.slice(1, 16))/ 15 * 4294.967296,
-					mhs5s: arraySum(h.slice(1, 6)) / 5 * 4294.967296,
-					mhs1s: h[1] * 4294.967296
+					hs1h: arraySum(h.slice(1)) / 3600 * 4294967296,
+					hs15m: arraySum(h.slice(1, 901)) / 900 * 4294967296,
+					hs5m: arraySum(h.slice(1, 301)) / 300 * 4294967296,
+					hs1m: arraySum(h.slice(1, 61)) / 60 * 4294967296,
+					hs15s: arraySum(h.slice(1, 16))/ 15 * 4294967296,
+					hs5s: arraySum(h.slice(1, 6)) / 5 * 4294967296,
+					hs1s: h[1] * 4294.967296
 				});
 				h.pop();
 			}

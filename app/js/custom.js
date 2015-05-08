@@ -1,4 +1,4 @@
-var MHz = 0;
+var hashrate = [0, 0, 0];
 var renderChart = function() {
 	Highcharts.setOptions({
 		global: {useUTC: false}
@@ -10,14 +10,11 @@ var renderChart = function() {
 			marginRight: 10,
 			events: {
 				load: function() {
-
-					// set up the updating of the chart each second
-					var series = this.series[0];
+					var series = this.series;
 					setInterval(function() {
-						var x = (new Date()).getTime(), // current time
-						//y = Math.random();
-						y = MHz;
-						series.addPoint([x, y], true, true);
+						var x = (new Date()).getTime();
+						for (var i in series)
+							series[i].addPoint([x, hashrate[i]], true, true);
 					}, 1000);
 				}
 			}
@@ -34,39 +31,64 @@ var renderChart = function() {
 		},
 		tooltip: {
 			formatter: function() {
-				return '<b>' + this.series.name + '</b><br/>' +
-					Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.x) + '<br/>' +
-					Highcharts.numberFormat(this.y, 2);
-			}
+				var s = Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.x);
+				s += '<table>';
+				for (var i in this.points)
+					s += '<tr><td><b>' + this.points[i].series.name + '</b>:&nbsp;</td><td>'
+						+ numberShorten(this.points[i].y) + 'Hs</td></tr>';
+				return s + '</table>';
+			},
+			useHTML: true,
+			shared: true
 		},
 		credits: {enabled: false},
 		legend: {enabled: false},
 		exporting: {enabled: false},
-		series: [{
-			name: 'Random data',
-			data: (function() {
-				// generate an array of random data
-				var data = [],
-				time = (new Date()).getTime(),
-				i;
-
-				for (i = -19; i <= 0; i++) {
-					data.push({
-						x: time + i * 1000,
-						y: 0
-					});
-				}
-				return data;
-			})()
-		}]
+		series: (function() {
+			var series = [];
+			var names = ['5-Secondly', 'Minutely', 'Hourly'];
+			var colors = ['#4cb0f9', '#a49ef0', '#ff7680'];
+			var data = [];
+			var time = (new Date()).getTime();
+			for (var i = -899; i <= 0; i++) {
+				data.push({
+					x: time + i * 1000,
+					y: 0
+				});
+			}
+			for (i in names)
+				series.push({
+					name: names[i],
+					color: colors[i],
+					data: data
+				});
+			return series;
+		})()
 	});
 };
+var numberShorten = function(num) {
+	var prefix = [
+		{prefix: 'E', base: 1000000000000000000},
+		{prefix: 'P', base: 1000000000000000},
+		{prefix: 'T', base: 1000000000000},
+		{prefix: 'G', base: 1000000000},
+		{prefix: 'M', base: 1000000},
+		{prefix: 'k', base: 1000},
+	];
+	for (var p of prefix)
+		if (num > p.base)
+			return (num / p.base).toFixed(3) + ' ' + p.prefix;
+	return num + ' ';
+};
+
 var updateHashrate = function( hashrates ){
-	var totalHashrate = 0;
-	for (var i of hashrates){
-		totalHashrate +=i.mhs1s;	
-	}	
-	MHz = totalHashrate * 1000000;
+	var totalHashrate = [0, 0, 0];
+	for (var h of hashrates){
+		totalHashrate[0] += h.hs5s;
+		totalHashrate[1] += h.hs1m;
+		totalHashrate[2] += h.hs1h;
+	}
+	hashrate = totalHashrate;
 }
 var poolInit = function(setting) {
 	console.log(setting);
@@ -161,10 +183,10 @@ $(function () {
 		var t = $("#poolId").val() =="-1" ? ($.setting._maxPoolId() !== undefined ? $.setting._maxPoolId()+1 : 0) : $("#poolId").val();
 		chrome.runtime.sendMessage({info: "NewPool", data:{url:Pool_url,port:Pool_port,username:Pool_worker,poolId:t}});
 		if($("#poolId").val()=="-1"){
-			$.setting._appendPool( t ,{url:Pool_url,port:Pool_port,username:Pool_worker});		
+			$.setting._appendPool( t ,{url:Pool_url,port:Pool_port,username:Pool_worker});
 		}else{
-			$("#pool-address-"+t).html(Pool_url+':'+Pool_port);	
-			$("#pool-worker-"+t).html(Pool_worker);	
+			$("#pool-address-"+t).html(Pool_url+':'+Pool_port);
+			$("#pool-worker-"+t).html(Pool_worker);
 		}
 		$('#myModal').modal('hide');
 	});
@@ -235,7 +257,7 @@ jQuery.setting = {
 		return poolStr;
 	},
 	_appendPool : function(id , data){
-		if($("#pool-info-footer").html()!==undefined)	
+		if($("#pool-info-footer").html()!==undefined)
 			$("#pool-info-footer").remove();
 		$("#pool_info").append($.setting._poolHtml(id, data));
 		$.setting._bindButton();
@@ -247,8 +269,8 @@ jQuery.setting = {
 		});
 	},
 	_editPool : function(poolId) {
-		$("#address").val($("#pool-address-"+poolId).html());	
-		$("#worker").val($("#pool-worker-"+poolId).html());	
+		$("#address").val($("#pool-address-"+poolId).html());
+		$("#worker").val($("#pool-worker-"+poolId).html());
 		$("#poolId").val(poolId);
 		$("#myModal").modal('show');
 	},
