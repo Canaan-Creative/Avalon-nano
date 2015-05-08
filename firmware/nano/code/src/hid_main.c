@@ -1,38 +1,17 @@
 /*
- * @brief USB to UART bridge example
+ * @brief
  *
  * @note
- * Copyright(C) NXP Semiconductors, 2012
- * All rights reserved.
+ * Author: Mikeqin Fengling.Qin@gmail.com
  *
  * @par
- * Software that is described herein is for illustrative purposes only
- * which provides customers with programming information regarding the
- * LPC products.  This software is supplied "AS IS" without any warranties of
- * any kind, and NXP Semiconductors and its licensor disclaim any and
- * all warranties, express or implied, including all implied warranties of
- * merchantability, fitness for a particular purpose and non-infringement of
- * intellectual property rights.  NXP Semiconductors assumes no responsibility
- * or liability for the use of the software, conveys no license or rights under any
- * patent, copyright, mask work right, or any other intellectual property rights in
- * or to any products. NXP Semiconductors reserves the right to make changes
- * in the software without notification. NXP Semiconductors also makes no
- * representation or warranty that such application will be suitable for the
- * specified use without further testing or modification.
- *
- * @par
- * Permission to use, copy, modify, and distribute this software and its
- * documentation is hereby granted, under NXP Semiconductors' and its
- * licensor's relevant copyrights in the software, without fee, provided that it
- * is used in conjunction with NXP Semiconductors microcontrollers.  This
- * copyright, permission, and disclaimer notice must appear in all copies of
- * this code.
+ * This is free and unencumbered software released into the public domain.
+ * For details see the UNLICENSE file at the root of the source tree.
  */
+
 #include <string.h>
 #include "board.h"
 #include "app_usbd_cfg.h"
-#include "hid_uart.h"
-#include "avalon_api.h"
 #ifdef __CODE_RED
 #include <NXP/crp.h>
 #endif
@@ -40,7 +19,21 @@
 #include "sha2.h"
 #include "protocol.h"
 
-#define A3233_TIMER_TIMEOUT				(AVALON_TMR_ID1)
+#include "hid_uart.h"
+#include "avalon_a3233.h"
+#include "avalon_adc.h"
+#include "avalon_iic.h"
+#include "avalon_led.h"
+#include "avalon_timer.h"
+#include "avlaon_usb.h"
+
+#ifdef __CODE_RED
+__CRP unsigned int CRP_WORD = CRP_NO_ISP;
+#endif
+
+#define A3233_TIMER_TIMEOUT	TMR_ID1
+#define A3233_TIMER_ADJFREQ	TMR_ID2
+
 #define A3233_STAT_IDLE					1
 #define A3233_STAT_WAITICA				2
 #define A3233_STAT_CHKICA				3
@@ -48,20 +41,127 @@
 #define A3233_STAT_RCVNONCE				5
 #define A3233_STAT_PROTECT				6
 #define A3233_STAT_MM_PROC				7
-#ifdef __CODE_RED
-__CRP unsigned int CRP_WORD = CRP_NO_ISP;
-#endif
 
-/*****************************************************************************
- * Private types/enumerations/variables
- ****************************************************************************/
+#define A3233_TEMP_MIN	60
+#define A3233_TEMP_MAX	65
+#define A3233_FREQ_ADJMIN	100
+#define A3233_FREQ_ADJMAX	360
+#define A3233_V25_ADJMIN	(int)(2.2 * 1024 / 5)
+#define A3233_V25_ADJMAX	(A3233_V25_ADJMIN + 10)
+#define A3233_TIMER_INTERVAL	5000
+#define A3233_ADJ_VCNT	2		/* n x 5s */
+#define A3233_ADJ_TUPCNT	1		/* n x 5s */
+#define A3233_ADJ_TDOWNCNT	2		/* n x 5s */
+#define A3233_ADJSTAT_T	0
+#define A3233_ADJSTAT_V	1
+
 /* http://blockexplorer.com/block/00000000000004b64108a8e4168cfaa890d62b8c061c6b74305b7f6cb2cf9fda */
-static unsigned char golden_ob[] =
-		"\x46\x79\xba\x4e\xc9\x98\x76\xbf\x4b\xfe\x08\x60\x82\xb4\x00\x25\x4d\xf6\xc3\x56\x45\x14\x71\x13\x9a\x3a\xfa\x71\xe4\x8f\x54\x4a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x87\x32\x0b\x1a\x14\x26\x67\x4f\x2f\xa7\x22\xce";
+static unsigned char golden_ob[] =		"\x46\x79\xba\x4e\xc9\x98\x76\xbf\x4b\xfe\x08\x60\x82\xb4\x00\x25\x4d\xf6\xc3\x56\x45\x14\x71\x13\x9a\x3a\xfa\x71\xe4\x8f\x54\x4a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x87\x32\x0b\x1a\x14\x26\x67\x4f\x2f\xa7\x22\xce";
 static unsigned int a3233_stat = A3233_STAT_WAITICA;
 static uint8_t gica_pkg[ICA_TASK_LEN];
 static uint8_t gmm_reqpkg[AVAU_P_COUNT];
 static uint8_t gmm_ackpkg[AVAU_P_COUNT];
+static uint32_t	a3233_freqneeded = A3233_FREQ_ADJMAX;
+static uint32_t	a3233_adjstat = A3233_ADJSTAT_T;
+static bool	a3323_istoohot = false;
+
+/*
+ * temp [A3233_TEMP_MIN, A3233_TEMP_MAX]
+ * temp raise check  A3233_ADJ_TUPCNT
+ * temp down/equal check A3233_ADJ_TDOWNCNT
+ * */
+static void a3233_freqmonitor()
+{
+	static unsigned int adc_cnt = 0;
+	static unsigned int temp_cnt = 0;
+	static unsigned int lasttemp = 0;
+	uint16_t adc_val;
+	unsigned int temp;
+	Bool	adjtemp = FALSE;
+
+	if (!A3233_IsPowerEn()) {
+		if (a3323_istoohot && (I2C_TemperRd() < A3233_TEMP_MIN))
+			a3323_istoohot = FALSE;
+		return;
+	}
+
+	switch(a3233_adjstat){
+	case A3233_ADJSTAT_T:
+		adc_read(ADC_CHANNEL_V_25, &adc_val);
+		if (adc_val < A3233_V25_ADJMIN) {
+			temp_cnt = 0;
+			a3233_adjstat = A3233_ADJSTAT_V;
+			return;
+		}
+
+		temp = I2C_TemperRd();
+		if (!lasttemp) {
+			lasttemp = temp;
+			break;
+		}
+
+		adjtemp = FALSE;
+		/* TODO:may be a new way to check inflection point */
+		if (lasttemp < temp) {
+			if (temp_cnt >= A3233_ADJ_TUPCNT) {
+				temp_cnt = 0;
+				adjtemp = TRUE;
+			} else
+				temp_cnt++;
+		} else {
+			if (temp_cnt >= A3233_ADJ_TDOWNCNT) {
+				temp_cnt = 0;
+				adjtemp = TRUE;
+			} else
+				temp_cnt++;
+		}
+
+		if (adjtemp) {
+			if (temp >= A3233_TEMP_MAX) {
+				if (a3233_freqneeded > A3233_FREQ_ADJMIN) {
+					a3233_freqneeded -= 40;
+					if (a3233_freqneeded < A3233_FREQ_ADJMIN)
+						a3233_freqneeded = A3233_FREQ_ADJMIN;
+				} else {
+					/* notify a3233 is too hot */
+					if (a3233_freqneeded < A3233_FREQ_ADJMIN)
+						a3233_freqneeded = A3233_FREQ_ADJMIN;
+
+					a3323_istoohot = TRUE;
+					return;
+				}
+			} else if (temp < A3233_TEMP_MIN) {
+				a3323_istoohot = FALSE;
+				if (a3233_freqneeded <= A3233_FREQ_ADJMAX)
+					a3233_freqneeded += 20;
+				if (a3233_freqneeded > A3233_FREQ_ADJMAX)
+					a3233_freqneeded = A3233_FREQ_ADJMAX;
+			} else {
+				a3323_istoohot = FALSE;
+			}
+		}
+		break;
+
+	case A3233_ADJSTAT_V:
+		adc_read(ADC_CHANNEL_V_25, &adc_val);
+		if (adc_cnt == A3233_ADJ_VCNT) {
+			adc_cnt = 0;
+			if (adc_val >= A3233_V25_ADJMIN) {
+				if (adc_val > A3233_V25_ADJMAX)
+					a3233_adjstat = A3233_ADJSTAT_T;
+				break;
+			} else {
+				a3233_freqneeded -= 20;
+				if (a3233_freqneeded < A3233_FREQ_ADJMIN)
+					a3233_freqneeded = A3233_FREQ_ADJMIN;
+
+				/* FIXME: if a3233_freqneeded = A3233_FREQ_ADJMIN also cann't work */
+			}
+		}
+		adc_cnt++;
+		break;
+	}
+}
 
 static int init_mm_pkg(struct avalon_pkg *pkg, uint8_t type)
 {
@@ -121,22 +221,6 @@ static unsigned int process_mm_pkg(struct avalon_pkg *pkg)
 	return ret;
 }
 
-void AVALON_Delay(unsigned int ms)
-{
-       unsigned int i;
-       unsigned int msticks = SystemCoreClock/16000; /* FIXME: 16000 is not accurate */
-
-       while (ms && ms--) {
-               for(i = 0; i < msticks; i++)
-                       __NOP();
-       }
-}
-
-/**
- * @brief	main routine for blinky example
- * @return	Function should not exit.
- */
-
 int main(void)
 {
 	unsigned int icarus_buflen = 0;
@@ -145,36 +229,39 @@ int main(void)
 	unsigned int nonce_buflen = 0;
 	unsigned int last_freq = 0;
 	uint32_t nonce_value = 0;
-	Bool isgoldenob = FALSE;
-	Bool timestart = FALSE;
+	bool isgoldenob = false;
+	bool timestart = false;
 
 	Board_Init();
 	SystemCoreClockUpdate();
 
-	/* Initialize avalon chip */
-	AVALON_USB_Init();
-	AVALON_TMR_Init();
-	AVALON_LED_Init();
-	AVALON_A3233_Init();
+	usb_init();
+	timer_init();
+	led_init();
+	i2c_init();
+	adc_init();
+	a3233_init();
+
+	timer_set(A3233_TIMER_ADJFREQ, 5000, a3233_freqmonitor);
 
 	while (1) {
 		switch (a3233_stat) {
 		case A3233_STAT_WAITICA:
 			memset(gica_pkg, 0, ICA_TASK_LEN);
-			icarus_buflen = UCOM_Read_Cnt();
+			icarus_buflen = hid_rxrb_cnt();
 			if (icarus_buflen > 0) {
 				timestart = FALSE;
-				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
+				timer_kill(A3233_TIMER_TIMEOUT);
 				a3233_stat = A3233_STAT_CHKICA;
 				break;
 			}
 
 			if (!timestart) {
-				AVALON_TMR_Set(A3233_TIMER_TIMEOUT, 50, NULL);
+				timer_set(A3233_TIMER_TIMEOUT, 50, NULL);
 				timestart = TRUE;
 			}
 
-			if (AVALON_TMR_IsTimeout(A3233_TIMER_TIMEOUT)) {
+			if (timer_istimeout(A3233_TIMER_TIMEOUT)) {
 				/* no data */
 				timestart = FALSE;
 				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
@@ -183,8 +270,8 @@ int main(void)
 			break;
 
 		case A3233_STAT_IDLE:
-			AVALON_LED_Rgb(AVALON_LED_GREEN);
-			icarus_buflen = UCOM_Read_Cnt();
+			led_rgb(AVALON_LED_GREEN);
+			icarus_buflen = hid_rxrb_cnt();
 			if (icarus_buflen > 0) {
 				a3233_stat = A3233_STAT_CHKICA;
 			}
@@ -358,11 +445,11 @@ int main(void)
 						| ((tmp << 8) & 0xff0000));
 				memcpy(gmm_ackpkg + AVAU_P_DATAOFFSET, (uint8_t*)&tmp, 4);
 				init_mm_pkg((struct avalon_pkg *)gmm_ackpkg, AVAU_P_STATUS);
-				UCOM_Write(gmm_ackpkg, AVAU_P_COUNT);
+				hid_write(gmm_ackpkg, AVAU_P_COUNT);
 				break;
 			}
 
-			if (UCOM_Read_Cnt()) {
+			if (hid_rxrb_Cnt()) {
 				timestart = FALSE;
 				AVALON_TMR_Kill(A3233_TIMER_TIMEOUT);
 				a3233_stat = A3233_STAT_CHKICA;
