@@ -196,6 +196,8 @@ Nano.prototype.log = function(level) {
 			console.log.apply(console, args);
 			break;
 		case "debug":
+			if (LOG_LIMIT !== 'debug')
+				break;
 			args.unshift("%c[NANO %d] " + arguments[1]);
 			args[1] = NANO_DEBUG_STYLE;
 			args[2] = this.id;

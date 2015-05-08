@@ -84,11 +84,12 @@ var SHA256_INIT = [
 	0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
 ];
 
+var LOG_LIMIT = 'debug';
 var NANO_LOG1_STYLE = 'color: green';
 var NANO_LOG2_STYLE = 'color: blue';
 var NANO_DEBUG_STYLE = 'color: black';
 var POOL_LOG1_STYLE = 'color: orange';
-var POOL_LOG2_STYLE = 'color: yellow';
+var POOL_LOG2_STYLE = 'color: orangered';
 var POOL_DEBUG_STYLE = 'color: grey';
 var MINER_LOG1_STYLE = 'color: pink';
 var MINER_LOG2_STYLE = 'color: magenta';
