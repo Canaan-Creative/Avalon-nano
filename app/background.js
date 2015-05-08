@@ -59,7 +59,6 @@ var main = function() {
 	});
 
 	miner.onHashrate.addListener(function(hashrate) {
-		console.info(hashrate[0].mhs5s);
 		chrome.runtime.sendMessage({
 			info: "Hashrate",
 			hashrate: hashrate
