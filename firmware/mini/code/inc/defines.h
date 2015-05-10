@@ -10,7 +10,7 @@
 
 #define IDLE_TIME	3000 /* 3s */
 #define ASIC_COUNT		5
-#define ASIC_0V                 0 /* TODO: 0V */
+#define ASIC_0V                 0xff
 
 #endif /* __DEFINES_H_ */
 
