@@ -19,7 +19,7 @@
 #define PIN_SHCP	17
 #define PIN_STCP	16
 #define PIN_PG	7
-#define VOLTAGE_DELAY   100
+#define VOLTAGE_DELAY   200
 static uint16_t g_voltage = ASIC_0V;
 
 static void init_mux(void)
