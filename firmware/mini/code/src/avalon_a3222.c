@@ -71,7 +71,7 @@ static void clk_init(void)
 	Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 2);
 }
 
-static void a3222_reset(void)
+void a3222_reset(void)
 {
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, PIN_FPGARESET);
 
@@ -89,7 +89,6 @@ void a3222_hw_init(void)
 	load_init();
 	spi_init();
 	clk_init();
-	a3222_reset();
 
 	load_set(0);
 

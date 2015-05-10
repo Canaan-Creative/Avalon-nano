@@ -140,7 +140,8 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		break;
 	case AVAM_P_SET_VOLT:
 		val[0] = (pkg->data[0] << 8) | pkg->data[1];
-		set_voltage(val[0]);
+		if(set_voltage(val[0]))
+			a3222_reset();
 		break;
 	default:
 		break;
@@ -185,6 +186,7 @@ int main(void)
 		} else {
 			/* power on then reset the pll */
 			if (set_voltage(lastvoltage)) {
+				a3222_reset();
 				for (i = 0; i < ASIC_COUNT; i++)
 					a3222_set_freq(g_freq[i], i);
 			}
