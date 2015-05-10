@@ -28,15 +28,26 @@
 #include "avalon_wdt.h"
 #include "avalon_shifter.h"
 #include "avalon_timer.h"
+#include "avalon_led.h"
 
 #ifdef __CODE_RED
 __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 #endif
 
+#define LED_OFF_ALL	0
+#define LED_IDLE	1 /* led blue */
+#define LED_BUSY	2
+#define LED_ERR_ON	3 /* led red */
+#define LED_ERR_OFF	4
+#define LED_PG_ON	5 /* led green */
+#define LED_PG_OFF	6
+
 static uint8_t g_a3222_pkg[AVAM_P_WORKLEN];
 static uint8_t g_reqpkg[AVAM_P_COUNT];
 static uint8_t g_ackpkg[AVAM_P_COUNT];
 static uint32_t g_freq[ASIC_COUNT][3];
+static uint16_t g_lastvoltage = ASIC_0V;
+static uint32_t g_ledstat = LED_OFF_ALL;
 
 static int init_mm_pkg(struct avalon_pkg *pkg, uint8_t type)
 {
@@ -85,7 +96,6 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		UCOM_Write(g_ackpkg);
 		break;
 	case AVAM_P_WORK:
-		timer_set(TIMER_ID1, IDLE_TIME);
 		/*
 		 * idx-1: midstate(32)
 		 * idx-2: job_id(2) + pool_no(2) + nonce2(4) + ntime_offset(2) + reserved(12) + data(12)
@@ -140,17 +150,46 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		break;
 	case AVAM_P_SET_VOLT:
 		val[0] = (pkg->data[0] << 8) | pkg->data[1];
-		if(set_voltage(val[0]))
+		if(set_voltage((uint16_t)val[0]))
 			a3222_reset();
+
+		g_lastvoltage = get_voltage();
 		break;
 	default:
 		break;
 	}
 }
 
+static inline void led_ctrl(uint8_t led_op)
+{
+	switch(led_op) {
+	case LED_OFF_ALL:
+		g_ledstat = 0;
+		break;
+	case LED_IDLE:
+		g_ledstat |= 0xff;
+		break;
+	case LED_BUSY:
+		g_ledstat &= 0xffff00;
+		break;
+	case LED_ERR_ON:
+		g_ledstat |= 0xff0000;
+		break;
+	case LED_ERR_OFF:
+		g_ledstat &= 0xffff;
+		break;
+	case LED_PG_ON:
+		g_ledstat |= 0xff00;
+		break;
+	case LED_PG_OFF:
+		g_ledstat &= 0xff00ff;
+		break;
+	}
+	led_rgb(g_ledstat);
+}
+
 int main(void)
 {
-	uint16_t lastvoltage;
 	uint8_t i;
 
 	Board_Init();
@@ -161,11 +200,13 @@ int main(void)
 	a3222_sw_init();
 	shifter_init();
 	timer_init();
+	led_init();
 
 	set_voltage(ASIC_0V);
 	wdt_init(5);	/* 5 seconds */
 	wdt_enable();
 	timer_set(TIMER_ID1, IDLE_TIME);
+	led_ctrl(LED_OFF_ALL);
 
 	while (42) {
 		wdt_feed();
@@ -175,22 +216,31 @@ int main(void)
 
 			UCOM_Read(g_reqpkg);
 			process_mm_pkg((struct avalon_pkg*)g_reqpkg);
+
+			if ((((struct avalon_pkg*)g_reqpkg)->type == AVAM_P_WORK) ||
+					(((struct avalon_pkg*)g_reqpkg)->type == AVAM_P_SET_VOLT)) {
+				timer_set(TIMER_ID1, IDLE_TIME);
+			}
 		}
 
 		if (timer_istimeout(TIMER_ID1)) {
 			/* Power off the AISC */
-			lastvoltage = get_voltage();
 			set_voltage(ASIC_0V);
-			/* TODO led */
+			led_ctrl(LED_IDLE);
+			led_ctrl(LED_PG_OFF);
 			continue;
 		} else {
 			/* power on then reset the pll */
-			if (set_voltage(lastvoltage)) {
+			if (set_voltage(g_lastvoltage)) {
 				a3222_reset();
 				for (i = 0; i < ASIC_COUNT; i++)
 					a3222_set_freq(g_freq[i], i);
 			}
-			/* TODO led */
+			led_ctrl(LED_BUSY);
+			if (read_power_good())
+				led_ctrl(LED_PG_ON);
+			else
+				led_ctrl(LED_PG_OFF);
 		}
 
 		a3222_process();
