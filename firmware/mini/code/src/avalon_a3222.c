@@ -45,8 +45,9 @@ static void load_init(void)
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 1, PIN_LOAD);
 
 	Chip_IOCON_PinMuxSet(LPC_IOCON, 1, PIN_SCK, (IOCON_FUNC3 | IOCON_MODE_PULLUP));	/* SCK0 */
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, PIN_MISO, (IOCON_FUNC3 | IOCON_MODE_PULLUP));	/* MISO0 */
+	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, PIN_MISO, (IOCON_FUNC3 | IOCON_MODE_PULLUP | IOCON_DIGMODE_EN));	/* MISO0 */
 	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, PIN_MOSI, (IOCON_FUNC2 | IOCON_MODE_PULLUP));	/* MOSI0 */
+
 }
 
 static void load_set(bool On)
