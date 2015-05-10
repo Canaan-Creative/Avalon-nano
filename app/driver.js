@@ -3,6 +3,7 @@ var Nano = function(device, miner) {
 	this.miner = miner;
 	this._sendCache = 0;
 	this._enable = false;
+	this.frequency = null;
 };
 
 Nano.prototype.__defineGetter__("id", function() {
@@ -120,10 +121,13 @@ Nano.prototype.__defineSetter__("received", function(pkg) {
 			break;
 		case P_STATUS:
 			this.log("log2", "Status:   %d MHz", data.frequency);
-			this.miner.newStatus = {
-				nanoId: this.id,
-				stat: {frequency: data.frequency}
-			};
+			if (this.frequency !== data.frequency) {
+				this.frequency = data.frequency;
+				this.miner.newStatus = {
+					nanoId: this.id,
+					stat: {frequency: data.frequency}
+				};
+			}
 			break;
 		case P_ACKDETECT:
 			this.log("log1", "Version:  %s", data.version);
@@ -196,6 +200,8 @@ Nano.prototype.log = function(level) {
 			console.log.apply(console, args);
 			break;
 		case "debug":
+			if (LOG_LIMIT !== 'debug')
+				break;
 			args.unshift("%c[NANO %d] " + arguments[1]);
 			args[1] = NANO_DEBUG_STYLE;
 			args[2] = this.id;

@@ -1,22 +1,26 @@
-var AVALON_NANO_VENDOR_ID = 10737; //0x29f1;
-var AVALON_NANO_PRODUCT_ID = 13297; //0x33f1;
+var AVALON_VENDOR_ID = 10737; //0x29f1;
+var AVALON_PRODUCT_ID_NANO = 13299; //0x33f3;
+var AVALON_PRODUCT_ID_MINI = 16625; //0x40f1;
 var FILTERS = {
 	filters: [{
-		vendorId: AVALON_NANO_VENDOR_ID,
-		productId: AVALON_NANO_PRODUCT_ID
+		vendorId: AVALON_VENDOR_ID,
+		productId: AVALON_PRODUCT_ID_NANO
+	}, {
+		vendorId: AVALON_VENDOR_ID,
+		productId: AVALON_PRODUCT_ID_MINI
 	}]};
 
-var P_DETECT = 0x10
-var P_SET_VOLT = 0x22
-var P_SET_FREQ = 0x23
-var P_WORK = 0x24
-var P_POLLING = 0x30
-var P_REQUIRE = 0x31
-var P_TEST = 0x32
-var P_ACKDETECT = 0x40
-var P_STATUS = 0x41
-var P_NONCE = 0x42
-var P_TEST_RET = 0x43
+var P_DETECT = 0x10;
+var P_SET_VOLT = 0x22;
+var P_SET_FREQ = 0x23;
+var P_WORK = 0x24;
+var P_POLLING = 0x30;
+var P_REQUIRE = 0x31;
+var P_TEST = 0x32;
+var P_ACKDETECT = 0x40;
+var P_STATUS = 0x41;
+var P_NONCE = 0x42;
+var P_TEST_RET = 0x43;
 
 var CANAAN_HEAD1 = 0x43;
 var CANAAN_HEAD2 = 0x4e;
@@ -80,11 +84,12 @@ var SHA256_INIT = [
 	0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
 ];
 
+var LOG_LIMIT = 'debug';
 var NANO_LOG1_STYLE = 'color: green';
 var NANO_LOG2_STYLE = 'color: blue';
 var NANO_DEBUG_STYLE = 'color: black';
 var POOL_LOG1_STYLE = 'color: orange';
-var POOL_LOG2_STYLE = 'color: yellow';
+var POOL_LOG2_STYLE = 'color: orangered';
 var POOL_DEBUG_STYLE = 'color: grey';
 var MINER_LOG1_STYLE = 'color: pink';
 var MINER_LOG2_STYLE = 'color: magenta';
@@ -92,7 +97,8 @@ var MINER_DEBUG_STYLE = 'color: silver';
 
 var check_version = function(version) {
 	//return version.slice(0, 15) === '3U1504-88c2f620';
-	return version.slice(0, 6) === '3U1504';
+	return version.slice(0, 6) === '3U1504' ||
+		version.slice(0, 6) === '4M1505';
 };
 
 var crc16 = function(arraybuffer) { var data = new Uint8Array(arraybuffer);
@@ -187,7 +193,7 @@ var mm_decode = function(pkg) {
 				version += String.fromCharCode(c);
 			return {type: P_ACKDETECT, version: version};
 		case P_NONCE:
-			var view = new DataView(data);
+			view = new DataView(data);
 			var poolId = view.getUint8(0);
 			var ntime = view.getUint8(1);
 			var jobId = view.getUint16(2, false);
@@ -310,4 +316,8 @@ var uInt2LeHex = function(integar, size) {
 	var view = new DataView(arraybuffer);
 	view.setUint32(0, integar, true);
 	return ab2hex(arraybuffer).slice(0, size * 2);
+};
+
+var arraySum = function(array) {
+	return array.reduce(function(a, b) {return a + b;});
 };

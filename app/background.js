@@ -34,14 +34,6 @@ var main = function() {
 		});
 	});
 
-	miner.onNewNonce.addListener(function(msg) {
-		chrome.runtime.sendMessage({
-			info: "NewNonce",
-			nanoId: msg.nanoId,
-			nonce: msg.nonce
-		});
-	});
-
 	miner.onNewStatus.addListener(function(msg) {
 		chrome.runtime.sendMessage({
 			info: "NewStatus",
@@ -66,7 +58,14 @@ var main = function() {
 		});
 	});
 
-	for (var i = 0; i < setting.length; i++)
+	miner.onHashrate.addListener(function(hashrate) {
+		chrome.runtime.sendMessage({
+			info: "Hashrate",
+			hashrate: hashrate
+		});
+	});
+
+	for (var i = 0; i < setting.length ; i++)
 		if (setting[i] !== undefined && setting[i] !== null)
 			miner.setPool({
 				url: setting[i].url,
@@ -79,7 +78,7 @@ var main = function() {
 
 chrome.app.runtime.onLaunched.addListener(function() {
 	chrome.storage.local.get("pool", function(result) {
-		setting = result.pool;
+		setting = result.pool || [];
 	});
 
 	chrome.runtime.onMessage.addListener(function(msg, sender) {
@@ -118,17 +117,15 @@ chrome.app.runtime.onLaunched.addListener(function() {
 
 	chrome.app.window.create("index.html", {
 		innerBounds: {
-		//bounds: {
 			width: 870,
 			height: 870,
 			minWidth: 870,
 			minHeight: 870
 		},
-		id: "Avalon Nano"
+		id: "Avalon miner"
+	}, function() {
+		chrome.app.window.get("Avalon miner").onClosed.addListener(function() {
+			miner.stop();
+		});
 	});
 });
-
-// url: 'stratum.btcchina.com',
-// port: 3333,
-// username: "canaan.apptest",
-// password: "1234"

@@ -10,7 +10,7 @@ Pool = function(poolInfo) {
 	this._SUBSCRIBE = {
 		id: 1,
 		method: "mining.subscribe",
-		params: ["avalon-nano-app"]
+		params: ["avalon-miner-chrome"]
 	};
 	this._AUTHORIZE = {
 		id: 2,
@@ -25,7 +25,12 @@ Pool.prototype.run = function() {
 	chrome.sockets.tcp.create({}, function(createInfo) {
 		pool.socketId = createInfo.socketId;
 		chrome.sockets.tcp.connect(pool.socketId, pool.url, pool.port, function(result) {
-			// error handler
+			if (chrome.runtime.lastError) {
+				// TODO: alert somebody !!!
+				//       a setter should work: pool.error = message
+				pool.log("error", chrome.runtime.lastError.message);
+				return;
+			}
 			pool.log("info", "Connected.");
 			pool.upload(pool._SUBSCRIBE);
 		});
@@ -41,35 +46,7 @@ Pool.prototype.disconnect = function() {
 
 Pool.prototype.decode = function(result) {
 	var data = JSON.parse(result);
-	if (data.id === 1) {
-		if (data.error) {
-			this.miner.poolSubscribed = {poolId: this.id, success: false};
-			this.log("warn", "Subscription Failed.");
-			return false;
-		}
-		this.miner.poolSubscribed = {poolId: this.id, success: true};
-		this.log("log1", "Subscribed.");
-		this.nonce1 = data.result[data.result.length - 2];
-		this.nonce2_size = data.result[data.result.length - 1];
-		if (data.result[0][0][0] === 'mining.set_difficulty')
-			this.difficulty = data.result[0][0][1];
-		this.upload(this._AUTHORIZE);
-	} else if (data.id === 2) {
-		if (data.error) {
-			this.miner.poolAuthorized = {poolId: this.id, success: false};
-			this.log("warn", "Authorization Failed.");
-			return false;
-		}
-		this.miner.poolAuthorized = {poolId: this.id, success: true};
-		this.log("log1", "Authorized.");
-		this.submit_id = 0;
-	} else if (data.id === 3) {
-		if (data.error) {
-			this.log("warn", "Submission Failed.");
-			return false;
-		}
-		this.log("log2", "Submitted.");
-	} else switch (data.method) {
+	switch (data.method) {
 		case "mining.set_difficulty":
 			this.difficulty = data.params[-1];
 			break;
@@ -89,25 +66,73 @@ Pool.prototype.decode = function(result) {
 				clean_jobs: data.params[8]
 			};
 			break;
+		case "mining.ping":
+			this.upload({"id": data.id, "result": "pong", "error": null});
+			break;
+		case "client.reconnect":
+			this.run();
+			break;
+		default:
+			if (data.id === 1) {
+				if (data.error) {
+					this.miner.poolSubscribed = {poolId: this.id, success: false};
+					this.log("warn", "Subscription Failed.");
+					return false;
+				}
+				this.miner.poolSubscribed = {poolId: this.id, success: true};
+				this.log("log1", "Subscribed.");
+				this.nonce1 = data.result[data.result.length - 2];
+				this.nonce2_size = data.result[data.result.length - 1];
+				if (data.result[0][0][0] === 'mining.set_difficulty')
+					this.difficulty = data.result[0][0][1];
+				this.upload(this._AUTHORIZE);
+			} else if (data.id === 2) {
+				if (data.error) {
+					this.miner.poolAuthorized = {poolId: this.id, success: false};
+					this.log("warn", "Authorization Failed.");
+					return false;
+				}
+				this.miner.poolAuthorized = {poolId: this.id, success: true};
+				this.log("log1", "Authorized.");
+				this.submit_id = 0;
+			} else if (data.id >= 1000){
+				if (data.error) {
+					this.log("warn", "Submission Failed.");
+					return false;
+				}
+				if (!data.result) {
+					this.log("log2", "Submission Failed: %s.",
+						data["reject-reason"]);
+					return false;
+				}
+				this.log("log1", "Submitted.");
+			}
+			break;
 	}
 };
 
 Pool.prototype.submit = function(jobId, nonce2, ntime, nonce) {
 	var data = {
 		params: [this.username, jobId, nonce2, ntime, nonce],
-		id: 4 + this.submit_id,
+		id: 1000 + this.submit_id,
 		method: "mining.submit"
 	};
-	this.submit_id = (this.submit_id + 1) % 1021;
+	this.submit_id = (this.submit_id + 1) % 1000;
 	this.upload(data);
 };
 
 Pool.prototype.upload = function(data) {
+	var pool = this;
 	data = JSON.stringify(data);
 	this.log("debug", "Sent:     %s", data);
 	data = str2ab(data + "\n");
 	chrome.sockets.tcp.send(this.socketId, data, function(sendInfo) {
-		//console.log(sendInfo);
+		if (chrome.runtime.lastError) {
+			// TODO: net::ERR_SOCKET_NOT_CONNECTED
+			//       alert somebody !!!
+			pool.log("error", chrome.runtime.lastError.message);
+			return;
+		}
 	});
 };
 
@@ -150,6 +175,8 @@ Pool.prototype.log = function(level) {
 			console.log.apply(console, args);
 			break;
 		case "debug":
+			if (LOG_LIMIT !== 'debug')
+				break;
 			args.unshift("%c[POOL %d] " + arguments[1]);
 			args[1] = POOL_DEBUG_STYLE;
 			args[2] = this.id;
