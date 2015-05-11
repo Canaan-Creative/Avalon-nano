@@ -57,13 +57,14 @@ nxp_lpcxpresso_11u14_board_lib:
 	make -C nxplib/nxp_lpcxpresso_11u14_board_lib
 
 reflash_ulink2: $(FIRMWARE).axf
+	-killall -s 9 redlinkserv
 	crt_emu_cm_redlink -flash-load-exec $< -g -2 -vendor=NXP -pLPC11U14/201 -wire=winUSB -s50 -flash-driver=LPC11_12_13_32K_4K.cfx
 
 reflash_lpclink: $(FIRMWARE).axf
 	-(dfu-util -d 0x0471:0xdf55 -c 0 -t 2048 -R -D "LPCXpressoWIN.enc" && sleep 1)
 	crt_emu_lpc11_13_nxp -flash-load-exec $< -g -2 -vendor=NXP -pLPC11U14/201 -wire=winUSB -s50 -flash-driver=LPC11_12_13_32K_4K.cfx
 
-erase:
+erase_lpclink:
 	-(dfu-util -d 0x0471:0xdf55 -c 0 -t 2048 -R -D "LPCXpressoWIN.enc" && sleep 1)
 	crt_emu_lpc11_13_nxp -flash-erase -g -2 -vendor=NXP -pLPC11U14/201 -wire=winUSB -s50 -flash-driver=LPC11_12_13_32K_4K.cfx
 
