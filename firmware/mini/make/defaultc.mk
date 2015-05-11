@@ -50,9 +50,8 @@ CFLAGS_PLATFORM = -D__REDLIB__ -D__CODE_RED -DCORE_M0 -D__REDLIB__ \
 
 # -Os -Og will not work with spi, it has a side effect
 ifeq "$(FW_RELEASE)" "DEBUG" 
-    CFLAGS_DEBUG = -g3 -Og -ffunction-sections -fdata-sections -DDEBUG -DDEBUG_ENABLE -DDEBUG_SEMIHOSTING
-else
-    CFLAGS_DEBUG = -O0
+    CFLAGS_DEBUG = -g -ffunction-sections -fdata-sections -DDEBUG -DDEBUG_ENABLE -DDEBUG_SEMIHOSTING
 endif
 
+CFLAGS += -Os -ffunction-sections -fdata-sections -Wl,--gc-sections
 CFLAGS += $(CFLAGS_WARN) $(CFLAGS_PLATFORM) $(CFLAGS_DEBUG) $(INCLUDES)
