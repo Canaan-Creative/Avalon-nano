@@ -60,11 +60,11 @@ reflash_ulink2: $(FIRMWARE).axf
 	crt_emu_cm_redlink -flash-load-exec $< -g -2 -vendor=NXP -pLPC11U14/201 -wire=winUSB -s50 -flash-driver=LPC11_12_13_32K_4K.cfx
 
 reflash_lpclink: $(FIRMWARE).axf
-	-(dfu-util -d 0x0471:0xdf55 -c 0 -t 2048 -R -D "/opt/lpcxpresso_7.3.0_186/lpcxpresso/bin/LPCXpressoWIN.enc" && sleep 1)
+	-(dfu-util -d 0x0471:0xdf55 -c 0 -t 2048 -R -D "LPCXpressoWIN.enc" && sleep 1)
 	crt_emu_lpc11_13_nxp -flash-load-exec $< -g -2 -vendor=NXP -pLPC11U14/201 -wire=winUSB -s50 -flash-driver=LPC11_12_13_32K_4K.cfx
 
 erase:
-	-(dfu-util -d 0x0471:0xdf55 -c 0 -t 2048 -R -D "/opt/lpcxpresso_7.3.0_186/lpcxpresso/bin/LPCXpressoWIN.enc" && sleep 1)
+	-(dfu-util -d 0x0471:0xdf55 -c 0 -t 2048 -R -D "LPCXpressoWIN.enc" && sleep 1)
 	crt_emu_lpc11_13_nxp -flash-erase -g -2 -vendor=NXP -pLPC11U14/201 -wire=winUSB -s50 -flash-driver=LPC11_12_13_32K_4K.cfx
 
 rungdb:
