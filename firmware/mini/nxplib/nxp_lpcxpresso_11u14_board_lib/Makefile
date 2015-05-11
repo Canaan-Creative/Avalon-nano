@@ -5,8 +5,17 @@
 # For details see the UNLICENSE file at the root of the source tree.
 #
 
-include ../../make/fwconfig.mk
-include ../../make/platform_lpc11u14.mk
-INCLUDES=-I../lpc_chip_11uxx_lib/inc/
+
 include ../../make/defaultc.mk
 
+INCLUDES	+= -I../lpc_chip_11uxx_lib/inc/
+
+all: $(SLIB)
+
+$(SLIB): ${OBJS}
+	mkdir -p $(LIBDIR)
+	$(AR) -r -o $@ $(OBJS)
+	mv $(SLIB) $(LIBDIR)
+
+clean:
+	rm -f $(OBJS) $(SLIB) $(LIBDIR)/$(SLIB)

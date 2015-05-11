@@ -6,37 +6,33 @@
 #
 
 FIRMWARE = avalon4_mini
+FW_RELEASE = RELEASE
 
 DATE:=$(shell date +%Y-%m-%d)
 OS:=$(shell uname -s)
+
+include make/defaultc.mk
+
 GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-7)
 GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
 
-include make/fwconfig.mk
-include make/platform_lpc11u14.mk
-
 SRCS	= $(wildcard ./code/src/*.c)
-OBJS	= $(patsubst %.c,%.o,$(SRCS))
 
-CFLAGS_WARN = -Wall -Wextra -Wshadow -Wmissing-prototypes \
-	      -Wmissing-declarations -Wno-format-zero-length \
-	      -Wno-unused-parameter
-
-CFLAGS	+= $(CFLAGS_WARN) \
-	-DAVAM_VERSION='"4M1505-$(GIT_VERSION)$(GIT_STATUS)"' \
+CFLAGS	+= -DAVAM_VERSION='"4M1505-$(GIT_VERSION)$(GIT_STATUS)"' \
 	-I./code/inc -I./nxplib/lpc_chip_11uxx_lib/inc \
 	-I./nxplib/nxp_lpcxpresso_11u14_board_lib/inc \
 	-I./nxplib/lpc_chip_11uxx_lib/inc/usbd
 
 LDCFLAGS += -nostdlib -Xlinker -Map=$(FIRMWARE).map \
 	-Xlinker --gc-sections -mcpu=cortex-m0 -mthumb \
-	-T $(FIRMWARE).ld
+	-T $(FIRMWARE).ld -lcr_c -lcr_eabihelpers
 
-ifeq "$(SW_VERSION)" "DEBUG"
-LDCFLAGS += -lcr_semihost -lcr_c -lcr_eabihelpers
+ifeq "$(FW_RELEASE)" "DEBUG"
+LDCFLAGS += -lcr_semihost
 else
-LDCFLAGS += -lcr_nohost -lcr_c -lcr_eabihelpers
+LDCFLAGS += -lcr_nohost
 endif
+
 LDLIBS   += -lnxp_lpcxpresso_11u14_board_lib -llpc_chip_11uxx_lib \
 	-lusbd_11uxx_lib
 LIBPATH  += -L./nxplib/lpc_chip_11uxx_lib/libs \
@@ -60,9 +56,6 @@ lpc_chip_11uxx_lib:
 
 nxp_lpcxpresso_11u14_board_lib:
 	make -C nxplib/nxp_lpcxpresso_11u14_board_lib
-
-%.o: %.c
-	$(CC) -c -o $@ $< $(CFLAGS) $(PLATFORM_CFLAGS)
 
 reflash_ulink2: $(FIRMWARE).axf
 	crt_emu_cm_redlink -flash-load-exec $< -g -2 -vendor=NXP -pLPC11U14/201 -wire=winUSB -s50 -flash-driver=LPC11_12_13_32K_4K.cfx
