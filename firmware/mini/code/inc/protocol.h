@@ -16,6 +16,7 @@
  * HEADER(2) TYPE OPT IDX CNT DATA(32) CRC(2)
  * */
 #define AVAM_MM_VER_LEN	15
+#define AVAM_MM_DNA_LEN	8
 
 #define AVAM_H1 'C'
 #define AVAM_H2 'N'

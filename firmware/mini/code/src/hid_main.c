@@ -18,6 +18,7 @@
 
 #include "app_usbd_cfg.h"
 #include "hid_ucom.h"
+#include "iap.h"
 
 #include "crc.h"
 #include "sha2.h"
@@ -74,6 +75,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	uint32_t val[3];
 	uint8_t roll_pkg[AVAM_P_WORKLEN];
 	uint16_t ntime_offset;
+	char dna[8];
 
 	static int s_tmp = 0;
 
@@ -86,12 +88,11 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	switch (pkg->type) {
 	case AVAM_P_DETECT:
 		a3222_sw_init();
-
 		memset(g_ackpkg, 0, AVAM_P_COUNT);
-		memcpy(g_ackpkg + AVAM_P_DATAOFFSET, AVAM_VERSION, AVAM_MM_VER_LEN);
-		g_ackpkg[37] = a3222_get_report_count();
-		g_ackpkg[36] = s_tmp;
-		g_ackpkg[35] = UCOM_Read_Cnt();
+		if (!iap_readserialid(dna))
+			memcpy(g_ackpkg + AVAM_P_DATAOFFSET, dna, AVAM_MM_DNA_LEN);
+		memcpy(g_ackpkg + AVAM_P_DATAOFFSET + AVAM_MM_DNA_LEN, AVAM_VERSION, AVAM_MM_VER_LEN);
+		UNPACK32(ASIC_COUNT, g_ackpkg + AVAM_P_DATAOFFSET + AVAM_MM_DNA_LEN + AVAM_MM_VER_LEN);
 		init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_ACKDETECT);
 		UCOM_Write(g_ackpkg);
 		break;
