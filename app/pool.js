@@ -70,6 +70,7 @@ Pool.prototype.decode = function(result) {
 			this.upload({"id": data.id, "result": "pong", "error": null});
 			break;
 		case "client.reconnect":
+			this.disconnect();
 			this.run();
 			break;
 		default:
