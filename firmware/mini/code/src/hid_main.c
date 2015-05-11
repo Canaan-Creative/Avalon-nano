@@ -19,6 +19,7 @@
 #include "app_usbd_cfg.h"
 #include "hid_ucom.h"
 #include "iap.h"
+#include "dfu.h"
 
 #include "crc.h"
 #include "sha2.h"
@@ -216,6 +217,10 @@ int main(void)
 	led_ctrl(LED_OFF_ALL);
 
 	while (42) {
+		if (dfu_sig()) {
+			dfu_proc();
+			usb_reconnect();
+		}
 		wdt_feed();
 
 		if (UCOM_Read_Cnt()) {

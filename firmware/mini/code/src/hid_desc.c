@@ -41,6 +41,12 @@
 #define HID_INPUT_REPORT_BYTES       40				/* size of report in Bytes */
 #define HID_OUTPUT_REPORT_BYTES      40				/* size of report in Bytes */
 
+#ifdef __GNUC__
+#define ALIGN4 __attribute__ ((aligned(4)))
+#else // Keil
+#define ALIGN4 __align(4)
+#endif
+
 /**
  * HID Report Descriptor
  */
@@ -96,9 +102,11 @@ ALIGNED(4) uint8_t USB_FsConfigDescriptor[] = {
 		USB_INTERFACE_DESC_SIZE       +
 		HID_DESC_SIZE                 +
 		USB_ENDPOINT_DESC_SIZE        +
-		USB_ENDPOINT_DESC_SIZE
+		USB_ENDPOINT_DESC_SIZE        +
+		USB_DFU_DESCRIPTOR_SIZE       +
+		USB_INTERFACE_DESC_SIZE
 		),
-	0x01,							/* bNumInterfaces */
+	0x02,							/* bNumInterfaces */
 	0x01,							/* bConfigurationValue */
 	0x00,							/* iConfiguration */
 	USB_CONFIG_SELF_POWERED,		/* bmAttributes */
@@ -137,8 +145,60 @@ ALIGNED(4) uint8_t USB_FsConfigDescriptor[] = {
 	USB_ENDPOINT_TYPE_INTERRUPT,	/* bmAttributes */
 	WBVAL(HID_OUTPUT_REPORT_BYTES),	/* wMaxPacketSize */
 	1,								/* bInterval */
+	USB_INTERFACE_DESC_SIZE,           /* bLength */
+	USB_INTERFACE_DESCRIPTOR_TYPE,     /* bDescriptorType */
+	1,                                 /* bInterfaceNumber */
+	0x00,                              /* bAlternateSetting */
+	0x00,                              /* bNumEndpoints */
+	USB_DEVICE_CLASS_APP,              /* bInterfaceClass */
+	USB_DFU_SUBCLASS,                  /* bInterfaceSubClass */
+	0x01,                               /* bInterfaceProtocol */
+	0x04,                              /* iInterface */
+	/* DFU RunTime/DFU Mode Functional Descriptor */
+	USB_DFU_DESCRIPTOR_SIZE,                /* bLength */
+	USB_DFU_DESCRIPTOR_TYPE,           /* bDescriptorType */
+	USB_DFU_CAN_DOWNLOAD | USB_DFU_CAN_UPLOAD | USB_DFU_MANIFEST_TOL | USB_DFU_WILL_DETACH, /* bmAttributes */
+	WBVAL(0xFF00),                     /* wDetachTimeout */
+	WBVAL(USB_DFU_XFER_SIZE),          /* wTransferSize */
+	WBVAL(0x100),                      /* bcdDFUVersion */
 	/* Terminator */
 	0								/* bLength */
+};
+
+ALIGN4 const uint8_t USB_dfuConfigDescriptor[] = {
+	/* Configuration 1 */
+	USB_CONFIGURATION_DESC_SIZE,       /* bLength */
+	USB_CONFIGURATION_DESCRIPTOR_TYPE, /* bDescriptorType */
+	WBVAL(                             /* wTotalLength */
+		1*USB_CONFIGURATION_DESC_SIZE +
+		1*USB_INTERFACE_DESC_SIZE     +
+		USB_DFU_DESCRIPTOR_SIZE
+	     ),
+	0x01,                              /* bNumInterfaces */
+	0x02,                              /* bConfigurationValue */
+	0x00,                              /* iConfiguration */
+	USB_CONFIG_SELF_POWERED /*|*/       /* bmAttributes */
+		/*USB_CONFIG_REMOTE_WAKEUP*/,
+	USB_CONFIG_POWER_MA(100),          /* bMaxPower */
+	/* Interface 0, Alternate Setting 0, DFU Class */
+	USB_INTERFACE_DESC_SIZE,           /* bLength */
+	USB_INTERFACE_DESCRIPTOR_TYPE,     /* bDescriptorType */
+	0x00,                              /* bInterfaceNumber */
+	0x00,                              /* bAlternateSetting */
+	0x00,                              /* bNumEndpoints */
+	0xFE/*USB_DEVICE_CLASS_APP*/,              /* bInterfaceClass */
+	0x01/*USB_DFU_SUBCLASS*/,                  /* bInterfaceSubClass */
+	0x02,                              /* bInterfaceProtocol */  /* 02: DFU mode */
+	0x04,                              /* iInterface */
+	/* DFU RunTime/DFU Mode Functional Descriptor */
+	USB_DFU_DESCRIPTOR_SIZE,                /* bLength */
+	USB_DFU_DESCRIPTOR_TYPE,           /* bDescriptorType */
+	USB_DFU_CAN_DOWNLOAD | USB_DFU_CAN_UPLOAD | USB_DFU_MANIFEST_TOL,
+	WBVAL(0xFF00),                     /* wDetachTimeout */
+	WBVAL(USB_DFU_XFER_SIZE),          /* wTransferSize */
+	WBVAL(0x100),                      /* bcdDFUVersion */
+	/* Terminator */
+	0                                  /* bLength */
 };
 
 /**

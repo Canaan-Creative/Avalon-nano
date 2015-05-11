@@ -17,6 +17,8 @@
 #include "avalon_a3222.h"
 #include "app_usbd_cfg.h"
 #include "hid_ucom.h"
+#include "dfu.h"
+#include "libfunctions.h"
 
 extern const  USBD_HW_API_T hw_api;
 extern const  USBD_CORE_API_T core_api;
@@ -119,7 +121,11 @@ void usb_init(void)
 	if (ret == LPC_OK) {
 
 		/* Init USB HID bridge interface */
-		ret = UCOM_init(g_hUsb, (USB_INTERFACE_DESCRIPTOR *) &USB_FsConfigDescriptor[sizeof(USB_CONFIGURATION_DESCRIPTOR)], &usb_param);
+		ret = UCOM_init(g_hUsb, find_IntfDesc(desc.high_speed_desc, USB_DEVICE_CLASS_HUMAN_INTERFACE), &usb_param);
+		/*
+		 * TODO: must have enough ram
+		 * ret = dfu_init(g_hUsb, find_IntfDesc(desc.high_speed_desc, USB_DEVICE_CLASS_APP), &usb_param);
+		 */
 		if (ret == LPC_OK) {
 			/* Make sure USB and IRQ priorities are same for this example */
 			NVIC_SetPriority(USB0_IRQn, 1);
@@ -132,3 +138,14 @@ void usb_init(void)
 
 	bUsbInit = TRUE;
 }
+
+void usb_reconnect(void)
+{
+	/* disconnect */
+	USBD_API->hw->Connect(g_hUsb, 0);
+	delay(200);
+	/* connect the device back */
+	USBD_API->hw->Connect(g_hUsb, 1);
+	delay(200);
+}
+
