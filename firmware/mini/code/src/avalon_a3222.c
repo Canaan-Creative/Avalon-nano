@@ -187,7 +187,9 @@ int a3222_push_work(uint8_t *pkg)
 
 	memcpy(awork + 60, pkg + 52, 12); /* data */
 
-	memcpy(awork + 72, pkg + 32, 8);	 /* work id */
+	memcpy(awork + 72, pkg + 32, 6);	 /* id + reserved */
+	awork[78] = g_asic_index;		/* asic */
+	awork[79] = 0;				/* ntime */
 
 	if ((g_freqflag >> g_asic_index) & 1) {
 		g_freqflag &= ~(1 << g_asic_index);

@@ -99,9 +99,8 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	case AVAM_P_WORK:
 		/*
 		 * idx-1: midstate(32)
-		 * idx-2: job_id(2) + pool_no(2) + nonce2(4) + ntime_offset(2) + reserved(12) + data(12)
+		 * idx-2: id(6) + reserved(2) + ntime(1) + fan(3) + led(4) + reserved(4) + data(12)
 		 */
-
 		if (pkg->idx != 1 && pkg->idx != 2 && pkg->cnt != 2)
 			break;
 
@@ -121,16 +120,23 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		}
 		break;
 	case AVAM_P_POLLING:
-		memset(g_ackpkg, 0, AVAM_P_COUNT);
+		memset(g_ackpkg, 0xff, AVAM_P_COUNT);
 		if (a3222_get_report_count()) {
-			/* P_NONCE: job_id(2) + pool_no(2) + nonce2(4) + nonce(4) */
+			/* P_NONCE: id(6) + chip_id(1) + ntime(1) + nonce(4) + reserved(1) + usb rb(1) + work rb(1) + nonce rb(1) */
 			a3222_get_report(g_ackpkg + AVAM_P_DATAOFFSET);
-			g_ackpkg[37] = a3222_get_report_count();
-			g_ackpkg[36] = s_tmp;
-			g_ackpkg[35] = UCOM_Read_Cnt();
-			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_NONCE);
+			g_ackpkg[AVAM_P_DATAOFFSET + 13] = UCOM_Read_Cnt();
+			g_ackpkg[AVAM_P_DATAOFFSET + 14] = s_tmp;
+			g_ackpkg[AVAM_P_DATAOFFSET + 15] = a3222_get_report_count();
+			if (a3222_get_report_count()) {
+				a3222_get_report(g_ackpkg + AVAM_P_DATAOFFSET + 16);
+				g_ackpkg[AVAM_P_DATAOFFSET + 16 + 13] = UCOM_Read_Cnt();
+				g_ackpkg[AVAM_P_DATAOFFSET + 16 + 14] = s_tmp;
+				g_ackpkg[AVAM_P_DATAOFFSET + 16 + 15] = a3222_get_report_count();
+			}
+
+			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_NONCE_M);
 		} else {
-			/* P_STATUS: */
+			/* P_STATUS_M: */
 			memcpy(g_ackpkg + AVAM_P_DATAOFFSET, AVAM_VERSION, AVAM_MM_VER_LEN);
 			g_ackpkg[37] = a3222_get_report_count();
 			g_ackpkg[36] = s_tmp;

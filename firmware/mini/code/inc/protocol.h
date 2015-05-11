@@ -36,7 +36,7 @@
 
 #define AVAM_P_ACKDETECT	0x40
 #define AVAM_P_STATUS		0x41
-#define AVAM_P_NONCE		0x42
+#define AVAM_P_NONCE_M		0x42
 #define AVAM_P_TEST_RET		0x43
 
 #define AVAM_P_DATAOFFSET	6
