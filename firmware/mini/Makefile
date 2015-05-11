@@ -14,7 +14,7 @@ OS:=$(shell uname -s)
 SRCS	= $(wildcard ./code/src/*.c)
 include make/defaultc.mk
 
-NXP_PARAMETERS = "-g -2 -vendor=NXP -pLPC11U14/201 -wire=winUSB -s50 -flash-driver=LPC11_12_13_32K_4K.cfx"
+NXP_PARAMETERS = -g -2 -vendor=NXP -pLPC11U14/201 -wire=winUSB -s50 -flash-driver=LPC11_12_13_32K_4K.cfx
 
 GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-7)
 GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
@@ -59,7 +59,7 @@ nxp_lpcxpresso_11u14_board_lib:
 	make -C nxplib/nxp_lpcxpresso_11u14_board_lib
 
 reflash_ulink2: $(FIRMWARE).axf
-	-killall -s 9 redlinkserv
+	-(killall -s 9 redlinkserv && sleep 1)
 	crt_emu_cm_redlink -flash-load-exec $< $(NXP_PARAMETERS)
 
 reflash_lpclink: $(FIRMWARE).axf

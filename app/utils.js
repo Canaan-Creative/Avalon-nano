@@ -321,3 +321,15 @@ var uInt2LeHex = function(integar, size) {
 var arraySum = function(array) {
 	return array.reduce(function(a, b) {return a + b;});
 };
+
+var getTarget = function(diff) {
+	// only work with diff lower than 0xffff
+	var arraybuffer = new ArrayBuffer(32);
+	var view = new DataView(arraybuffer);
+	var base = 0xffff;
+	for (var i = 2; i < 16; i++) {
+		view.setUint16(i * 2, Math.floor(base / diff));
+		base = (base % diff) << 16;
+	}
+	return arraybuffer;
+};
