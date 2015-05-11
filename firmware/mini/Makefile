@@ -11,12 +11,11 @@ FW_RELEASE = RELEASE
 DATE:=$(shell date +%Y-%m-%d)
 OS:=$(shell uname -s)
 
+SRCS	= $(wildcard ./code/src/*.c)
 include make/defaultc.mk
 
 GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-7)
 GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
-
-SRCS	= $(wildcard ./code/src/*.c)
 
 CFLAGS	+= -DAVAM_VERSION='"4M1505-$(GIT_VERSION)$(GIT_STATUS)"' \
 	-I./code/inc -I./nxplib/lpc_chip_11uxx_lib/inc \

@@ -5,21 +5,14 @@
 # For details see the UNLICENSE file at the root of the source tree.
 #
 
-#
-# Author: Mikeqin <Fengling.Qin@gmail.com>
-#
-# This is free and unencumbered software released into the public domain.
-# For details see the UNLICENSE file at the root of the source tree.
-#
-
 SHELL = /bin/bash
 
 CROSS_COMPILE ?= arm-none-eabi-
 
-CC		:= $(CROSS_COMPILE)gcc
-LD		:= $(CROSS_COMPILE)ld
+CC	:= $(CROSS_COMPILE)gcc
+LD	:= $(CROSS_COMPILE)ld
 SIZE	:= $(CROSS_COMPILE)size
-AR		:= $(CROSS_COMPILE)ar
+AR	:= $(CROSS_COMPILE)ar
 
 # ----- Verbosity control -----------------------------------------------------
 
@@ -39,7 +32,7 @@ endif
 
 LIBNAME	 = $(shell pwd |sed 's/^\(.*\)[/]//' )
 
-SRCS    += $(wildcard src/*.c)
+SRCS    ?= $(wildcard src/*.c)
 OBJS	 = $(patsubst %.c,%.o,$(SRCS))
 
 LIBDIR	 = ./libs
