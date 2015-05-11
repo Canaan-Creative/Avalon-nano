@@ -14,6 +14,8 @@ OS:=$(shell uname -s)
 SRCS	= $(wildcard ./code/src/*.c)
 include make/defaultc.mk
 
+NXP_PARAMETERS = "-g -2 -vendor=NXP -pLPC11U14/201 -wire=winUSB -s50 -flash-driver=LPC11_12_13_32K_4K.cfx"
+
 GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-7)
 GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
 
@@ -58,15 +60,15 @@ nxp_lpcxpresso_11u14_board_lib:
 
 reflash_ulink2: $(FIRMWARE).axf
 	-killall -s 9 redlinkserv
-	crt_emu_cm_redlink -flash-load-exec $< -g -2 -vendor=NXP -pLPC11U14/201 -wire=winUSB -s50 -flash-driver=LPC11_12_13_32K_4K.cfx
+	crt_emu_cm_redlink -flash-load-exec $< $(NXP_PARAMETERS)
 
 reflash_lpclink: $(FIRMWARE).axf
 	-(dfu-util -d 0x0471:0xdf55 -c 0 -t 2048 -R -D "LPCXpressoWIN.enc" && sleep 1)
-	crt_emu_lpc11_13_nxp -flash-load-exec $< -g -2 -vendor=NXP -pLPC11U14/201 -wire=winUSB -s50 -flash-driver=LPC11_12_13_32K_4K.cfx
+	crt_emu_lpc11_13_nxp -flash-load-exec $< $(NXP_PARAMETERS)
 
 erase_lpclink:
 	-(dfu-util -d 0x0471:0xdf55 -c 0 -t 2048 -R -D "LPCXpressoWIN.enc" && sleep 1)
-	crt_emu_lpc11_13_nxp -flash-erase -g -2 -vendor=NXP -pLPC11U14/201 -wire=winUSB -s50 -flash-driver=LPC11_12_13_32K_4K.cfx
+	crt_emu_lpc11_13_nxp -flash-erase $(NXP_PARAMETERS)
 
 rungdb:
 	@echo "Find the keypoint at https://en.bitcoin.it/wiki/Avalon_nano#How_to_debug_issues_with_gdb_.28Works_on_OSX.29"
