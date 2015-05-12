@@ -159,10 +159,44 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		PACK32(pkg->data + 4, &val[1]);
 		PACK32(pkg->data + 8, &val[0]);
 
-		for (i = 0; i < ASIC_COUNT; i++) {
-			memcpy(g_freq[i], val, sizeof(uint32_t) * 3);
-			a3222_set_freq(val, i);
+		if (!pkg->opt) {
+			for (i = 0; i < ASIC_COUNT; i++) {
+				memcpy(g_freq[i], val, sizeof(uint32_t) * 3);
+				a3222_set_freq(val, i);
+			}
 		}
+
+		if (pkg->opt) {
+			memcpy(g_freq[pkg->opt - 1], val, sizeof(uint32_t) * 3);
+			a3222_set_freq(val, pkg->opt - 1);
+		}
+		break;
+
+	case AVAM_P_GET_FREQ:
+		memset(g_ackpkg, 0, AVAM_P_COUNT);
+		if (!pkg->opt) {
+			val[0] = g_freq[0][0];
+			val[1] = g_freq[0][1];
+			val[2] = g_freq[0][2];
+
+			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET);
+			UNPACK32(val[1], g_ackpkg + AVAM_P_DATAOFFSET + 4);
+			UNPACK32(val[2], g_ackpkg + AVAM_P_DATAOFFSET + 8);
+		}
+
+		if (pkg->opt) {
+			val[0] = g_freq[pkg->opt - 1][0];
+			val[1] = g_freq[pkg->opt - 1][1];
+			val[2] = g_freq[pkg->opt - 1][2];
+
+			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET);
+			UNPACK32(val[1], g_ackpkg + AVAM_P_DATAOFFSET + 4);
+			UNPACK32(val[2], g_ackpkg + AVAM_P_DATAOFFSET + 8);
+		}
+		init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_STATUS_FREQ);
+		/* change opt */
+		g_ackpkg[3] = pkg->opt;
+		UCOM_Write(g_ackpkg);
 		break;
 	case AVAM_P_SET_VOLT:
 		val[0] = (pkg->data[0] << 8) | pkg->data[1];

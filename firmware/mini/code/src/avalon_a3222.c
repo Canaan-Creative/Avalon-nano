@@ -251,9 +251,6 @@ void a3222_set_freq(uint32_t *freq, uint8_t index)
 	if (index >= ASIC_COUNT)
 		return;
 
-	if (!memcmp(freq, &g_freq[index], sizeof(uint32_t) * 3))
-		return;
-
 	g_freqflag |= (1 << index);
 	memcpy(g_freq[index], freq, sizeof(uint32_t) * 3);
 }
