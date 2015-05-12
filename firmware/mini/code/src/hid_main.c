@@ -86,14 +86,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	timer_set(TIMER_ID1, IDLE_TIME);
 	switch (pkg->type) {
 	case AVAM_P_DETECT:
-		/* Power off the AISC */
 		set_voltage(ASIC_0V);
-
-		val[0] = val[1] = val[2] = 0;
-		for (i = 0; i < ASIC_COUNT; i++) {
-			memcpy(g_freq[i], val, sizeof(uint32_t) * 3);
-			a3222_set_freq(val, i);
-		}
 		a3222_sw_init();
 
 		memset(g_ackpkg, 0, AVAM_P_COUNT);
@@ -173,8 +166,11 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		break;
 	case AVAM_P_SET_VOLT:
 		val[0] = (pkg->data[0] << 8) | pkg->data[1];
-		if(set_voltage((uint16_t)val[0]))
+		if(set_voltage((uint16_t)val[0])) {
 			a3222_reset();
+			for (i = 0; i < ASIC_COUNT; i++)
+				a3222_set_freq(g_freq[i], i);
+		}
 		break;
 	default:
 		break;

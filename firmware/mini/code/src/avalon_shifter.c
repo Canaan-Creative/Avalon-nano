@@ -72,7 +72,7 @@ int set_voltage(uint16_t vol)
 	shifter_byte(vol & 0xff);
 
 	g_voltage = vol;
-	if (poweron)
+	if (poweron && vol != ASIC_0V)
 		delay(VOLTAGE_DELAY);
 
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_STCP, 1);
