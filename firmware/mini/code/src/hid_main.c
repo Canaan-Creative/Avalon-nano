@@ -18,7 +18,7 @@
 
 #include "app_usbd_cfg.h"
 #include "hid_ucom.h"
-#include "iap.h"
+#include "sbl_iap.h"
 #include "dfu.h"
 
 #include "crc.h"

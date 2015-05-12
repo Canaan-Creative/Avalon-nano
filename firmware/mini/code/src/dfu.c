@@ -15,18 +15,47 @@
 #include "app_usbd_cfg.h"
 #include "board.h"
 #include "dfu.h"
+#include "sbl_iap.h"
+
+/* DFU boot definitions */
+#define DFU_DEST_BASE         0x4000
+#define DFU_MAX_IMAGE_LEN     (8 * 1024)
+#define DFU_MAX_BLOCKS        (DFU_MAX_IMAGE_LEN/USB_DFU_XFER_SIZE)
 
 volatile uint8_t dfu_detach_sig = 0;
 extern const uint8_t USB_dfuConfigDescriptor[];
 
-static uint32_t dfu_read( uint32_t block_num, uint8_t** pBuff, uint32_t length)
+static uint32_t dfu_read(uint32_t block_num, uint8_t** pBuff, uint32_t length)
 {
-	return 0;
+	uint32_t src_addr = DFU_DEST_BASE;
+
+	if (length) {
+		if (block_num == DFU_MAX_BLOCKS)
+			return 0;
+
+		if (block_num > DFU_MAX_BLOCKS)
+			return DFU_STATUS_errADDRESS;
+
+		src_addr += (block_num * USB_DFU_XFER_SIZE);
+		memcpy((void*)(*pBuff), (void*)src_addr, length);
+	}
+	return length;
 }
 
-static uint8_t dfu_write( uint32_t block_num, uint8_t** pBuff, uint32_t length,
+static uint8_t dfu_write(uint32_t block_num, uint8_t** pBuff, uint32_t length,
 		uint8_t* bwPollTimeout)
 {
+	bwPollTimeout[0] = 255;
+	if (length != 0) {
+		uint32_t dest_addr = DFU_DEST_BASE;
+
+		if (block_num >= DFU_MAX_BLOCKS)
+			return DFU_STATUS_errADDRESS;
+
+		dest_addr += (block_num * USB_DFU_XFER_SIZE);
+		write_flash((unsigned *)dest_addr, (char*)&((*pBuff)[0]), length);
+	}
+
 	return DFU_STATUS_OK;
 }
 
