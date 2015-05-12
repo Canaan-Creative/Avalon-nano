@@ -77,8 +77,6 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	uint16_t ntime_offset;
 	char dna[8];
 
-	static int s_tmp = 0;
-
 	expected_crc = (pkg->crc[1] & 0xff) | ((pkg->crc[0] & 0xff) << 8);
 	actual_crc = crc16(pkg->data, AVAM_P_DATA_LEN);
 
@@ -110,7 +108,6 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 			ntime_offset = (g_a3222_pkg[40] << 8) | g_a3222_pkg[41];
 			if (!ntime_offset) {
 				a3222_push_work(g_a3222_pkg);
-				s_tmp = a3222_get_works_count();
 			} else {
 				memcpy(roll_pkg, g_a3222_pkg, AVAM_P_WORKLEN);
 				for (i = 0; i < ntime_offset; i++) {
@@ -124,14 +121,16 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		memset(g_ackpkg, 0xff, AVAM_P_COUNT);
 		if (a3222_get_report_count()) {
 			/* P_NONCE: id(6) + chip_id(1) + ntime(1) + nonce(4) + reserved(1) + usb rb(1) + work rb(1) + nonce rb(1) */
+			val[0] = a3222_get_works_count();
 			a3222_get_report(g_ackpkg + AVAM_P_DATAOFFSET);
 			g_ackpkg[AVAM_P_DATAOFFSET + 13] = UCOM_Read_Cnt();
-			g_ackpkg[AVAM_P_DATAOFFSET + 14] = s_tmp;
+			g_ackpkg[AVAM_P_DATAOFFSET + 14] = (uint8_t)val[0];
 			g_ackpkg[AVAM_P_DATAOFFSET + 15] = a3222_get_report_count();
 			if (a3222_get_report_count()) {
+				val[0] = a3222_get_works_count();
 				a3222_get_report(g_ackpkg + AVAM_P_DATAOFFSET + 16);
 				g_ackpkg[AVAM_P_DATAOFFSET + 16 + 13] = UCOM_Read_Cnt();
-				g_ackpkg[AVAM_P_DATAOFFSET + 16 + 14] = s_tmp;
+				g_ackpkg[AVAM_P_DATAOFFSET + 16 + 14] = (uint8_t)val[0];
 				g_ackpkg[AVAM_P_DATAOFFSET + 16 + 15] = a3222_get_report_count();
 			}
 
