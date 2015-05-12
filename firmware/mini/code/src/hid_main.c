@@ -203,6 +203,9 @@ static inline void led_ctrl(uint8_t led_op)
 
 int main(void)
 {
+	uint8_t i;
+	uint32_t val[3];
+
 	Board_Init();
 	SystemCoreClockUpdate();
 
@@ -235,6 +238,13 @@ int main(void)
 		if (timer_istimeout(TIMER_ID1)) {
 			/* Power off the AISC */
 			set_voltage(ASIC_0V);
+
+			val[0] = val[1] = val[2] = 0;
+			for (i = 0; i < ASIC_COUNT; i++) {
+				memcpy(g_freq[i], val, sizeof(uint32_t) * 3);
+				a3222_set_freq(val, i);
+			}
+
 			led_ctrl(LED_IDLE);
 			led_ctrl(LED_PG_OFF);
 			continue;
