@@ -216,7 +216,7 @@ int main(void)
 	led_init();
 
 	set_voltage(ASIC_0V);
-	wdt_init(5);	/* 5 seconds */
+	wdt_init(3);	/* 3 seconds */
 	wdt_enable();
 	timer_set(TIMER_ID1, IDLE_TIME);
 	led_ctrl(LED_OFF_ALL);

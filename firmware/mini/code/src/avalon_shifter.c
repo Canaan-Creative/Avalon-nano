@@ -60,7 +60,7 @@ int set_voltage(uint16_t vol)
 {
 	uint8_t poweron = 0;
 
-	if (vol == g_voltage)
+	if (g_voltage == vol)
 		return 0;
 
 	if (g_voltage == ASIC_0V)
