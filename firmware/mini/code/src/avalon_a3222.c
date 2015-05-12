@@ -103,11 +103,12 @@ void a3222_sw_init(void)
 	load_set(0);
 
 	g_freqflag = 0;
+	g_asic_index = 0;
 
 	for (i = 0; i < ASIC_COUNT; i++) {
-		g_freq[i][0] = A3222_DEFAULT_FREQ;
-		g_freq[i][1] = A3222_DEFAULT_FREQ;
-		g_freq[i][2] = A3222_DEFAULT_FREQ;
+		g_freq[i][0] = 0x01;
+		g_freq[i][1] = 0x01;
+		g_freq[i][2] = 0x01;
 	}
 
 	RingBuffer_Flush(&a3222_txrb);
@@ -199,7 +200,7 @@ int a3222_push_work(uint8_t *pkg)
 	} else {
 		memcpy(awork + 80, "\x0\x0\x0\x1", 4);
 		memcpy(awork + 84, "\x0\x0\x0\x1", 4);
-		memcpy(awork + 88, "\x0\x0\x0\x1", 4);	/* PLL, Voltage: 0.7625 */
+		memcpy(awork + 88, "\x0\x0\x0\x1", 4);
 	}
 
 	g_asic_index++;

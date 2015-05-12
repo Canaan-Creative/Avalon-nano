@@ -86,7 +86,16 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	timer_set(TIMER_ID1, IDLE_TIME);
 	switch (pkg->type) {
 	case AVAM_P_DETECT:
+		/* Power off the AISC */
+		set_voltage(ASIC_0V);
+
+		val[0] = val[1] = val[2] = 0;
+		for (i = 0; i < ASIC_COUNT; i++) {
+			memcpy(g_freq[i], val, sizeof(uint32_t) * 3);
+			a3222_set_freq(val, i);
+		}
 		a3222_sw_init();
+
 		memset(g_ackpkg, 0, AVAM_P_COUNT);
 		if (!iap_readserialid(dna))
 			memcpy(g_ackpkg + AVAM_P_DATAOFFSET, dna, AVAM_MM_DNA_LEN);
@@ -243,6 +252,8 @@ int main(void)
 				memcpy(g_freq[i], val, sizeof(uint32_t) * 3);
 				a3222_set_freq(val, i);
 			}
+
+			a3222_sw_init();
 
 			led_ctrl(LED_IDLE);
 			led_ctrl(LED_PG_OFF);

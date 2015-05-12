@@ -82,6 +82,10 @@ int set_voltage(uint16_t vol)
 	__NOP();
 	__NOP();
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_OE, 0);
+
+	if (vol == ASIC_0V)
+			return 0;
+
 	return poweron;
 }
 
