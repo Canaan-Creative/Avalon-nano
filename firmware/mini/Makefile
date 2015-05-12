@@ -39,6 +39,8 @@ LDLIBS   += -lnxp_lpcxpresso_11u14_board_lib -llpc_chip_11uxx_lib \
 LIBPATH  += -L./nxplib/lpc_chip_11uxx_lib/libs \
 	-L./nxplib/nxp_lpcxpresso_11u14_board_lib/libs
 
+.PHONY: reflash_ulink2 erase_ulink2 reflash_lpclink erase_lpclink
+
 all: $(FIRMWARE).axf
 	mkdir -p bin/$(DATE)
 	cp $^ bin/$(DATE)
@@ -61,6 +63,10 @@ nxp_lpcxpresso_11u14_board_lib:
 reflash_ulink2: $(FIRMWARE).axf
 	-(killall -s 9 redlinkserv && sleep 1)
 	crt_emu_cm_redlink -flash-load-exec $< $(NXP_PARAMETERS)
+
+erase_ulink2:
+	-(killall -s 9 redlinkserv && sleep 1)
+	crt_emu_cm_redlink -flash-erase $(NXP_PARAMETERS)
 
 reflash_lpclink: $(FIRMWARE).axf
 	-(dfu-util -d 0x0471:0xdf55 -c 0 -t 2048 -R -D "LPCXpressoWIN.enc" && sleep 1)
