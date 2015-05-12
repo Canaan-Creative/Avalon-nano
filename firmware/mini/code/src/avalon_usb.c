@@ -23,13 +23,14 @@
 extern const  USBD_HW_API_T hw_api;
 extern const  USBD_CORE_API_T core_api;
 extern const  USBD_HID_API_T hid_api;
+extern const  USBD_DFU_API_T dfu_api;
 
 static USBD_HANDLE_T g_hUsb;
 static const  USBD_API_T g_usbApi = {
 	&hw_api,
 	&core_api,
 	0,
-	0,
+	&dfu_api,
 	&hid_api,
 	0,
 	0,
@@ -122,10 +123,8 @@ void usb_init(void)
 
 		/* Init USB HID bridge interface */
 		ret = UCOM_init(g_hUsb, find_IntfDesc(desc.high_speed_desc, USB_DEVICE_CLASS_HUMAN_INTERFACE), &usb_param);
-		/*
-		 * TODO: must have enough ram
-		 * ret = dfu_init(g_hUsb, find_IntfDesc(desc.high_speed_desc, USB_DEVICE_CLASS_APP), &usb_param);
-		 */
+
+		ret = dfu_init(g_hUsb, find_IntfDesc(desc.high_speed_desc, USB_DEVICE_CLASS_APP), &usb_param);
 		if (ret == LPC_OK) {
 			/* Make sure USB and IRQ priorities are same for this example */
 			NVIC_SetPriority(USB0_IRQn, 1);
@@ -148,4 +147,3 @@ void usb_reconnect(void)
 	USBD_API->hw->Connect(g_hUsb, 1);
 	delay(200);
 }
-
