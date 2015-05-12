@@ -48,7 +48,6 @@ static uint8_t g_a3222_pkg[AVAM_P_WORKLEN];
 static uint8_t g_reqpkg[AVAM_P_COUNT];
 static uint8_t g_ackpkg[AVAM_P_COUNT];
 static uint32_t g_freq[ASIC_COUNT][3];
-static uint16_t g_lastvoltage = ASIC_0V;
 static uint32_t g_ledstat = LED_OFF_ALL;
 
 static int init_mm_pkg(struct avalon_pkg *pkg, uint8_t type)
@@ -86,6 +85,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	if (expected_crc != actual_crc)
 		return;
 
+	timer_set(TIMER_ID1, IDLE_TIME);
 	switch (pkg->type) {
 	case AVAM_P_DETECT:
 		a3222_sw_init();
@@ -137,12 +137,19 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_NONCE_M);
 		} else {
-			/* P_STATUS_M: */
-			memcpy(g_ackpkg + AVAM_P_DATAOFFSET, AVAM_VERSION, AVAM_MM_VER_LEN);
-			g_ackpkg[37] = a3222_get_report_count();
-			g_ackpkg[36] = s_tmp;
-			g_ackpkg[35] = UCOM_Read_Cnt();
-			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_STATUS);
+			/* P_STATUS_M: spi speed(4) + led(4) + fan(4) + voltage(4) + frequency(12) + power good(4) */
+			val[0] = 1000000;
+			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET);
+			val[0] = g_ledstat;
+			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET + 4);
+			val[0] = (uint32_t)-1;
+			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET + 8);
+			val[0] = get_voltage();
+			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET + 12);
+			/* TODO: temp + adc x 2 */
+			val[0] = read_power_good();
+			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET + 28);
+			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_STATUS_M);
 		}
 		UCOM_Write(g_ackpkg);
 		break;
@@ -160,8 +167,6 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		val[0] = (pkg->data[0] << 8) | pkg->data[1];
 		if(set_voltage((uint16_t)val[0]))
 			a3222_reset();
-
-		g_lastvoltage = get_voltage();
 		break;
 	default:
 		break;
@@ -198,8 +203,6 @@ static inline void led_ctrl(uint8_t led_op)
 
 int main(void)
 {
-	uint8_t i;
-
 	Board_Init();
 	SystemCoreClockUpdate();
 
@@ -225,14 +228,8 @@ int main(void)
 
 		if (UCOM_Read_Cnt()) {
 			memset(g_reqpkg, 0, AVAM_P_COUNT);
-
 			UCOM_Read(g_reqpkg);
 			process_mm_pkg((struct avalon_pkg*)g_reqpkg);
-
-			if ((((struct avalon_pkg*)g_reqpkg)->type == AVAM_P_WORK) ||
-					(((struct avalon_pkg*)g_reqpkg)->type == AVAM_P_SET_VOLT)) {
-				timer_set(TIMER_ID1, IDLE_TIME);
-			}
 		}
 
 		if (timer_istimeout(TIMER_ID1)) {
@@ -241,23 +238,14 @@ int main(void)
 			led_ctrl(LED_IDLE);
 			led_ctrl(LED_PG_OFF);
 			continue;
-		} else {
-			/* power on then reset the pll */
-			if (set_voltage(g_lastvoltage)) {
-				a3222_reset();
-				for (i = 0; i < ASIC_COUNT; i++)
-					a3222_set_freq(g_freq[i], i);
-			}
-			led_ctrl(LED_BUSY);
-			if (read_power_good())
-				led_ctrl(LED_PG_ON);
-			else
-				led_ctrl(LED_PG_OFF);
 		}
 
-		a3222_process();
+		led_ctrl(LED_BUSY);
+		if (read_power_good())
+			led_ctrl(LED_PG_ON);
+		else
+			led_ctrl(LED_PG_OFF);
 
-		/* Sleep until next IRQ happens */
-		//__WFI(); /* FIXME: */
+		a3222_process();
 	}
 }
