@@ -175,9 +175,9 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	case AVAM_P_GET_FREQ:
 		memset(g_ackpkg, 0, AVAM_P_COUNT);
 		if (!pkg->opt) {
-			val[0] = g_freq[0][0];
+			val[0] = g_freq[0][2];
 			val[1] = g_freq[0][1];
-			val[2] = g_freq[0][2];
+			val[2] = g_freq[0][0];
 
 			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET);
 			UNPACK32(val[1], g_ackpkg + AVAM_P_DATAOFFSET + 4);
