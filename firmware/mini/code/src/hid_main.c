@@ -267,7 +267,7 @@ int main(void)
 		}
 		wdt_feed();
 
-		if (UCOM_Read_Cnt()) {
+		while (UCOM_Read_Cnt()) {
 			memset(g_reqpkg, 0, AVAM_P_COUNT);
 			UCOM_Read(g_reqpkg);
 			process_mm_pkg((struct avalon_pkg*)g_reqpkg);
