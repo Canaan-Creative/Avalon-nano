@@ -118,9 +118,9 @@ chrome.app.runtime.onLaunched.addListener(function() {
 	chrome.app.window.create("index.html", {
 		innerBounds: {
 			width: 870,
-			height: 870,
+			height: 600,
 			minWidth: 870,
-			minHeight: 870
+			minHeight: 600
 		},
 		id: "Avalon miner"
 	}, function() {

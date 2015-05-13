@@ -7,6 +7,7 @@
 	"app": {
 		"background": {
 			"scripts": [
+				"sha256.js",
 				"utils.js",
 				"driver.js",
 				"pool.js",

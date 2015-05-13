@@ -1,3 +1,6 @@
+html, body {
+    overflow-y: visible;
+}
 .row{
 	margin:0px;
 }
@@ -18,4 +21,51 @@
 .btn-row{
 	height:70px;
 	line-height:70px;
+}
+.panel-body{
+	padding:0px;
+}
+body{
+	background:#f9f9f9;
+}
+.top-div{
+	height:40px;
+	line-height:40px;
+	background:#efefef;
+	border-bottom:1px dashed #cfcfcf;
+}
+.center-img{
+	height:600px;
+	line-height:600px;
+	text-align:center;
+}
+.guide .logo{
+	height:250px;
+	line-height:200px; 
+	text-align:center;}
+.guide .detect{
+	background:#f4f4f4;	
+	height:200px;
+}
+.guide .detect p{
+	text-align:center;
+	height:80px;
+	line-height:80px;
+}
+.detect h4,.detect h5{
+	text-align:center;
+}
+.detect h4{
+	color:#3a3a3a;
+}
+.detect h5{
+	color:#888888;
+}
+.guide>p{
+	margin-top:50px;
+	color:#888888;
+	text-align:center;
+}
+.pool-add{
+	margin:0px 10px 10px 0px;
 }

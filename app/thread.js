@@ -35,10 +35,7 @@ onmessage = function(e) {
 (function loop() {
 	if (thread.enable && (!thread.update) && thread.job !== undefined) {
 		if (thread.nonce2 < thread.nonce2_limit) {
-			var blockheader = get_blockheader(
-				thread.job,
-				uInt2LeHex(thread.nonce2, thread.job.nonce2_size)
-			);
+			var blockheader = get_blockheader(thread.job, thread.nonce2);
 
 			var midstate = get_midstate(blockheader);
 			var raw = gw_pool2raw(
@@ -46,7 +43,6 @@ onmessage = function(e) {
 				blockheader,
 				thread.poolId,
 				thread.jobId,
-				0,
 				thread.nonce2
 			);
 
