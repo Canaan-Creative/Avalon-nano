@@ -56,7 +56,7 @@ var renderChart = function() {
 			for (var i = -899; i <= 0; i++) {
 				data.push({
 					x: time + i * 1000,
-					y:Math.random() 
+					y:0 
 				});
 			}
 			for (i in names)
@@ -365,6 +365,8 @@ var poolTr = function(id , data) {
 	return _tpl;
 }
 var deviceTr = function(nanoId) {
+	if($("#device-null").html()!==undefined)
+		$("#device-null").remove();
 	var _tpl = '';
 	_tpl += '<tr class="active" id="nano-tr-id-' + nanoId + '">';
 	_tpl += '<td id="nano-device-id-' + nanoId + '">nano' + nanoId + '</td>';
@@ -415,7 +417,7 @@ var dialog = function( obj  , data ) {
 
 	var _address = !!data&&!!data.address ? data.address : '';
 	var _worker = !!data&&!!data.worker ? data.worker : '';
-	var _poolId = !!data&&!!data.poolId ? data.poolId : '-1';
+	var _poolId = (data.poolI!==undefined || data.poolId!==null) ? data.poolId : '-1';
 	neo.content = `<div>
 		<div class="form-group">
 		<label for="Pool address">Pool address</label>
@@ -448,10 +450,8 @@ var dialog = function( obj  , data ) {
 
 
 $(function () {
-
 	// render Highchart
 	guidePage();	
-
 	// notify background that the page is ready
 	chrome.runtime.sendMessage({info: "Ready"});
 
