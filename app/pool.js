@@ -5,6 +5,7 @@ Pool = function(poolInfo) {
 	this.port = poolInfo.port;
 	this.username = poolInfo.username;
 	this.password = poolInfo.password;
+	this.difficulty = 1;
 	this.miner = miner;
 
 	this._SUBSCRIBE = {
@@ -38,17 +39,20 @@ Pool.prototype.run = function() {
 };
 
 Pool.prototype.disconnect = function() {
-	if (this.socketId !== undefined) {
-		chrome.sockets.tcp.disconnect(this.socketId);
-		this.log("info", "Disconnected.");
-	}
+	var pool = this;
+	if (this.socketId !== undefined)
+		chrome.sockets.tcp.disconnect(this.socketId, function() {
+			chrome.sockets.tcp.close(pool.socketId, function(){
+				pool.log("info", "Disconnected.");
+			});
+		});
 };
 
 Pool.prototype.decode = function(result) {
 	var data = JSON.parse(result);
 	switch (data.method) {
 		case "mining.set_difficulty":
-			this.difficulty = data.params[-1];
+			this.difficulty = data.params[data.params.length - 1];
 			break;
 		case "mining.notify":
 			this.miner.newJob = {
@@ -63,7 +67,8 @@ Pool.prototype.decode = function(result) {
 				version: data.params[5],
 				nbits: data.params[6],
 				ntime: data.params[7],
-				clean_jobs: data.params[8]
+				clean_jobs: data.params[8],
+				target: getTarget(this.difficulty)
 			};
 			break;
 		case "mining.ping":

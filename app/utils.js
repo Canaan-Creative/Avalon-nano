@@ -8,7 +8,8 @@ var FILTERS = {
 	}, {
 		vendorId: AVALON_VENDOR_ID,
 		productId: AVALON_PRODUCT_ID_MINI
-	}]};
+	}]
+};
 
 var P_DETECT = 0x10;
 var P_SET_VOLT = 0x22;
@@ -101,7 +102,8 @@ var check_version = function(version) {
 		version.slice(0, 6) === '4M1505';
 };
 
-var crc16 = function(arraybuffer) { var data = new Uint8Array(arraybuffer);
+var crc16 = function(arraybuffer) {
+	var data = new Uint8Array(arraybuffer);
 	var crc = 0;
 	var i = 0;
 	var len = data.byteLength;
@@ -188,34 +190,46 @@ var mm_decode = function(pkg) {
 
 	switch (cmd) {
 		case P_ACKDETECT:
+			var dna = ab2hex(data.slice(0, 8));
 			var version = '';
-			for (var c of new Uint8Array(data))
+			for (var c of new Uint8Array(data.slice(8, 23)))
 				version += String.fromCharCode(c);
-			return {type: P_ACKDETECT, version: version};
+			var asicCount = new DataView(data.slice(23, 27)).getUint32(0);
+			return {
+				type: P_ACKDETECT,
+				version: version,
+				dna: dna,
+				asicCount: asicCount,
+			};
 		case P_NONCE:
 			view = new DataView(data);
-			var poolId = view.getUint8(0);
-			var ntime = view.getUint8(1);
-			var jobId = view.getUint16(2, false);
-			var nonce2 = view.getUint32(4, false);
-			var nonce = view.getUint32(8, false) - 0x4000;
-			return {
-				type: P_NONCE,
-				nonce: nonce,
-				nonce2: nonce2,
-				jobId: jobId,
-				poolId: poolId,
-				ntime: ntime
-			};
+			var result = {type: P_NONCE, value: []};
+			for (var i = 0; i < 2; i++) {
+				var chipId = view.getUint8(i * 16 + 6, false);
+				if (chipId === 0xff)
+					continue;
+				var poolId = view.getUint8(i * 16 + 0);
+				var jobId = view.getUint8(i * 16 + 1, false);
+				var nonce2 = view.getUint32(i * 16 + 2, false);
+				var ntime = view.getUint8(i * 16 + 7, false);
+				var nonce = view.getUint32(i * 16 + 8, false) - 0x4000;
+				result.value.push({
+					type: P_NONCE,
+					nonce: nonce,
+					nonce2: nonce2,
+					jobId: jobId,
+					poolId: poolId,
+					ntime: ntime,
+				});
+			}
+			return result;
 		case P_STATUS:
 			var frequency = new DataView(data).getUint32(0, false);
 			return {type: P_STATUS, frequency: frequency};
-		default:
-			return data;
 	}
 };
 
-var gw_pool2raw = function(midstat, data, poolId, jobId, ntime, nonce2) {
+var gw_pool2raw = function(midstat, data, poolId, jobId, nonce2) {
 	var raw = new ArrayBuffer(64);
 	var view = new DataView(raw);
 	var i;
@@ -224,9 +238,8 @@ var gw_pool2raw = function(midstat, data, poolId, jobId, ntime, nonce2) {
 	for (i = 0; i < 32; i++)
 		view.setUint8(31 - i, parseInt(midstat.slice(i * 2, i * 2 + 2), 16));
 	view.setUint8(32, poolId);
-	view.setUint8(33, ntime);
-	view.setUint16(34, jobId, false);
-	view.setUint32(36, nonce2, false);
+	view.setUint8(33, jobId);
+	view.setUint32(34, nonce2, false);
 	for (i = 0; i < 12; i++)
 		view.setUint8(63 - i, parseInt(data.slice(i * 2, i * 2 + 2), 16));
 	return raw;
@@ -238,6 +251,7 @@ var sha256 = function(hex) {
 };
 
 var get_blockheader = function(job, nonce2) {
+	nonce2 = uInt2LeHex(nonce2, job.nonce2_size);
 	var coinbase = job.coinbase1 + job.nonce1 + nonce2 + job.coinbase2;
 	var merkle_root = sha256(sha256(coinbase));
 	for (var branch of job.merkle_branch)
@@ -253,6 +267,39 @@ var get_blockheader = function(job, nonce2) {
 	view.setUint32(18 * 4, parseInt(job.nbits, 16), false);
 
 	return ab2hex(arraybuffer);
+};
+
+var varifyWork = function(job, nonce2, ntime, nonce) {
+	nonce2 = uInt2LeHex(nonce2, job.nonce2_size);
+	var coinbase = job.coinbase1 + job.nonce1 + nonce2 + job.coinbase2;
+	var merkle_root = sha256(sha256(coinbase));
+	for (var branch of job.merkle_branch)
+		merkle_root = sha256(sha256(merkle_root + branch));
+	var arraybuffer = new ArrayBuffer(80);
+	var view = new DataView(arraybuffer);
+	view.setUint32(0, parseInt(job.version, 16), true);
+	for (var i = 0; i < 8; i++) {
+		view.setUint32((i + 1) * 4, parseInt(job.prevhash.slice(i * 8, i * 8 + 8), 16), true);
+		view.setUint32((i + 9) * 4, parseInt(merkle_root.slice(i * 8, i * 8 + 8), 16), false);
+	}
+	view.setUint32(17 * 4, ntime, true);
+	view.setUint32(18 * 4, parseInt(job.nbits, 16), true);
+	view.setUint32(19 * 4, nonce, false);
+
+	var hash = sha256(sha256(ab2hex(arraybuffer)));
+	if (hash.slice(56, 64) !== '00000000')
+		// hard ware error
+		return 2;
+	var targetView = new Uint8Array(job.target);
+	var hashView = new Uint8Array(hex2ab(hash));
+	for (var j = 0; j < 32; j++) {
+		if (hashView[31 - j] > targetView[j])
+			// above target
+			return 1;
+		else if (hashView[31 - j] < targetView[j])
+			return 0;
+	}
+	return 0;
 };
 
 var get_midstate = function(data) {

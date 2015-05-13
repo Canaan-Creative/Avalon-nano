@@ -1,7 +1,6 @@
 var Nano = function(device, miner) {
 	this.device = device;
 	this.miner = miner;
-	this._sendCache = 0;
 	this._enable = false;
 	this.frequency = null;
 };
@@ -37,17 +36,23 @@ Nano.prototype.disconnect = function() {
 };
 
 
-Nano.prototype.run = function(size) {
+Nano.prototype.run = function() {
 	this._enable = true;
+	var size = this.asicCount || 1;
 	var nano = this;
 
 	var polling = mm_encode(
 		P_POLLING, 0, 0x01, 0x01,
 		new ArrayBuffer(32)
 	);
+	var set_volt = mm_encode(
+		P_SET_VOLT, 0, 1, 1,
+		hex2ab("009f")
+	);
+	nano._send(set_volt);
 
 	var i = 0;
-	(function loop() {
+	var loop = function() {
 		var work = nano.miner.getWork;
 		while (work !== undefined) {
 			//nano._send(polling);
@@ -55,14 +60,15 @@ Nano.prototype.run = function(size) {
 			for (var j = 0; j < work.length; j++)
 				nano._send(work[j], j);
 			i++;
-			if (size === i)
+			if (i === size)
 				break;
 			else
 				work = nano.miner.getWork;
 		}
 		if (i < size)
 			setTimeout(loop, 100);
-	})();
+	};
+	setTimeout(loop, 1000);
 };
 
 Nano.prototype.stop = function() {
@@ -109,15 +115,17 @@ Nano.prototype.__defineSetter__("received", function(pkg) {
 	var data = mm_decode(pkg);
 	switch (data.type) {
 		case P_NONCE:
-			this.log("log2", "Nonce:    0x%s", data.nonce.toString(16));
-			this.miner.newNonce = {
-				nanoId: this.id,
-				nonce: data.nonce,
-				nonce2: data.nonce2,
-				jobId: data.jobId,
-				poolId: data.poolId,
-				ntime: data.ntime
-			};
+			for (var p of data.value) {
+				this.log("log2", "Nonce:    0x%s", p.nonce.toString(16));
+				this.miner.newNonce = {
+					nanoId: this.id,
+					nonce: p.nonce,
+					nonce2: p.nonce2,
+					jobId: p.jobId,
+					poolId: p.poolId,
+					ntime: p.ntime,
+				};
+			}
 			break;
 		case P_STATUS:
 			this.log("log2", "Status:   %d MHz", data.frequency);
@@ -131,12 +139,16 @@ Nano.prototype.__defineSetter__("received", function(pkg) {
 			break;
 		case P_ACKDETECT:
 			this.log("log1", "Version:  %s", data.version);
+			this.log("log1", "DNA:      %s", data.dna);
+			this.log("log1", "AsicCount:%s", data.asicCount);
 			this.version = data.version;
+			this.dna = data.dna;
+			this.asicCount = data.asicCount;
 			if (check_version(this.version))
 				this.miner.nanoDetected = {
 					nanoId: this.id,
 					version: this.version,
-					success: true
+					success: true,
 				};
 			else {
 				this.log("info", "Wrong Version.");

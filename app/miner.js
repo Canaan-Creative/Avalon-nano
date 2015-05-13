@@ -25,6 +25,7 @@ var Miner = function() {
 	var miner = this;
 
 	this.scanNano();
+
 	chrome.hid.onDeviceAdded.addListener(function(device) {
 		miner.newNano = {
 			nano: new Nano(device, miner),
@@ -34,7 +35,6 @@ var Miner = function() {
 	chrome.hid.onDeviceRemoved.addListener(function(deviceId) {
 		miner.nanoDeleted = deviceId;
 	});
-
 	chrome.sockets.tcp.onReceive.addListener(function(info) {
 		for (var pool of miner._pools)
 			if (pool !== undefined && info.socketId === pool.socketId) {
@@ -49,7 +49,7 @@ var Miner = function() {
 	this._stop = false;
 	(function loop() {
 		var hashrate = [];
-        var h;
+		var h;
 		for (var i in miner._hashrates) {
 			h = miner._hashrates[i];
 			if (h !== undefined) {
@@ -67,23 +67,23 @@ var Miner = function() {
 				h.pop();
 			}
 		}
-        h = miner._total_hashrate;
-        h.unshift(0);
-        hashrate.push({
-            nanoId: null,
-            hs1h: arraySum(h.slice(1)) / 3600 * 4294967296,
-            hs15m: arraySum(h.slice(1, 901)) / 900 * 4294967296,
-            hs5m: arraySum(h.slice(1, 301)) / 300 * 4294967296,
-            hs1m: arraySum(h.slice(1, 61)) / 60 * 4294967296,
-            hs15s: arraySum(h.slice(1, 16))/ 15 * 4294967296,
-            hs5s: arraySum(h.slice(1, 6)) / 5 * 4294967296,
-            hs1s: h[1] * 4294.967296
-        });
-        h.pop();
-        miner.hashrate = hashrate;
-        if (!miner._stop)
-            setTimeout(loop, 1000);
-    })();
+		h = miner._total_hashrate;
+		h.unshift(0);
+		hashrate.push({
+			nanoId: null,
+			hs1h: arraySum(h.slice(1)) / 3600 * 4294967296,
+			hs15m: arraySum(h.slice(1, 901)) / 900 * 4294967296,
+			hs5m: arraySum(h.slice(1, 301)) / 300 * 4294967296,
+			hs1m: arraySum(h.slice(1, 61)) / 60 * 4294967296,
+			hs15s: arraySum(h.slice(1, 16))/ 15 * 4294967296,
+			hs5s: arraySum(h.slice(1, 6)) / 5 * 4294967296,
+			hs1s: h[1] * 4294.967296
+		});
+		h.pop();
+		miner.hashrate = hashrate;
+		if (!miner._stop)
+			setTimeout(loop, 1000);
+	})();
 };
 
 Miner.prototype.__defineSetter__("newJob", function(job) {
@@ -149,19 +149,32 @@ Miner.prototype.__defineSetter__("poolAuthorized", function(msg) {
 });
 
 Miner.prototype.__defineSetter__("newNonce", function(msg) {
-	// msg: {nanoId, nonce}
+	// msg: {nanoId, nonce, nonce2, jobId, poolId, sub_ntime}
+	if (this._jobs[msg.poolId] === undefined)
+		return;
 	var job = this._jobs[msg.poolId][msg.jobId];
 	if (job === undefined)
 		// Some false nonces without valid jobId during the first several runs.
 		return;
-	this._pools[msg.poolId].submit(
-		job.job_id,
-		uInt2LeHex(msg.nonce2, job.nonce2_size),
-		(msg.ntime + parseInt(job.ntime, 16)).toString(16),
-		uInt2LeHex(msg.nonce, 4)
-	);
-	this._hashrates[msg.nanoId][0]++;
-	this._total_hashrate[0]++;
+	var ntime = msg.ntime + parseInt(job.ntime, 16);
+
+	switch (varifyWork(job, msg.nonce2, ntime, msg.nonce)) {
+		case 2:
+			// hard ware error
+			return;
+		case 0:
+			this._pools[msg.poolId].submit(
+				job.job_id,
+				uInt2LeHex(msg.nonce2, job.nonce2_size),
+				ntime.toString(16),
+				uInt2LeHex(msg.nonce, 4)
+			);
+			/* falls through */
+		case 1:
+			this._hashrates[msg.nanoId][0]++;
+			this._total_hashrate[0]++;
+			return;
+	}
 });
 
 Miner.prototype.__defineSetter__("newStatus", function(msg) {
@@ -178,10 +191,10 @@ Miner.prototype.__defineGetter__("getWork", function() {
 	if (this._active_pool === undefined)
 		return undefined;
 	var work = this._works[this._active_pool].shift();
-	if (this._thread_pause[this._active_pool]
-			&& (this._works[this._active_pool].length < this._WORK_BUFFER_SIZE - 10)) {
-		this._thread[this._active_pool].postMessage("resume");
-		this._thread_pause[this._active_pool] = false;
+	if (this._thread_pause[this._active_pool] &&
+		(this._works[this._active_pool].length < this._WORK_BUFFER_SIZE - 10)) {
+			this._thread[this._active_pool].postMessage("resume");
+			this._thread_pause[this._active_pool] = false;
 	}
 	return work;
 });
