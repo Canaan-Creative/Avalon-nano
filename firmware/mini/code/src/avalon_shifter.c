@@ -63,10 +63,11 @@ int set_voltage(uint16_t vol)
 	if (g_voltage == vol)
 		return 0;
 
-	if (g_voltage == ASIC_0V)
+	if (g_voltage == ASIC_0V) {
+		Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_OE, 1);
 		poweron = 1;
+	}
 
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_OE, 1);
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_STCP, 0);
 
 	shifter_byte(vol & 0xff);
