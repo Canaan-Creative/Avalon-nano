@@ -104,31 +104,43 @@ var nanoList = function(nanoId) {
 	if(enterFlag){
 		deviceTr(nanoId);
 	}else{
-		if(nanoObj.length < 2){
-			$(".detect p img").remove();	
-			var btnTpl = '<div style="text-align:center;"><button type="button" data-type="enter" class="btn btn-default"> Enter </button>  ';
-			if(!poolObj.length)
-				btnTpl +='  <button type="button" data-type="setting-pool" class="btn btn-default"> Setting pool </button>';
-			btnTpl +='</div>';
-			$(".detect p").append(btnTpl);
-
-			$("p").delegate("button","click",function(){
-				enterFlag = true;
-				var _type = $(this).data('type');
-				switch( $(this).data('type') ) {
-					case 'enter':
-						mainPage();
-						break;
-					case 'setting-pool':
-						settingPool();
-						break;
-				}
-			});
-		}	
+		detectDevice();
 	}
-	console.log(nanoObj);
 };
+var detectFlag = false;
+var detectDevice = function() {
+	if(!enterFlag){
+		if(nanoObj.length < 1){
+			$(".detect p").html('<img src="images/device.png">');
+			detectFlag = false;
+		}
+		if(!detectFlag){
+			if(nanoObj.length === 1 ){
+				detectFlag = true;
+				$(".detect p img").remove();	
+				var btnTpl = '<div style="text-align:center;"><button type="button" data-type="enter" class="btn btn-default"> Enter </button>  ';
+				if(!poolObj.length)
+					btnTpl +='  <button type="button" data-type="setting-pool" class="btn btn-default"> Setting pool </button>';
+				btnTpl +='</div>';
+				$(".detect p").append(btnTpl);
 
+				$("p").delegate("button","click",function(){
+					enterFlag = true;
+					var _type = $(this).data('type');
+					switch( $(this).data('type') ) {
+						case 'enter':
+							mainPage();
+							break;
+						case 'setting-pool':
+							settingPool();
+							break;
+					}
+				});
+			}	
+		}
+
+	}
+}
 var poolList = function(data) {
 	if( data !== undefined || data !==null){
 		for (var id in data){
@@ -166,12 +178,12 @@ var guidePage = function( ){
 }
 
 var mainPage = function() {
+	enterFlag = true;
 	var _mainObj = $("#main");
 	_mainObj.addClass('center-img').html(loadingImg);	
 	setTimeout(function(){
 		$("#loadImg").remove();
 		_mainObj.removeClass('center-img');
-		console.log('mainPage');
 		var _tpl = topPart();
 		_tpl += chartPart();
 		_tpl += tablePart(); 
@@ -208,9 +220,6 @@ var bindSaveButton = function(callback) {
 		var Pool_url = Pool_before[0];
 		var Pool_port = parseInt(Pool_before[1] || 3333);
 		var t = $("#poolId").val() =="-1" ? (maxPoolId() !== undefined ? maxPoolId()+1 : 0) : $("#poolId").val();
-		console.log('poolId :' + $("#poolId").val());
-		console.log('max:' + maxPoolId()); 
-		console.log('t:' +  t);
 		chrome.runtime.sendMessage({info: "NewPool", data:{url:Pool_url,port:Pool_port,username:Pool_worker,poolId:t}});
 		if($("#poolId").val()=="-1"){
 			appendPool( t ,{url:Pool_url,port:Pool_port,username:Pool_worker});
@@ -230,11 +239,9 @@ var bindPoolButton = function() {
 	$("td").delegate("button","click",function(){
 		switch( $(this).data('type') ) {
 			case 'edit':
-				console.log('pool edit' + $(this).data('id'));
 				editPool($(this).data('id'));
 				break;
 			case 'remove':
-				console.log('pool remove'+ $(this).data('id'));
 				removePool( $(this).data('id') );
 				break;
 		}
@@ -249,6 +256,15 @@ var removePool = function(poolId) {
 }
 var removeNano = function(nanoId) {
 	$("#nano-tr-id-"+nanoId).remove();
+	var _temp = [];
+	for(var i of nanoObj){
+		if(i === nanoId)	
+			continue;
+		_temp.push(i);
+	}
+	nanoObj = _temp;
+	if(!enterFlag)
+		detectDevice();
 	if($('#device tr').size()===1)
 		$("#device").append('<tr id="device-null"><td colspan="4" align="center" style="color:#cfcfcf;">Insert usb device</td></tr>');
 }
@@ -367,7 +383,6 @@ var tablePart = function() {
 }
 
 var settingPool = function() {
-	console.log('setting Pool');
 	dialog({title:'Setting pool'});
 	bindSaveButton(mainPage);
 
