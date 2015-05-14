@@ -36,7 +36,6 @@
 #include "protocol.h"
 #include "avalon_a3222.h"
 
-
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
@@ -130,8 +129,8 @@ static ErrorCode_t UCOM_int_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event)
 		if ((g_usb.usbRxFlags & (UCOM_RX_BUF_FULL | UCOM_RX_BUF_QUEUED)) == 0) {
 			g_usb.usbRx_count = USBD_API->hw->ReadReqEP(hUsb, HID_EP_OUT, g_usb.usbRx_buff, UCOM_RX_BUF_SZ);
 			if (g_usb.usbRx_count >= AVAM_P_COUNT) {
-					RingBuffer_Insert(&usb_rxrb, g_usb.usbRx_buff);
-					g_usb.usbRx_count -= AVAM_P_COUNT;
+				RingBuffer_Insert(&usb_rxrb, g_usb.usbRx_buff);
+				g_usb.usbRx_count -= AVAM_P_COUNT;
 			}
 			g_usb.usbRxFlags |= UCOM_RX_BUF_QUEUED;
 		}
@@ -223,4 +222,10 @@ uint32_t UCOM_Write(uint8_t *pBuf)
 	}
 
 	return ret;
+}
+
+void UCOM_Flush(void)
+{
+	RingBuffer_Flush(&usb_txrb);
+	RingBuffer_Flush(&usb_rxrb);
 }

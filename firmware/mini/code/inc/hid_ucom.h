@@ -50,6 +50,7 @@ ErrorCode_t UCOM_init(USBD_HANDLE_T hUsb, USB_INTERFACE_DESCRIPTOR *pIntfDesc, U
 uint32_t UCOM_Read_Cnt(void);
 uint32_t UCOM_Read(uint8_t *pBuf);
 uint32_t UCOM_Write(uint8_t *pBuf);
+void UCOM_Flush(void);
 
 #ifdef __cplusplus
 }
