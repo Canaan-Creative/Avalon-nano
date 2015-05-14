@@ -101,10 +101,14 @@ var updateHashrate = function( hashrates ){
 };
 var nanoList = function(nanoId) {
 	nanoObj.push(nanoId);
+	console.log(nanoObj);
 	if(enterFlag){
 		deviceTr(nanoId);
 	}else{
-		detectDevice();
+		$(".detect p img").attr("src","images/loading-m.gif");                
+		setTimeout(function(){
+			detectDevice();
+		},900);
 	}
 };
 var detectFlag = false;
@@ -174,6 +178,7 @@ var guidePage = function( ){
 		setTimeout(function(){
 			$(".detect p img").attr("src","images/device.png");                
 		},500);
+		
 	},500);
 }
 
