@@ -230,7 +230,8 @@ var bindSaveButton = function(callback) {
 		var Pool_before = Pool_address.split(":");
 		var Pool_url = Pool_before[0];
 		var Pool_port = parseInt(Pool_before[1] || 3333);
-		var t = $("#poolId").val() =="-1" ? (maxPoolId() !== undefined ? maxPoolId()+1 : 0) : $("#poolId").val();
+		var t = parseInt($("#poolId").val());
+		t = (t === -1) ? (maxPoolId() !== undefined ? maxPoolId() + 1 : 0) : t;
 		chrome.runtime.sendMessage({info: "NewPool", data:{url:Pool_url,port:Pool_port,username:Pool_worker,poolId:t}});
 		if($("#poolId").val()=="-1"){
 			appendPool( t ,{url:Pool_url,port:Pool_port,username:Pool_worker});
