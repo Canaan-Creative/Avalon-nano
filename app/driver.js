@@ -3,6 +3,7 @@ var Nano = function(device, miner) {
 	this.miner = miner;
 	this._enable = false;
 	this.frequency = null;
+	this.voltage = null;
 	this.powerGood = 0;
 };
 
@@ -144,11 +145,11 @@ Nano.prototype.__defineSetter__("received", function(pkg) {
 			);
 			if (this.powerGood !== data.powerGood)
 				this.powerGood = data.powerGood;
-			if (this.frequency !== data.frequency) {
-				this.frequency = data.frequency;
+			if (this.voltage !== data.voltage) {
+				this.voltage = data.voltage;
 				this.miner.newStatus = {
 					nanoId: this.id,
-					stat: {frequency: data.frequency}
+					stat: {voltage: data.voltage}
 				};
 			}
 			break;
