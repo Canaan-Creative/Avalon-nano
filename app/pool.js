@@ -7,6 +7,8 @@ Pool = function(poolInfo) {
 	this.password = poolInfo.password;
 	this.difficulty = 1;
 	this.miner = miner;
+	this.submitQueue = [];
+	this.submitId = 0;
 
 	this._SUBSCRIBE = {
 		id: 1,
@@ -100,7 +102,6 @@ Pool.prototype.decode = function(result) {
 				}
 				this.miner.poolAuthorized = {poolId: this.id, success: true};
 				this.log("log1", "Authorized.");
-				this.submit_id = 0;
 			} else if (data.id >= 1000){
 				if (data.error) {
 					this.log("warn", "Submission Failed.");
@@ -120,25 +121,40 @@ Pool.prototype.decode = function(result) {
 Pool.prototype.submit = function(jobId, nonce2, ntime, nonce) {
 	var data = {
 		params: [this.username, jobId, nonce2, ntime, nonce],
-		id: 1000 + this.submit_id,
-		method: "mining.submit"
+		id: 1000 + this.submitId,
+		method: "mining.submit",
 	};
-	this.submit_id = (this.submit_id + 1) % 1000;
+	this.submitId = (this.submitId + 1) % 1000;
+	this.submitQueue[this.submitId] = {
+		data: data,
+		retry: 0,
+	};
 	this.upload(data);
 };
 
 Pool.prototype.upload = function(data) {
 	var pool = this;
-	data = JSON.stringify(data);
-	this.log("debug", "Sent:     %s", data);
-	data = str2ab(data + "\n");
-	chrome.sockets.tcp.send(this.socketId, data, function(sendInfo) {
+	var dataStr = JSON.stringify(data);
+	this.log("debug", "Sent:     %s", dataStr);
+	dataStr = str2ab(dataStr + "\n");
+	chrome.sockets.tcp.send(this.socketId, dataStr, function(sendInfo) {
 		if (chrome.runtime.lastError) {
 			// TODO: net::ERR_SOCKET_NOT_CONNECTED
 			//       alert somebody !!!
 			pool.log("error", chrome.runtime.lastError.message);
+			if (data.method === "mining.submit") {
+				var submitId = data.id - 1000;
+				if (++(pool.submitQueue[submitId].retry) < 3)
+					setTimeout(function() {
+						pool.upload(pool.submitQueue[submitId].data);
+					}, 1000);
+				else
+					delete(pool.submitQueue[submitId]);
+			}
 			return;
 		}
+		if (data.method === "mining.submit")
+			delete(pool.submitQueue[data.id - 1000]);
 	});
 };
 
@@ -181,8 +197,6 @@ Pool.prototype.log = function(level) {
 			console.log.apply(console, args);
 			break;
 		case "debug":
-			if (LOG_LIMIT !== 'debug')
-				break;
 			args.unshift("%c[POOL %d] " + arguments[1]);
 			args[1] = POOL_DEBUG_STYLE;
 			args[2] = this.id;

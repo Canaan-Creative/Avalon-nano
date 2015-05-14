@@ -42,6 +42,14 @@ var Miner = function() {
 				return;
 			}
 	});
+	chrome.sockets.tcp.onReceiveError.addListener(function(info) {
+		console.info(`Connection ${info.socketId} Failed.`);
+		for (var pool of miner._pools)
+			if (pool !== undefined && info.socketId === pool.socketId) {
+				pool.run();
+				return;
+			}
+	});
 
 	this._thread = [];
 	this._thread_pause = [];
