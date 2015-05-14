@@ -429,7 +429,7 @@ var dialog = function( obj  , data ) {
 
 	var _address = !!data&&!!data.address ? data.address : '';
 	var _worker = !!data&&!!data.worker ? data.worker : '';
-	var _poolId = (data.poolI!==undefined || data.poolId!==null) ? data.poolId : '-1';
+	var _poolId = (data === undefined || data.poolId === undefined) ? '-1' : data.poolId;
 	neo.content = `<div>
 		<div class="form-group">
 		<label for="Pool address">Pool address</label>
