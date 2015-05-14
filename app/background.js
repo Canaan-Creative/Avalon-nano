@@ -97,13 +97,14 @@ chrome.app.runtime.onLaunched.addListener(function() {
 						url: msg.data.url,
 						port: msg.data.port,
 						username: msg.data.username,
-						password: msg.data.password || "1234"
+						password: msg.data.password || "1234",
 					}, msg.data.poolId);
 					setting[msg.data.poolId] = {
 						url: msg.data.url,
 						port: msg.data.port,
 						username: msg.data.username,
-						password: msg.data.password || "1234"
+						password: msg.data.password || "1234",
+						apiKey: msg.data.apiKey,
 					};
 					chrome.storage.local.set({"pool": setting});
 					break;
