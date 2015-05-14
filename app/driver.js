@@ -66,7 +66,13 @@ Nano.prototype.run = function() {
 				work = nano.miner.getWork;
 		}
 		if (i < size)
-			setTimeout(loop, 100);
+			setTimeout(loop, 20);
+		if (i === size) {
+			i = 0;
+			nano._send(polling);
+			nano._receive();
+			setTimeout(loop, 175);
+		}
 	};
 	setTimeout(loop, 1000);
 };
@@ -92,10 +98,6 @@ Nano.prototype._send = function(pkg, index) {
 			return;
 		}
 		nano.log("debug", "Sent:     0x%s", ab2hex(pkg));
-		if (index === 1)
-			setTimeout(function() {
-				nano.sent = index;
-			}, 175);
 	});
 };
 
