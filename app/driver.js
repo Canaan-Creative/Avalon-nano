@@ -67,7 +67,7 @@ Nano.prototype.run = function() {
 		}
 		if (i < size)
 			setTimeout(loop, 20);
-		if (i === size) {
+		if (i === size && nano._enable) {
 			i = 0;
 			nano._send(polling);
 			nano._receive();
