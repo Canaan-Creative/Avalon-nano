@@ -224,8 +224,15 @@ var mm_decode = function(pkg) {
 			}
 			return result;
 		case P_STATUS:
+			view = new DataView(data);
 			var frequency = new DataView(data).getUint32(0, false);
-			return {type: P_STATUS, frequency: frequency};
+			return {
+				type: P_STATUS,
+				spiSpeed: view.getUint32(0, false),
+				led: view.getUint32(4, false),
+				voltage: voltageDecode(view.getUint32(12, false)),
+				powerGood: view.getUint32(28, false),
+			};
 	}
 };
 
@@ -378,5 +385,20 @@ var getTarget = function(diff) {
 		view.setUint16(i * 2, Math.floor(base / diff));
 		base = (base % diff) << 16;
 	}
+	return arraybuffer;
+};
+
+var voltageDecode = function(raw) {
+	if (raw === 0xff)
+		return 0;
+	return (0x59 - (raw >>> 1)) * 125 + 5000;
+};
+
+var voltageEncode = function(voltage) {
+	if (voltage === 0)
+		return hex2ab("00ff");
+	var arraybuffer = new ArrayBuffer(2);
+	var view = new DataView(arraybuffer);
+	view.setUint16(0, (((0x59 - (voltage - 5000) / 125) & 0xff) << 1 | 1), false);
 	return arraybuffer;
 };

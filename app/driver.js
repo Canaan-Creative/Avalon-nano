@@ -3,6 +3,7 @@ var Nano = function(device, miner) {
 	this.miner = miner;
 	this._enable = false;
 	this.frequency = null;
+	this.powerGood = 0;
 };
 
 Nano.prototype.__defineGetter__("id", function() {
@@ -42,39 +43,44 @@ Nano.prototype.run = function() {
 	var nano = this;
 
 	var polling = mm_encode(
-		P_POLLING, 0, 0x01, 0x01,
+		P_POLLING, 0, 1, 1,
 		new ArrayBuffer(32)
 	);
 	var set_volt = mm_encode(
 		P_SET_VOLT, 0, 1, 1,
-		hex2ab("009f")
+		voltageEncode(6250)
 	);
-	nano._send(set_volt);
 
 	var i = 0;
+	var work;
 	var loop = function() {
-		var work = nano.miner.getWork;
+		work = work || nano.miner.getWork;
 		while (work !== undefined) {
-			//nano._send(polling);
-			//nano._receive();
+			if (nano.powerGood === 0) {
+				nano._send(set_volt);
+				nano._send(polling);
+				nano._receive();
+				setTimeout(loop, 1000);
+				return;
+			}
 			for (var j = 0; j < work.length; j++)
 				nano._send(work[j], j);
-			i++;
-			if (i === size)
+			work = nano.miner.getWork;
+			if (++i === size)
 				break;
-			else
-				work = nano.miner.getWork;
 		}
 		if (i < size)
 			setTimeout(loop, 20);
-		if (i === size && nano._enable) {
+		else if (i === size && nano._enable) {
 			i = 0;
-			nano._send(polling);
-			nano._receive();
+			for (var k = 0; k < size; k++) {
+				nano._send(polling);
+				nano._receive();
+			}
 			setTimeout(loop, 175);
 		}
 	};
-	setTimeout(loop, 1000);
+	loop();
 };
 
 Nano.prototype.stop = function() {
@@ -130,7 +136,14 @@ Nano.prototype.__defineSetter__("received", function(pkg) {
 			}
 			break;
 		case P_STATUS:
-			this.log("log2", "Status:   %d MHz", data.frequency);
+			this.log("log2", "Status:   0x%s, 0x%s, %d, %d",
+				data.spiSpeed.toString(16),
+				data.led.toString(16),
+				data.voltage,
+				data.powerGood
+			);
+			if (this.powerGood !== data.powerGood)
+				this.powerGood = data.powerGood;
 			if (this.frequency !== data.frequency) {
 				this.frequency = data.frequency;
 				this.miner.newStatus = {
