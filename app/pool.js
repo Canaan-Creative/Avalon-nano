@@ -170,33 +170,45 @@ Pool.prototype.log = function(level) {
 	var args = Array.prototype.slice.call(arguments);
 	switch (level) {
 		case "error":
+			if (POOL_LOG_LIMIT > 4)
+				break;
 			args[0] = "[POOL %d] " + arguments[1];
 			args[1] = this.id;
 			console.error.apply(console, args);
 			break;
 		case "warn":
+			if (POOL_LOG_LIMIT > 3)
+				break;
 			args[0] = "[POOL %d] " + arguments[1];
 			args[1] = this.id;
 			console.warn.apply(console, args);
 			break;
 		case "info":
+			if (POOL_LOG_LIMIT > 2)
+				break;
 			args[0] = "[POOL %d] " + arguments[1];
 			args[1] = this.id;
 			console.info.apply(console, args);
 			break;
 		case "log1":
+			if (POOL_LOG_LIMIT > 1)
+				break;
 			args.unshift("%c[POOL %d] " + arguments[1]);
 			args[1] = POOL_LOG1_STYLE;
 			args[2] = this.id;
 			console.log.apply(console, args);
 			break;
 		case "log2":
+			if (POOL_LOG_LIMIT > 1)
+				break;
 			args.unshift("%c[POOL %d] " + arguments[1]);
 			args[1] = POOL_LOG2_STYLE;
 			args[2] = this.id;
 			console.log.apply(console, args);
 			break;
 		case "debug":
+			if (POOL_LOG_LIMIT > 0)
+				break;
 			args.unshift("%c[POOL %d] " + arguments[1]);
 			args[1] = POOL_DEBUG_STYLE;
 			args[2] = this.id;

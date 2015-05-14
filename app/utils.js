@@ -86,6 +86,7 @@ var SHA256_INIT = [
 ];
 
 var NANO_LOG_LIMIT = 0;
+var POOL_LOG_LIMIT = 1;
 var NANO_LOG1_STYLE = 'color: green';
 var NANO_LOG2_STYLE = 'color: blue';
 var NANO_DEBUG_STYLE = 'color: black';
