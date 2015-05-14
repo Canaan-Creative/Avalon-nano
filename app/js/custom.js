@@ -45,7 +45,13 @@ var renderChart = function() {
 			shared: true
 		},
 		credits: {enabled: false},
-		legend: {enabled: false},
+		legend: {
+			enabled: true,
+			layout: 'vertical',
+			align: 'right',
+			verticalAlign: 'top',
+			borderWidth: 0
+		},
 		exporting: {enabled: false},
 		series: (function() {
 			var series = [];
