@@ -44,11 +44,15 @@ __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 #define LED_PG_ON	5 /* led green */
 #define LED_PG_OFF	6
 
+#define STATE_NORMAL	0
+#define STATE_IDLE	1
+
 static uint8_t g_a3222_pkg[AVAM_P_WORKLEN];
 static uint8_t g_reqpkg[AVAM_P_COUNT];
 static uint8_t g_ackpkg[AVAM_P_COUNT];
 static uint32_t g_freq[ASIC_COUNT][3];
 static uint32_t g_ledstat = LED_OFF_ALL;
+static uint8_t g_state = STATE_NORMAL;
 
 static int init_mm_pkg(struct avalon_pkg *pkg, uint8_t type)
 {
@@ -88,6 +92,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	case AVAM_P_DETECT:
 		set_voltage(ASIC_0V);
 		a3222_sw_init();
+		UCOM_Flush();
 
 		memset(g_ackpkg, 0, AVAM_P_COUNT);
 		if (!iap_readserialid(dna))
@@ -265,37 +270,49 @@ int main(void)
 			dfu_proc();
 			usb_reconnect();
 		}
+
 		wdt_feed();
+		switch (g_state) {
+			case STATE_NORMAL:
+				while (UCOM_Read_Cnt()) {
+					memset(g_reqpkg, 0, AVAM_P_COUNT);
+					UCOM_Read(g_reqpkg);
+					process_mm_pkg((struct avalon_pkg*)g_reqpkg);
+				}
 
-		while (UCOM_Read_Cnt()) {
-			memset(g_reqpkg, 0, AVAM_P_COUNT);
-			UCOM_Read(g_reqpkg);
-			process_mm_pkg((struct avalon_pkg*)g_reqpkg);
+				if (timer_istimeout(TIMER_ID1)) {
+					/* Power off the AISC */
+					set_voltage(ASIC_0V);
+
+					val[0] = val[1] = val[2] = 0;
+					for (i = 0; i < ASIC_COUNT; i++) {
+						memcpy(g_freq[i], val, sizeof(uint32_t) * 3);
+						a3222_set_freq(val, i);
+					}
+
+					a3222_sw_init();
+					UCOM_Flush();
+
+					led_ctrl(LED_IDLE);
+					led_ctrl(LED_PG_OFF);
+					g_state = STATE_IDLE;
+					continue;
+				}
+
+				led_ctrl(LED_BUSY);
+				if (read_power_good())
+					led_ctrl(LED_PG_ON);
+				else
+					led_ctrl(LED_PG_OFF);
+
+				a3222_process();
+
+				break;
+			case STATE_IDLE:
+				if (UCOM_Read_Cnt())
+					g_state = STATE_NORMAL;
+				break;
 		}
 
-		if (timer_istimeout(TIMER_ID1)) {
-			/* Power off the AISC */
-			set_voltage(ASIC_0V);
-
-			val[0] = val[1] = val[2] = 0;
-			for (i = 0; i < ASIC_COUNT; i++) {
-				memcpy(g_freq[i], val, sizeof(uint32_t) * 3);
-				a3222_set_freq(val, i);
-			}
-
-			a3222_sw_init();
-
-			led_ctrl(LED_IDLE);
-			led_ctrl(LED_PG_OFF);
-			continue;
-		}
-
-		led_ctrl(LED_BUSY);
-		if (read_power_good())
-			led_ctrl(LED_PG_ON);
-		else
-			led_ctrl(LED_PG_OFF);
-
-		a3222_process();
 	}
 }
