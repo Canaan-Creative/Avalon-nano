@@ -21,7 +21,7 @@ var Miner = function() {
 	this._nanos = [];
 	this._pools = [];
 	this._hashrates = [];
-	this._total_hashrate = Array.apply(null, new Array(3600)).map(Number.prototype.valueOf, 0);
+	this._total_hashrate = Array.apply(null, new Array(3601)).map(Number.prototype.valueOf, 0);
 	var miner = this;
 
 	this.scanNano();
@@ -90,7 +90,7 @@ var Miner = function() {
 		h.pop();
 		miner.hashrate = hashrate;
 		if (!miner._stop)
-			setTimeout(loop, 1000);
+			setTimeout(loop, 2500);
 	})();
 };
 
@@ -116,7 +116,7 @@ Miner.prototype.__defineSetter__("newNano", function(msg) {
 	this.log("info", "New Nano: %d", msg.nanoId);
 	this._nanos[msg.nanoId] = msg.nano;
 	this._hashrates[msg.nanoId] = this._hashrates[msg.nanoId] ||
-		Array.apply(null, new Array(3600)).map(Number.prototype.valueOf, 0);
+		Array.apply(null, new Array(3601)).map(Number.prototype.valueOf, 0);
 	msg.nano.connect();
 
 	this.onNewNano.fire(msg);

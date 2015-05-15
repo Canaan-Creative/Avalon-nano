@@ -18,7 +18,7 @@ var renderChart = function() {
 						var x = (new Date()).getTime();
 						for (var i in series)
 							series[i].addPoint([x, hashrate[i]], true, true);
-					}, 1000);
+					}, 5000);
 				}
 			}
 		},
