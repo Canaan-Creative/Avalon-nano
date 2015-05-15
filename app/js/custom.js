@@ -84,7 +84,7 @@ var getPrice = function() {
 				$("#Price").html(msg.ticker.last);
 			}
 		});
-	}, 1000 * 2);
+	}, 1000 * 5);
 }
 var getPoolHashRate = function() {
 	setInterval(function(){
