@@ -18,7 +18,7 @@ var renderChart = function() {
 						var x = (new Date()).getTime();
 						for (var i in series)
 							series[i].addPoint([x, hashrate[i]], true, true);
-					}, 5000);
+					}, 2500);
 				}
 			}
 		},
@@ -37,8 +37,9 @@ var renderChart = function() {
 				var s = Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.x);
 				s += '<table>';
 				for (var i in this.points)
-					s += '<tr><td><b>' + this.points[i].series.name + '</b>:&nbsp;</td><td>'
-						+ numberShorten(this.points[i].y) + 'Hs</td></tr>';
+					s += '<tr style="color: ' + this.points[i].series.color + '"><td><b>' +
+						this.points[i].series.name + '</b>:&nbsp;</td><td>' +
+						numberShorten(this.points[i].y) + 'Hs</td></tr>';
 				return s + '</table>';
 			},
 			useHTML: true,
