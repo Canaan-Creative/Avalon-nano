@@ -1,17 +1,14 @@
 {
 	"name": "Avalon miner",
-	"version": "0.9",
-	"description": "Chrome Miner for Avalon miners",
+	"version": "1.0",
+	"description": "Chrome BTC Miner for Avalon Devices",
 	"manifest_version": 2,
 	"minimum_chrome_version": "42.0.2311.90",
 	"app": {
 		"background": {
 			"scripts": [
 				"sha256.js",
-				"utils.js",
-				"driver.js",
-				"pool.js",
-				"miner.js",
+				"avalon.js",
 				"background.js"]
 		}
 	},
