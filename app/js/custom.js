@@ -382,7 +382,7 @@ var devicePart = function( data ) {
 var poolPart = function( ) {
 	var _tpl = '<table class="table table-hover" id="pool_info">';
 	_tpl += '<tr>';
-	_tpl += '<th>Pool address</th>';
+	_tpl += '<th>Address</th>';
 	_tpl += '<th>Worker</th>';
 	_tpl += '<th>Status</th>';
 	_tpl += '<th>Operation</th>';
@@ -398,7 +398,7 @@ var poolPart = function( ) {
 		_tpl +='<tr id="pool-null"><td colspan="4" align="center" style="color:#cfcfcf;">Setting pool</td></tr>';
 	}
 	_tpl += '</table>';
-	_tpl += '<div class="row row-pool"><button type="button" class="btn btn-default pull-right pool-add">Add pool</button></div>';
+	_tpl += '<div class="row row-pool"><button type="button" class="btn btn-default pull-right pool-add">Add Pool</button></div>';
 	return _tpl;
 }
 
