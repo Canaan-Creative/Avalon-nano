@@ -1,5 +1,13 @@
 var Nano = function(device, miner) {
 	this.device = device;
+	switch (device.productId) {
+		case AVALON_PRODUCT_ID_NANO:
+			this.deviceType = "Avalon mini";
+			break;
+		case AVALON_PRODUCT_ID_MINI:
+			this.deviceType = "Avalon nano";
+			break;
+	}
 	this.miner = miner;
 	this._enable = false;
 	this.frequency = null;

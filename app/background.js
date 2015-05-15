@@ -6,7 +6,8 @@ var main = function() {
 	miner.onNewNano.addListener(function(msg) {
 		chrome.runtime.sendMessage({
 			info: "NewNano",
-			nanoId: msg.nanoId
+			nanoId: msg.nanoId,
+			deviceType: msg.nano.deviceType,
 		});
 	});
 
