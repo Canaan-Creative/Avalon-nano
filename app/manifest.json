@@ -8,7 +8,10 @@
 		"background": {
 			"scripts": [
 				"sha256.js",
-				"avalon.js",
+				"utils.js",
+				"pool.js",
+				"driver.js",
+				"miner.js",
 				"background.js"]
 		}
 	},

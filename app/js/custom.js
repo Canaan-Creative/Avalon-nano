@@ -324,7 +324,7 @@ var editPool = function(poolId) {
 		"apiKey" : $("#pool-api-key-"+poolId).val(),
 		"poolId" : poolId
 	}
-	dialog({title:'Update pool'} , _editObj);
+	dialog({title:'Update Pool'} , _editObj);
 	bindSaveButton();
 }
 var changePool = function(id , address , worker,apiKey) {
@@ -476,15 +476,15 @@ var dialog = function( obj  , data ) {
 	var _poolId = (data === undefined || data.poolId === undefined) ? '-1' : data.poolId;
 	neo.content = `<div>
 		<div class="form-group">
-		<label for="Pool address">Pool address</label>
+		<label for="Pool address">Address</label>
 		<input type="text" class="form-control" id="address" placeholder="Pool address" value="${_address}">
 		</div>
 		<div class="form-group">
-		<label for="Pool address">Worker</label>
+		<label for="Address">Worker</label>
 		<input type="text" class="form-control" id="worker" placeholder="worker" value="${_worker}">
 		</div>
 		<div class="form-group">
-		<label for="apiKey">apiKey</label>
+		<label for="apiKey">API Key</label>
 		<input type="text" class="form-control" id="apiKey" placeholder="apiKey" value="${_apiKey}">
 		</div>
 		<div class="form-group">
