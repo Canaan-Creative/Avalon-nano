@@ -57,5 +57,5 @@ onmessage = function(e) {
 			thread.nonce2 = (thread.nonce2 + 1) % thread.nonce2_limit;
 		}
 	}
-	setTimeout(loop, 10);
+	setTimeout(loop, 2);
 })();
