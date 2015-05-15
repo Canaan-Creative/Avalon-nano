@@ -132,7 +132,6 @@ var numberShorten = function(num) {
 
 var updateHashrate = function( hashrates ){
 	var h = hashrates[hashrates.length - 1];
-	//hashrate = [h.hs5s, h.hs1m, h.hs1h];
 	hashrate[0] = h.hs5s;
 	hashrate[1] = h.hs1m;
 	hashrate[2] = h.hs1h;
@@ -307,7 +306,7 @@ var removeNano = function(nanoId) {
 	$("#nano-tr-id-"+nanoId).remove();
 	var _temp = [];
 	for(var i of nanoObj){
-		if(i === nanoId)	
+		if(i.nanoId === nanoId)	
 			continue;
 		_temp.push(i);
 	}
