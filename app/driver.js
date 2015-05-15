@@ -230,7 +230,7 @@ Nano.prototype.log = function(level) {
 			console.log.apply(console, args);
 			break;
 		case "log2":
-			if (NANO_LOG_LIMIT > 1)
+			if (NANO_LOG_LIMIT > 0)
 				break;
 			args.unshift("%c[NANO %d] " + arguments[1]);
 			args[1] = NANO_LOG2_STYLE;
