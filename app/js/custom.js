@@ -161,7 +161,7 @@ var detectDevice = function() {
 				$(".detect p img").remove();	
 				var btnTpl = '<div style="text-align:center;"><button type="button" data-type="enter" class="btn btn-default"> Enter </button>  ';
 				if(!poolObj.length)
-					btnTpl +='  <button type="button" data-type="setting-pool" class="btn btn-default"> Setting pool </button>';
+					btnTpl +='  <button type="button" data-type="setting-pool" class="btn btn-default"> Set Pool </button>';
 				btnTpl +='</div>';
 				$(".detect p").append(btnTpl);
 
@@ -207,10 +207,11 @@ var guidePage = function( ){
 				<p>
 					<img src="images/loading-m.gif"/>
 				</p>
-				<h4>To begin,plug your Avalon devices into the USB port of the computer</h4>
-				<h5>if your Avalon devices are not recognized, please contact us by <a href="mailto:service@cannan-creative.com" target="_blank">service@cannan-creative.com</a></h5>
+				<h4>To begin, plug your Avalon devices into the USB port of the computer</h4>
+				<h5>If your Avalon devices are not recognized, please contact us by <a href="mailto:service@cannan-creative.com" target="_blank">service@cannan-creative.com</a></h5>
 			</div>
-			<p>${chrome.runtime.getManifest().name} v${chrome.runtime.getManifest().version}</p>
+			<p>${chrome.runtime.getManifest().name} v${chrome.runtime.getManifest().version}<br />
+			Powered by <a href="http://www.canaan-creative.com" target="_blank">Canaan-Creative</a></p>
 		</div>`;
 		_mainObj.append(guidTpl);
 		setTimeout(function(){
