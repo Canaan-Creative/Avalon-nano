@@ -56,7 +56,7 @@ var renderChart = function() {
 		series: (function() {
 			var series = [];
 			var names = ['5-Secondly', 'Minutely', 'Hourly', 'Pool'];
-			var colors = ['#808080', '#feae1b', '#7B72E9' , '#0066FF'];
+			var colors = ['#808080', '#feae1b', '#00cc99' , '#0066FF'];
 			var data = [];
 			var time = (new Date()).getTime();
 			for (var i = -899; i <= 0; i++) {
@@ -273,6 +273,7 @@ var bindSaveButton = function(callback) {
 		}else{
 			changePool(t , Pool_url+':'+Pool_port , Pool_worker,apiKey);
 		}
+		hashrate[3] = 0;
 		$('#dialogModel').modal('hide');
 		if (callback !== undefined) {
 			poolObj.push({url:Pool_url,port:Pool_port,username:Pool_worker,apiKey:apiKey});
