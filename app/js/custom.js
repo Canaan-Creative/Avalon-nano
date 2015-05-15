@@ -136,11 +136,11 @@ var updateHashrate = function( hashrates ){
 	hashrate[1] = h.hs1m;
 	hashrate[2] = h.hs1h;
 };
-var nanoList = function(nanoId) {
-	nanoObj.push(nanoId);
+var nanoList = function(deviceObj) {
+	nanoObj.push(deviceObj);
 	console.log(nanoObj);
 	if(enterFlag){
-		deviceTr(nanoId);
+		deviceTr(deviceObj);
 	}else{
 		$(".detect p img").attr("src","images/loading-m.gif");                
 		setTimeout(function(){
@@ -207,10 +207,10 @@ var guidePage = function( ){
 				<p>
 					<img src="images/loading-m.gif"/>
 				</p>
-				<h4>To begin,plug your Ledger Wallet into the USB port of the computer</h4>
-				<h5>if your Ledger Wallet is not recognized visit our help center</h5>
+				<h4>To begin,plug your Avalon devices into the USB port of the computer</h4>
+				<h5>if your Avalon devices are not recognized, please contact us by <a href="mailto:service@cannan-creative.com" target="_blank">service@cannan-creative.com</a></h5>
 			</div>
-			<p>Avalon nano chrome 12.01</p>
+			<p>${chrome.runtime.getManifest().name} v${chrome.runtime.getManifest().version}</p>
 		</div>`;
 		_mainObj.append(guidTpl);
 		setTimeout(function(){
@@ -344,7 +344,7 @@ var maxPoolId = function() {
 }
 var topPart = function() {
 	var tpl = `<div class="row top-div">
-		<p>btcPrice : <span id="Price">------<span></p>
+		<p><button class="button button-small">BTC Price : <span id="Price">------<span></button></p>
         </div>`;
 	return tpl;
 }
@@ -371,6 +371,7 @@ var devicePart = function( data ) {
 	var _tpl = '<table class="table table-hover" id="device">';
 	_tpl += '<tr>';
 	_tpl += '<th>Device</th>';
+	_tpl += '<th>ID</th>';
 	_tpl += '<th>Temp</th>';
 	_tpl += '<th>Frequency</th>';
 	_tpl += '<th>Status</th>';
@@ -415,13 +416,16 @@ var poolTr = function(id , data) {
 	_tpl += '</tr>';
 	return _tpl;
 }
-var deviceTr = function(nanoId) {
+var deviceTr = function(deviceObj) {
 	if($("#device-null").html()!==undefined)
 		$("#device-null").remove();
 	var _tpl = '';
+	var nanoId = deviceObj.nanoId;
+	var deviceType = deviceObj.deviceType; 
 	_tpl += '<tr class="active" id="nano-tr-id-' + nanoId + '">';
-	_tpl += '<td id="nano-device-id-' + nanoId + '">nano' + nanoId + '</td>';
-	_tpl += '<td>55</td>';
+	_tpl += '<td>'+ deviceType +'</td>';
+	_tpl += '<td id="nano-device-id-' + nanoId + '">' + nanoId + '</td>';
+	_tpl += '<td>null</td>';
 	_tpl += '<td id="nano-frequency-'+ nanoId +'">0</td>';
 	_tpl += '<td id="nano-status-' + nanoId + '">Normal</td>';
 	_tpl += '</tr>';
@@ -429,8 +433,8 @@ var deviceTr = function(nanoId) {
 }
 var tablePart = function() {
 	var tpl = '<div class="row">';	
-	tpl += panelPart('device' , 'left' , 'Device lists'); 
-	tpl += panelPart('pool' , 'right' , 'Pool lists');
+	tpl += panelPart('device' , 'left' , 'Device List'); 
+	tpl += panelPart('pool' , 'right' , 'Pool List');
 	tpl += '</div>';
 	return tpl;
 }
@@ -520,7 +524,8 @@ $(function () {
 					break;
 				case "NewNano":
 					console.log("NewNano");
-					nanoList(msg.nanoId);
+					nanoList({nanoId:msg.nanoId,deviceType:msg.deviceType});
+					console.log(msg);
 					break;
 				case "NanoDeleted":
 					console.log("NanoDeleted");
