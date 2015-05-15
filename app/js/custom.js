@@ -1,4 +1,4 @@
-var hashrate = [0, 0, 0];
+var hashrate = [0, 0, 0, 0];
 var enterFlag = false;
 var poolObj = [];
 var nanoObj = [];
@@ -55,8 +55,8 @@ var renderChart = function() {
 		exporting: {enabled: false},
 		series: (function() {
 			var series = [];
-			var names = ['5-Secondly', 'Minutely', 'Hourly'];
-			var colors = ['#808080', '#feae1b', '#7B72E9'];
+			var names = ['5-Secondly', 'Minutely', 'Hourly', 'Pool'];
+			var colors = ['#808080', '#feae1b', '#7B72E9' , '#0066FF'];
 			var data = [];
 			var time = (new Date()).getTime();
 			for (var i = -899; i <= 0; i++) {
@@ -75,17 +75,45 @@ var renderChart = function() {
 		})()
 	});
 };
-/*
-setInterval(function(){
-        $.ajax({
-                url : 'https://data.btcchina.com/data/ticker?maket=all',
-                success : function(msg){
-                        $("#btc-price").html(msg.ticker.last);
-                }
-        });
-}, 1000 * 2);
-*/
 
+var getPrice = function() {
+	setInterval(function(){
+		$.ajax({
+			url : 'https://data.btcchina.com/data/ticker?maket=all',
+			success : function(msg){
+				$("#Price").html(msg.ticker.last);
+			}
+		});
+	}, 1000 * 2);
+}
+var getPoolHashRate = function() {
+	setInterval(function(){
+		var poolId = $("#pool_info tr:eq(1)").data('id');	
+		if(poolId !== undefined){
+			var address = $("#pool-address-"+poolId).html(); 
+			var worker = $("#pool-worker-"+poolId).html(); 
+			var apiKey = $("#pool-api-key-"+poolId).val(); 
+
+			if(address.indexOf('btcchina') > 0){
+				var url = "https://pool.btcchina.com/api?api_key="+apiKey;
+				$.ajax({
+					url : url,
+ 					contentType : "application/json; charset=UTF-8",
+					dataType : "json",
+					success : function(msg){
+						var workers = msg.user.workers;
+						if(workers !== undefined){
+							for(var data of workers){
+								if(data.worker_name === worker)
+									hashrate[3] = data.hashrate;
+							}
+						}
+					}
+				});
+			}
+		}
+	} , 5000);
+}
 var numberShorten = function(num) {
 	var prefix = [
 		{prefix: 'E', base: 1000000000000000000},
@@ -103,7 +131,10 @@ var numberShorten = function(num) {
 
 var updateHashrate = function( hashrates ){
 	var h = hashrates[hashrates.length - 1];
-	hashrate = [h.hs5s, h.hs1m, h.hs1h];
+	//hashrate = [h.hs5s, h.hs1m, h.hs1h];
+	hashrate[0] = h.hs5s;
+	hashrate[1] = h.hs1m;
+	hashrate[2] = h.hs1h;
 };
 var nanoList = function(nanoId) {
 	nanoObj.push(nanoId);
@@ -152,6 +183,7 @@ var detectDevice = function() {
 	}
 }
 var poolList = function(data) {
+	console.log(data);
 	if( data !== undefined || data !==null){
 		for (var id in data){
 			if (data[id] !== undefined && data[id] !== null)
@@ -204,6 +236,8 @@ var mainPage = function() {
 		bindPoolButton();
 		loopNano();
 	},500);
+	getPrice();
+	getPoolHashRate();
 }
 var loopNano = function() {
 	for(var i of nanoObj)
@@ -219,6 +253,7 @@ var bindSaveButton = function(callback) {
 	$(".form-group").delegate("button" , "click" , function(){
 		var Pool_address = $("#address").val();
 		var Pool_worker = $("#worker").val();
+		var apiKey = $("#apiKey").val();
 		if(!Pool_address.length || !Pool_worker){
 			$("#message").html('Pool address or Worker is null').css("color","red");
 			return;
@@ -232,15 +267,15 @@ var bindSaveButton = function(callback) {
 		var Pool_port = parseInt(Pool_before[1] || 3333);
 		var t = parseInt($("#poolId").val());
 		t = (t === -1) ? (maxPoolId() !== undefined ? maxPoolId() + 1 : 0) : t;
-		chrome.runtime.sendMessage({info: "NewPool", data:{url:Pool_url,port:Pool_port,username:Pool_worker,poolId:t}});
+		chrome.runtime.sendMessage({info: "NewPool", data:{url:Pool_url,port:Pool_port,username:Pool_worker,poolId:t,apiKey:apiKey}});
 		if($("#poolId").val()=="-1"){
-			appendPool( t ,{url:Pool_url,port:Pool_port,username:Pool_worker});
+			appendPool( t ,{url:Pool_url,port:Pool_port,username:Pool_worker,apiKey:apiKey});
 		}else{
-			changePool(t , Pool_url+':'+Pool_port , Pool_worker);
+			changePool(t , Pool_url+':'+Pool_port , Pool_worker,apiKey);
 		}
 		$('#dialogModel').modal('hide');
 		if (callback !== undefined) {
-			poolObj.push({url:Pool_url,port:Pool_port,username:Pool_worker});
+			poolObj.push({url:Pool_url,port:Pool_port,username:Pool_worker,apiKey:apiKey});
 			callback();
 		}
 	});
@@ -285,14 +320,16 @@ var editPool = function(poolId) {
 	var _editObj = {
 		"address": $("#pool-address-"+poolId).html(),
 		"worker" : $("#pool-worker-"+poolId).html(),
+		"apiKey" : $("#pool-api-key-"+poolId).val(),
 		"poolId" : poolId
 	}
 	dialog({title:'Update pool'} , _editObj);
 	bindSaveButton();
 }
-var changePool = function(id , address , worker) {
+var changePool = function(id , address , worker,apiKey) {
 	$("#pool-address-" + id).html(address);
 	$("#pool-worker-" + id).html(worker);
+	$("#pool-api-key-"+id).val(apiKey);	
 }
 
 var appendPool =  function(id , data){
@@ -306,7 +343,7 @@ var maxPoolId = function() {
 }
 var topPart = function() {
 	var tpl = `<div class="row top-div">
-		<p>btcPrice : 1459.23</p>
+		<p>btcPrice : <span id="Price">------<span></p>
         </div>`;
 	return tpl;
 }
@@ -373,6 +410,7 @@ var poolTr = function(id , data) {
 	_tpl += ' <button class="btn btn-default btn-xs" data-id="' + id + '" data-type="edit">Edit</button>';
 	_tpl += ' <button class="btn btn-default btn-xs" data-id="' + id + '" data-type="remove">Remove</button>';
 	_tpl += '</td>';
+	_tpl += '<input type="hidden" id="pool-api-key-'+id+'" value="'+data.apiKey+'"/>';
 	_tpl += '</tr>';
 	return _tpl;
 }
@@ -429,6 +467,7 @@ var dialog = function( obj  , data ) {
 
 	var _address = !!data&&!!data.address ? data.address : '';
 	var _worker = !!data&&!!data.worker ? data.worker : '';
+	var _apiKey = !!data&&!!data.apiKey ? data.apiKey : '';
 	var _poolId = (data === undefined || data.poolId === undefined) ? '-1' : data.poolId;
 	neo.content = `<div>
 		<div class="form-group">
@@ -438,6 +477,10 @@ var dialog = function( obj  , data ) {
 		<div class="form-group">
 		<label for="Pool address">Worker</label>
 		<input type="text" class="form-control" id="worker" placeholder="worker" value="${_worker}">
+		</div>
+		<div class="form-group">
+		<label for="apiKey">apiKey</label>
+		<input type="text" class="form-control" id="apiKey" placeholder="apiKey" value="${_apiKey}">
 		</div>
 		<div class="form-group">
 		<input type="hidden" id="poolId" value="${_poolId}" />
