@@ -1,15 +1,18 @@
 /*
-===============================================================================
- Name        : avalon_usb.c
- Author      : Mikeqin
- Version     : 0.1
- Copyright   : GPL
- Description : avalon_usb api
-===============================================================================
-*/
+ * @brief
+ *
+ * @note
+ * Author: Mikeqin Fengling.Qin@gmail.com
+ *
+ * @par
+ * This is free and unencumbered software released into the public domain.
+ * For details see the UNLICENSE file at the root of the source tree.
+ */
+
 #include <string.h>
-#include "avalon_api.h"
+#include "board.h"
 #include "app_usbd_cfg.h"
+#include "avalon_usb.h"
 #include "hid_uart.h"
 
 extern const  USBD_HW_API_T hw_api;
@@ -51,42 +54,14 @@ void USB_IRQHandler(void)
 	USBD_API->hw->ISR(g_hUsb);
 }
 
-/* Find the address of interface descriptor for given class type. */
-USB_INTERFACE_DESCRIPTOR *find_IntfDesc(const uint8_t *pDesc, uint32_t intfClass)
+void usb_init(void)
 {
-	USB_COMMON_DESCRIPTOR *pD;
-	USB_INTERFACE_DESCRIPTOR *pIntfDesc = 0;
-	uint32_t next_desc_adr;
-
-	pD = (USB_COMMON_DESCRIPTOR *) pDesc;
-	next_desc_adr = (uint32_t) pDesc;
-
-	while (pD->bLength) {
-		/* is it interface descriptor */
-		if (pD->bDescriptorType == USB_INTERFACE_DESCRIPTOR_TYPE) {
-
-			pIntfDesc = (USB_INTERFACE_DESCRIPTOR *) pD;
-			/* did we find the right interface descriptor */
-			if (pIntfDesc->bInterfaceClass == intfClass) {
-				break;
-			}
-		}
-		pIntfDesc = 0;
-		next_desc_adr = (uint32_t) pD + pD->bLength;
-		pD = (USB_COMMON_DESCRIPTOR *) next_desc_adr;
-	}
-
-	return pIntfDesc;
-}
-
-void AVALON_USB_Init(void)
-{
-	static Bool bUsbInit = FALSE;
+	static bool usbinit = false;
 	USBD_API_INIT_PARAM_T usb_param;
 	USB_CORE_DESCS_T desc;
 	ErrorCode_t ret = LPC_OK;
 
-	if(bUsbInit)
+	if(usbinit)
 		return;
 
 	usb_pin_clk_init();
@@ -113,7 +88,7 @@ void AVALON_USB_Init(void)
 	if (ret == LPC_OK) {
 
 		/* Init UCOM - USB to UART bridge interface */
-		ret = UCOM_init(g_hUsb, (USB_INTERFACE_DESCRIPTOR *) &USB_FsConfigDescriptor[sizeof(USB_CONFIGURATION_DESCRIPTOR)], &usb_param);
+		ret = hid_init(g_hUsb, (USB_INTERFACE_DESCRIPTOR *) &USB_FsConfigDescriptor[sizeof(USB_CONFIGURATION_DESCRIPTOR)], &usb_param);
 		if (ret == LPC_OK) {
 			/* Make sure USB and UART IRQ priorities are same for this example */
 			NVIC_SetPriority(USB0_IRQn, 1);
@@ -124,27 +99,6 @@ void AVALON_USB_Init(void)
 		}
 	}
 
-	bUsbInit = TRUE;
-}
-/* Sends a character on the USB */
-void AVALON_USB_PutChar(char ch)
-{
-	UCOM_Write((uint8_t*)&ch,1);
+	usbinit = true;
 }
 
-/* Outputs a string on the debug USB */
-void AVALON_USB_PutSTR(char *str)
-{
-	UCOM_Write((uint8_t*)str,strlen(str));
-}
-
-void AVALON_USB_Test(void)
-{
-	AVALON_USB_Init();
-
-	AVALON_USB_PutSTR("AVALON_USB_Test Start\n");
-	AVALON_USB_PutSTR("hello");
-	AVALON_USB_PutChar('V');
-	AVALON_USB_PutChar('\n');
-	AVALON_USB_PutSTR("AVALON_USB_Test End\n");
-}

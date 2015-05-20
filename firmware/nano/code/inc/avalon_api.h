@@ -43,22 +43,6 @@ extern "C"
 #define A3233_NONCE_LEN     4
 #define ICA_TASK_LEN        64
 
-#define AVALON_LED_GREEN 	0xff00
-#define AVALON_LED_RED		0xff0000
-#define AVALON_LED_BLUE		0xff
-#define AVALON_LED_BLACK	0
-#define AVALON_LED_WHITE	0xffffff
-
-typedef void (*TMRPROC)(void);
-
-typedef enum {
-	AVALON_TMR_ID1,
-	AVALON_TMR_ID2,
-	AVALON_TMR_ID3,
-	AVALON_TMR_ID4,
-	AVALON_TMR_MAX
-} AVALON_TMR_e;
-
 typedef enum {
 	AVALON_PWM_GREEN,
 	AVALON_PWM_BLUE,

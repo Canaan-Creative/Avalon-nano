@@ -1,126 +1,155 @@
 /*
- ===============================================================================
- Name        : avalon_iic.c
- Author      : Mikeqin
- Version     : 0.1
- Copyright   : GPL
- Description : avalon iic api
- Note: Chip IIC cann't work sometimes,It may be conflict with the usb.
- ===============================================================================
+ * @brief
+ *
+ * @note
+ * Author: Mikeqin Fengling.Qin@gmail.com
+ *
+ * @par
+ * This is free and unencumbered software released into the public domain.
+ * For details see the UNLICENSE file at the root of the source tree.
  */
 
-#include "chip.h"
-#include "avalon_api.h"
+#include "board.h"
+#include "avalon_timer.h"
+#include "avalon_iic.h"
 
-//write:0x92, read:0x93
-#define I2C_NOP 2 //even only
-#define I2C_ADDR_W 0x92
-#define I2C_ADDR_R 0x93
+/* PIO0_4 as scl, PIO0_5 as sda */
+/* write addr: 0x92, read addr: 0x93 */
+#define TMP102_ADDR_W 0x92
+#define TMP102_ADDR_R 0x93
+#define TMP102_TIMER	TIMER_ID4
+#define TIMER_INTERVAL	1000
 
-static void I2c_Start(){
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, TRUE);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, TRUE);
-	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, FALSE);
-	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, FALSE);
-	AVALON_Delay(I2C_NOP);
+static void i2c_nop(void)
+{
+	__NOP();
+	__NOP();
 }
 
-static void I2c_Stop(){
-	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, TRUE);
-	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, TRUE);
-	AVALON_Delay(I2C_NOP);
+static void i2c_start(void)
+{
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, true);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, true);
+	i2c_nop();
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, false);
+	i2c_nop();
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, false);
+	i2c_nop();
 }
 
-static void I2c_w_byte(unsigned char data){
-	unsigned int i;
-	unsigned char data_buf = data;
-	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, FALSE);
-	AVALON_Delay(I2C_NOP);
+static void i2c_stop()
+{
+	i2c_nop();
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, true);
+	i2c_nop();
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, true);
+	i2c_nop();
+}
 
-	for(i=0; i<8; i++){
-		if((data_buf&0x80) == 0x80)
-			Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, TRUE);
+static void i2c_wbyte(uint8_t data)
+{
+	uint8_t i;
+
+	i2c_nop();
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, false);
+	i2c_nop();
+
+	for (i = 0; i < 8; i++) {
+		if ((data & 0x80) == 0x80)
+			Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, true);
 		else
-			Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, FALSE);
-		AVALON_Delay(I2C_NOP);
-		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, TRUE);
-		AVALON_Delay(I2C_NOP);
-		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, FALSE);
-		data_buf = data_buf << 1;
-		AVALON_Delay(I2C_NOP);
+			Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, false);
+		i2c_nop();
+		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, true);
+		i2c_nop();
+		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, false);
+		data <<= 1;
+		i2c_nop();
 	}
 	//master wait ACK
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, TRUE);
-	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, TRUE);
-	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, FALSE);
-	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, FALSE);
-	AVALON_Delay(I2C_NOP);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, true);
+	i2c_nop();
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, true);
+	i2c_nop();
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, false);
+	i2c_nop();
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, false);
+	i2c_nop();
 }
 
-unsigned char I2c_r_byte(){
-	unsigned int i;
-	unsigned char data_buf = 0;
+static uint8_t i2c_rbyte(void)
+{
+	uint8_t i;
+	uint8_t data_buf = 0;
 
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, FALSE);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, TRUE);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, false);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, true);
 	Chip_GPIO_SetPinDIRInput(LPC_GPIO, 0, 5);
 
-	for(i=0; i<8; i++){
-		AVALON_Delay(I2C_NOP);
-		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, TRUE);
-		AVALON_Delay(I2C_NOP/2);
+	for (i = 0; i < 8; i++) {
+		i2c_nop();
+		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, true);
+		i2c_nop();
 		data_buf = data_buf << 1;
-		data_buf = data_buf | (Chip_GPIO_ReadPortBit(LPC_GPIO, 0, 5)&0x1);
-		AVALON_Delay(I2C_NOP/2);
-		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, FALSE);
-		AVALON_Delay(I2C_NOP);
+		data_buf = data_buf | (Chip_GPIO_ReadPortBit(LPC_GPIO, 0, 5) & 0x1);
+		i2c_nop();
+		Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, false);
+		i2c_nop();
 	}
 
 	//master sent ACK
-	AVALON_Delay(I2C_NOP);
+	i2c_nop();
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 5);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, FALSE);
-	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, TRUE);
-	AVALON_Delay(I2C_NOP);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, FALSE);
-	AVALON_Delay(I2C_NOP);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, false);
+	i2c_nop();
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, true);
+	i2c_nop();
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, false);
+	i2c_nop();
 
 	return data_buf;
 }
 
-void AVALON_I2C_Init(void)
+void i2c_init(void)
 {
 	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 4, IOCON_FUNC0 | IOCON_MODE_INACT | IOCON_STDI2C_EN);
 	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 5, IOCON_FUNC0 | IOCON_MODE_INACT | IOCON_STDI2C_EN);
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 4);
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 5);
 
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, TRUE);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, TRUE);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, true);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, true);
+	timer_set(TMP102_TIMER, TIMER_INTERVAL, NULL);
 }
 
-unsigned int AVALON_I2C_TemperRd(void)
+int i2c_readtemp(void)
 {
-	unsigned int tmp = 0;
-	I2c_Start();
-	I2c_w_byte(I2C_ADDR_W);
-	I2c_w_byte(0x0);//temperature register
-	I2c_Stop();
-	I2c_Start();
-	I2c_w_byte(I2C_ADDR_R);
-	tmp = I2c_r_byte()&0xff;
-	tmp = tmp << 8;
-	tmp = (tmp&0xffffff00) | I2c_r_byte();
-	I2c_Stop();
-	tmp = (((tmp >> 4)&0xfff)/4)*0.25;
-	return tmp;
+	static int last_temp;
+	int temp = 0;
+
+	if (!timer_istimeout(TMP102_TIMER))
+		return last_temp;
+
+	i2c_start();
+	i2c_wbyte(TMP102_ADDR_W);
+	i2c_wbyte(0x0);
+	i2c_stop();
+
+	i2c_start();
+	i2c_wbyte(TMP102_ADDR_R);
+	temp = i2c_rbyte();
+	temp = temp << 8;
+	temp = (temp & 0xffffff00) | i2c_rbyte();
+	i2c_stop();
+	temp >>= 4;
+
+	if (temp > 0x7ff) {
+		temp = (~temp + 1) & 0x7ff;
+		temp = -temp;
+	}
+
+	temp >>= 4;
+	last_temp = temp;
+	timer_set(TMP102_TIMER, TIMER_INTERVAL, NULL);
+	return temp;
 }

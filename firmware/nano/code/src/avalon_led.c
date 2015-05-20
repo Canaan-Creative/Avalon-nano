@@ -1,96 +1,116 @@
 /*
-===============================================================================
- Name        : avalon_led.c
- Author      : Mikeqin
- Version     : 0.1
- Copyright   : GPL
- Description : avalon led api
-===============================================================================
-*/
+ * @brief
+ *
+ * @note
+ * Author: Mikeqin Fengling.Qin@gmail.com
+ *
+ * @par
+ * This is free and unencumbered software released into the public domain.
+ * For details see the UNLICENSE file at the root of the source tree.
+ */
 
-#include "avalon_api.h"
+#include "board.h"
+#include "avalon_led.h"
+#include "avalon_timer.h"
 
-#define A3233_TIMER_LED				(AVALON_TMR_ID2)
+#define PIN_LED_RED	15
+#define PIN_LED_GREEN	8
+#define PIN_LED_BLUE	9
 
-static unsigned int blinkcolor;
+#define DUTY_100	(uint32_t)(256)
+#define DUTY_50		(uint32_t)(DUTY_100*0.5)
+#define DUTY_25		(uint32_t)(DUTY_100*0.75)
+#define DUTY_10		(uint32_t)(DUTY_100*0.9)
+#define DUTY_0		(0)
 
-/*make sure timer has init*/
-void AVALON_LED_Init(void)
+#define A3233_TIMER_LED	TIMER_ID3
+
+static uint32_t blinkcolor;
+
+static void led_setduty(uint8_t r_duty, uint8_t g_duty, uint8_t b_duty)
 {
-	AVALON_PWM_Init();
+	Chip_TIMER_ClearMatch(LPC_TIMER16_0, 2);
+	Chip_TIMER_ExtMatchControlSet(LPC_TIMER16_0, 1, TIMER_EXTMATCH_SET, 2);
+	Chip_TIMER_SetMatch(LPC_TIMER16_0, 2, r_duty);
+
+	Chip_TIMER_ClearMatch(LPC_TIMER16_0, 0);
+	Chip_TIMER_ExtMatchControlSet(LPC_TIMER16_0, 1, TIMER_EXTMATCH_SET, 0);
+	Chip_TIMER_SetMatch(LPC_TIMER16_0, 0, g_duty);
+
+	Chip_TIMER_ClearMatch(LPC_TIMER16_0, 1);
+	Chip_TIMER_ExtMatchControlSet(LPC_TIMER16_0, 1, TIMER_EXTMATCH_SET, 1);
+	Chip_TIMER_SetMatch(LPC_TIMER16_0, 1, b_duty);
 }
 
-static void AVALON_LED_PWMSet(unsigned int rgb)
+static void led_set(uint32_t rgb)
 {
-	unsigned char r,g,b;
+	uint8_t r, g, b;
 
 	r = (rgb >> 16) & 0xff;
 	g = (rgb >> 8) & 0xff;
 	b = (rgb & 0xff);
 
-	/*FIXME:PWM set need delay some times?*/
-	AVALON_PWM_Disable();
-	AVALON_PWM_SetDuty(AVALON_PWM_RED, r);
-	AVALON_PWM_SetDuty(AVALON_PWM_GREEN, g);
-	AVALON_PWM_SetDuty(AVALON_PWM_BLUE, b);
-	AVALON_PWM_Enable();
+	/* FIXME:PWM set need delay some times? */
+	Chip_TIMER_Disable(LPC_TIMER16_0);
+	led_setduty(r, g, b);
+
+	/* Prescale 0 */
+	Chip_TIMER_PrescaleSet(LPC_TIMER16_0, 0);
+
+	/* PWM Period 800Hz */
+	Chip_TIMER_SetMatch(LPC_TIMER16_0, 3, DUTY_100);
+	Chip_TIMER_ResetOnMatchEnable(LPC_TIMER16_0, 3);
+
+	/* CT16B0_MAT0/CT16B0_MAT1/CT16B0_MAT2 enable */
+	LPC_TIMER16_0->PWMC = 0x7;
+
+	Chip_TIMER_Enable(LPC_TIMER16_0);
 }
 
-void AVALON_LED_Rgb(unsigned int rgb)
+static void led_blinkcb(void)
 {
-	AVALON_TMR_Kill(A3233_TIMER_LED);
-	AVALON_LED_PWMSet(rgb);
+	static uint8_t open = 0;
+
+	if (open)
+		led_set(LED_BLACK);
+	else
+		led_set(blinkcolor);
+	open = ~open;
 }
 
-static void AVALON_LED_Blinkcb(void)
+void led_init(void)
 {
-	static Bool is_open = FALSE;
+	/* System CLK 48MHz */
+	Chip_TIMER_Init(LPC_TIMER16_0);
+	Chip_TIMER_Disable(LPC_TIMER16_0);
 
-	if (is_open) {
-		AVALON_LED_PWMSet(AVALON_LED_BLACK);
-		is_open = FALSE;
-	} else {
-		AVALON_LED_PWMSet(blinkcolor);
-		is_open = TRUE;
-	}
+	/* CT16B0_MAT0/CT16B0_MAT1/CT16B0_MAT2 init */
+	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, PIN_LED_GREEN, IOCON_FUNC2 | IOCON_MODE_INACT);
+	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, PIN_LED_BLUE, IOCON_FUNC2 | IOCON_MODE_INACT);
+	Chip_IOCON_PinMuxSet(LPC_IOCON, 1, PIN_LED_RED, IOCON_FUNC2 | IOCON_MODE_INACT);
+
+	/* CT16B0_MAT0 LED_GREEN duty:50% */
+	Chip_TIMER_ExtMatchControlSet(LPC_TIMER16_0, 1, TIMER_EXTMATCH_SET, 0);
+	Chip_TIMER_SetMatch(LPC_TIMER16_0, 0, DUTY_0);
+
+	/* CT16B0_MAT1 LED_BLUE duty:25% */
+	Chip_TIMER_ExtMatchControlSet(LPC_TIMER16_0, 1, TIMER_EXTMATCH_SET, 1);
+	Chip_TIMER_SetMatch(LPC_TIMER16_0, 1, DUTY_0);
+
+	/* CT16B0_MAT2 LED_RED duty:10% */
+	Chip_TIMER_ExtMatchControlSet(LPC_TIMER16_0, 1, TIMER_EXTMATCH_SET, 2);
+	Chip_TIMER_SetMatch(LPC_TIMER16_0, 2, DUTY_0);
 }
 
-void AVALON_LED_Blink(unsigned int rgb)
+void led_rgb(unsigned int rgb)
+{
+	timer_kill(A3233_TIMER_LED);
+	led_set(rgb);
+}
+
+void led_blink(unsigned int rgb)
 {
 	blinkcolor = rgb;
-	AVALON_TMR_Set(A3233_TIMER_LED, 500, AVALON_LED_Blinkcb);
+	timer_set(A3233_TIMER_LED, 500, led_blinkcb);
 }
 
-void AVALON_LED_Test(void)
-{
-    /* Initialize GPIO */
-	Chip_GPIO_Init(LPC_GPIO);
-	AVALON_LED_Init();
-
-	/* open all led */
-	AVALON_LED_Rgb(AVALON_LED_WHITE);
-	AVALON_Delay(1000);
-
-	/* close all led */
-	AVALON_LED_Rgb(AVALON_LED_BLACK);
-	AVALON_Delay(1000);
-
-	/* open separate led and close it, r->g->b */
-	AVALON_LED_Rgb(AVALON_LED_RED);
-	AVALON_Delay(1000);
-	AVALON_LED_Rgb(AVALON_LED_BLACK);
-
-	AVALON_LED_Rgb(AVALON_LED_GREEN);
-	AVALON_Delay(1000);
-	AVALON_LED_Rgb(AVALON_LED_BLACK);
-
-	AVALON_LED_Rgb(AVALON_LED_BLUE);
-	AVALON_Delay(1000);
-	AVALON_LED_Rgb(AVALON_LED_BLACK);
-
-	/* all led has been closed */
-	AVALON_Delay(1000);
-
-	AVALON_LED_Blink(AVALON_LED_RED);
-	AVALON_Delay(4000);
-}

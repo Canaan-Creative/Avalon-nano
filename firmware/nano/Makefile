@@ -23,7 +23,7 @@ CFLAGS_WARN = -Wall -Wextra -Wshadow -Wmissing-prototypes \
 	      -Wno-unused-parameter
 
 CFLAGS	+= $(CFLAGS_WARN) \
-	-DAVAU_VERSION='"3U1504-$(GIT_VERSION)$(GIT_STATUS)"' \
+	-DAVAM_VERSION='"3U1504-$(GIT_VERSION)$(GIT_STATUS)"' \
 	-I./code/inc -I./nxplib/lpc_chip_11uxx_lib/inc \
 	-I./nxplib/nxp_lpcxpresso_11u14_board_lib/inc \
 	-I./nxplib/lpc_chip_11uxx_lib/inc/usbd

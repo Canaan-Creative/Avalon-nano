@@ -1,15 +1,17 @@
 /*
-===============================================================================
- Name        : avalon_adc.c
- Author      : Mikeqin
- Version     : 0.1
- Copyright   : GPL
- Description : avalon adc api
-===============================================================================
-*/
-#include "avalon_api.h"
+ * @brief
+ *
+ * @note
+ * Author: Mikeqin Fengling.Qin@gmail.com
+ *
+ * @par
+ * This is free and unencumbered software released into the public domain.
+ * For details see the UNLICENSE file at the root of the source tree.
+ */
+#include "board.h"
+#include "avalon_adc.h"
 
-void AVALON_ADC_Init(void)
+void adc_init(void)
 {
 	ADC_CLOCK_SETUP_T ADCSetup;
 	/*
@@ -25,7 +27,7 @@ void AVALON_ADC_Init(void)
 	Chip_ADC_Init(LPC_ADC, &ADCSetup);
 }
 
-void AVALON_ADC_Rd(uint8_t channel, uint16_t *data)
+void adc_read(uint8_t channel, uint16_t *data)
 {
 	Chip_ADC_EnableChannel(LPC_ADC, (ADC_CHANNEL_T)channel, ENABLE);
 	/* Start A/D conversion */
@@ -36,3 +38,4 @@ void AVALON_ADC_Rd(uint8_t channel, uint16_t *data)
 	Chip_ADC_ReadValue(LPC_ADC, channel, data);
 	Chip_ADC_EnableChannel(LPC_ADC, (ADC_CHANNEL_T)channel, DISABLE);
 }
+

@@ -44,7 +44,7 @@
 /**
  * HID Report Descriptor
  */
-const uint8_t UCOM_ReportDescriptor[] = {
+const uint8_t hid_reportdescriptor[] = {
 	HID_UsagePageVendor(0x00),
 	HID_Usage(0x01),
 	HID_Collection(HID_Application),
@@ -62,7 +62,7 @@ const uint8_t UCOM_ReportDescriptor[] = {
 	HID_Output(HID_Data | HID_Variable | HID_Absolute),
 	HID_EndCollection,
 };
-const uint16_t UCOM_ReportDescSize = sizeof(UCOM_ReportDescriptor);
+const uint16_t hid_reportdescsize = sizeof(hid_reportdescriptor);
 /**
  * USB Standard Device Descriptor
  */
@@ -122,7 +122,7 @@ ALIGNED(4) uint8_t USB_FsConfigDescriptor[] = {
 	0x00,							/* bCountryCode */
 	0x01,							/* bNumDescriptors */
 	HID_REPORT_DESCRIPTOR_TYPE,		/* bDescriptorType */
-	WBVAL(sizeof(UCOM_ReportDescriptor)),	/* wDescriptorLength */
+	WBVAL(sizeof(hid_reportdescriptor)),	/* wDescriptorLength */
 	/* Endpoint, HID Interrupt In */
 	USB_ENDPOINT_DESC_SIZE,			/* bLength */
 	USB_ENDPOINT_DESCRIPTOR_TYPE,	/* bDescriptorType */
@@ -181,8 +181,8 @@ const uint8_t USB_StringDescriptor[] = {
 	'5', 0,
 	'0', 0,
 	'5', 0,
-	'0', 0,
-	'7', 0,
+	'1', 0,
+	'8', 0,
 	/* Index 0x04: Interface 0, Alternate Setting 0 */
 	(3 * 2 + 2),					/* bLength (9 Char + Type + lenght) */
 	USB_STRING_DESCRIPTOR_TYPE,		/* bDescriptorType */
