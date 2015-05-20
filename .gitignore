@@ -1,6 +1,7 @@
 *~
 *.d
 *.o
+.editorconfig
 
 firmware/mini/avalon4_mini.axf
 firmware/mini/avalon4_mini.map
