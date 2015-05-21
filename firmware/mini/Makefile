@@ -15,6 +15,7 @@ SRCS	= $(wildcard ./code/src/*.c)
 include make/defaultc.mk
 
 NXP_PARAMETERS = -g -2 -vendor=NXP -pLPC11U14/201 -wire=winUSB -s50 -flash-driver=LPC11_12_13_32K_4K.cfx
+LPCLINK_FIRM ?= LPCXpressoWIN.enc
 
 GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-7)
 GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
@@ -69,11 +70,11 @@ erase_ulink2:
 	crt_emu_cm_redlink -flash-erase $(NXP_PARAMETERS)
 
 reflash_lpclink: $(FIRMWARE).axf
-	-(dfu-util -d 0x0471:0xdf55 -c 0 -t 2048 -R -D "LPCXpressoWIN.enc" && sleep 1)
+	-(dfu-util -d 0x0471:0xdf55 -c 0 -t 2048 -R -D $(LPCLINK_FIRM) && sleep 1)
 	crt_emu_lpc11_13_nxp -flash-load-exec $< $(NXP_PARAMETERS)
 
 erase_lpclink:
-	-(dfu-util -d 0x0471:0xdf55 -c 0 -t 2048 -R -D "LPCXpressoWIN.enc" && sleep 1)
+	-(dfu-util -d 0x0471:0xdf55 -c 0 -t 2048 -R -D $(LPCLINK_FIRM) && sleep 1)
 	crt_emu_lpc11_13_nxp -flash-erase $(NXP_PARAMETERS)
 
 rungdb:
