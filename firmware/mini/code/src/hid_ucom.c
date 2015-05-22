@@ -34,6 +34,7 @@
 #include "hid_ucom.h"
 
 #include "protocol.h"
+#include "defines.h"
 #include "avalon_a3222.h"
 
 /*****************************************************************************
@@ -113,6 +114,16 @@ static ErrorCode_t UCOM_int_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event)
 		break;
 	case USB_EVT_OUT:
 		g_usb.usbRx_count = USBD_API->hw->ReadEP(hUsb, HID_EP_OUT, g_usb.usbRx_buff);
+#ifdef DEBUG_VERBOSE
+		if (RingBuffer_GetCount(&usb_rxrb) == RX_BUF_CNT) {
+			debug32("E:(%d-%x %x %x %x) usb_rxrb overflow evt out\n", g_usb.usbRx_count,
+					g_usb.usbRx_buff[0],
+					g_usb.usbRx_buff[1],
+					g_usb.usbRx_buff[2],
+					g_usb.usbRx_buff[3]);
+		}
+#endif
+
 		if (g_usb.usbRx_count >= AVAM_P_COUNT) {
 			RingBuffer_Insert(&usb_rxrb, g_usb.usbRx_buff);
 			g_usb.usbRx_count -= AVAM_P_COUNT;
@@ -128,6 +139,10 @@ static ErrorCode_t UCOM_int_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event)
 		/* queue free buffer for RX */
 		if ((g_usb.usbRxFlags & (UCOM_RX_BUF_FULL | UCOM_RX_BUF_QUEUED)) == 0) {
 			g_usb.usbRx_count = USBD_API->hw->ReadReqEP(hUsb, HID_EP_OUT, g_usb.usbRx_buff, UCOM_RX_BUF_SZ);
+#ifdef DEBUG_VERBOSE
+			if (RingBuffer_GetCount(&usb_rxrb) == RX_BUF_CNT)
+				debug32("E: usb_rxrb overflow evt nak\n");
+#endif
 			if (g_usb.usbRx_count >= AVAM_P_COUNT) {
 				RingBuffer_Insert(&usb_rxrb, g_usb.usbRx_buff);
 				g_usb.usbRx_count -= AVAM_P_COUNT;

@@ -84,8 +84,10 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	expected_crc = (pkg->crc[1] & 0xff) | ((pkg->crc[0] & 0xff) << 8);
 	actual_crc = crc16(pkg->data, AVAM_P_DATA_LEN);
 
-	if (expected_crc != actual_crc)
+	if (expected_crc != actual_crc) {
+		debug32("E: crc err\n");
 		return;
+	}
 
 	timer_set(TIMER_ID1, IDLE_TIME);
 	switch (pkg->type) {
@@ -164,6 +166,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		PACK32(pkg->data + 4, &val[1]);
 		PACK32(pkg->data + 8, &val[0]);
 
+		debug32("D: (%d)-F(%x, %x, %x)\n", pkg->opt, val[2], val[1], val[0]);
 		if (!pkg->opt) {
 			for (i = 0; i < ASIC_COUNT; i++) {
 				memcpy(g_freq[i], val, sizeof(uint32_t) * 3);
@@ -205,6 +208,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		break;
 	case AVAM_P_SET_VOLT:
 		val[0] = (pkg->data[0] << 8) | pkg->data[1];
+		debug32("D: V(%x)\n", val[0]);
 		if(set_voltage((uint16_t)val[0])) {
 			a3222_reset();
 			for (i = 0; i < ASIC_COUNT; i++)
@@ -258,12 +262,14 @@ int main(void)
 	shifter_init();
 	timer_init();
 	led_init();
+	uart_init();
 
 	set_voltage(ASIC_0V);
 	wdt_init(3);	/* 3 seconds */
 	wdt_enable();
 	timer_set(TIMER_ID1, IDLE_TIME);
 	led_ctrl(LED_OFF_ALL);
+	debug32("Ver:%s\n", AVAM_VERSION);
 
 	while (42) {
 		if (dfu_sig()) {
@@ -311,6 +317,7 @@ int main(void)
 			case STATE_IDLE:
 				if (UCOM_Read_Cnt())
 					g_state = STATE_NORMAL;
+				__WFI();
 				break;
 		}
 

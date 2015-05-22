@@ -25,6 +25,10 @@ CFLAGS	+= -DAVAM_VERSION='"4M1505-$(GIT_VERSION)$(GIT_STATUS)"' \
 	-I./nxplib/nxp_lpcxpresso_11u14_board_lib/inc \
 	-I./nxplib/lpc_chip_11uxx_lib/inc/usbd
 
+ifeq ($(DEBUG),1)
+CFLAGS += -DDEBUG
+endif
+
 LDCFLAGS += -nostdlib -Xlinker -Map=$(FIRMWARE).map \
 	-Xlinker --gc-sections -mcpu=cortex-m0 -mthumb \
 	-T $(FIRMWARE).ld -lcr_c -lcr_eabihelpers
