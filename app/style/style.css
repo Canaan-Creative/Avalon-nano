@@ -85,8 +85,8 @@ body{
 .top-div{
 	height:40px;
 	line-height:40px;
-	background:#efefef;
-	border-bottom:1px dashed #cfcfcf;
+	background:#f1f1f1;
+	border-bottom:1px solid #d4d4d4;
 }
 .top-div ul li{
 	margin-left:15px;
