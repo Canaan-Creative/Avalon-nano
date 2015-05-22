@@ -76,17 +76,26 @@ var renderChart = function() {
 		})()
 	});
 };
-
 var getPrice = function() {
-	setInterval(function(){
+	setInterval(getRemoteData, 1000 * 5);
+}
+var getRemoteData = function() {
+		var htmlObj;
 		$.ajax({
-			url : 'https://data.btcchina.com/data/ticker?maket=all',
-			success : function(msg){
-				$("#Price").html(msg.ticker.last);
+			url : 'https://bitcoinwisdom.com/',
+			type : "GET",
+			success : function(htmlData){
+				htmlObj = $(htmlData);
+				$("#_huobi").html($("#market_huobibtccny" , htmlObj).html());	
+				$("#_difficulty").html($("#slot_difficulty" , htmlObj).html());
+				$("#_next").html($("#slot_estimated" , htmlObj).html());
+				$("#_hash_rate").html($("#slot_hash_rate" , htmlObj).html());
 			}
 		});
-	}, 1000 * 5);
+		remoteFlag = true;
 }
+
+
 var getPoolHashRate = function() {
 	setInterval(function(){
 		var poolId = $("#pool_info tr:eq(1)").data('id');	
@@ -231,14 +240,32 @@ var mainPage = function() {
 		var _tpl = topPart();
 		_tpl += chartPart();
 		_tpl += tablePart(); 
+		_tpl += bottom();
 		_mainObj.html(_tpl);
 		renderChart();
 		bindPoolAdd();
 		bindPoolButton();
 		loopNano();
+		
 	},500);
+	getRemoteData();
 	getPrice();
 	getPoolHashRate();
+}
+var bottom = function() {
+	var _tpl=`<div class="login_panel" isLogin="">
+		  <div class="panel_center">
+		    <p class="tips">Canaan Creative</p>
+		    <p class="connectBox1">
+			<a title="EHash" href="https://ehash.com" target="_blank" rel="nofollow"><img alt="EHash" src="images/ehash.png"></a>
+			<a title="Canaan Creative" href="http://www.canaan-creative.com" target="_blank" rel="nofollow"><img alt="Canaan Creative" src="images/home.png"></a>
+			<a title="#Avalon" href="http://webchat.freenode.net/?randomnick=1&channels=avalon" target="_blank" rel="nofollow"><img alt="#avalon" src="images/irc.png"></a>
+			<a title="service@canaan-creative.com" href="mailto:service@canaan-creative.com" target="_blank" rel="nofollow"><img alt="service@canaan-creative.com" src="images/email.png"></a>
+
+			 </p>
+		  </div>
+		</div>`;
+	return _tpl;
 }
 var loopNano = function() {
 	for(var i of nanoObj)
@@ -345,8 +372,15 @@ var maxPoolId = function() {
 }
 var topPart = function() {
 	var tpl = `<div class="row top-div">
-		<p><button class="button button-small">BTC Price : <span id="Price">------<span></button></p>
-        </div>`;
+		<ul>
+			<li><p>HUOBI (USD/CNY) : <span id="_huobi">0</span></p></li>
+			<li><p>Difficulty : <span id="_difficulty">0</span></p></li>
+			<li><p>Next : <span id="_next">0</span></p></li>
+			<li><p>Hash Rate : <span id="_hash_rate">0</span></p></li>
+		</ul>
+		<!--<p><button class="button button-small">BTC Price : <span id="Price">------<span></button></p>-->
+        </div>
+	`;
 	return tpl;
 }
 var chartPart = function() {
