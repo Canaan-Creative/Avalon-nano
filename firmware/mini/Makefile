@@ -1,5 +1,6 @@
 #
 # Author: Mikeqin <Fengling.Qin@gmail.com>
+# 	  Xiangfu <xiangfu@canaan-creative.com>
 #
 # This is free and unencumbered software released into the public domain.
 # For details see the UNLICENSE file at the root of the source tree.
@@ -57,7 +58,7 @@ endif
 	$(SIZE) $^
 
 $(FIRMWARE).axf: $(OBJS) lpc_chip_11uxx_lib nxp_lpcxpresso_11u14_board_lib
-	$(CC) -Wl,--start-group $(LDCFLAGS) $(LIBPATH) $(OBJS) $(LDLIBS) -Wl,--end-group -o $(FIRMWARE).axf
+	$(CC) -Wl,--start-group $(LDCFLAGS) $(LIBPATH) $(OBJS) $(LDLIBS) -Wl,--end-group -o $@
 
 lpc_chip_11uxx_lib:
 	make -C nxplib/lpc_chip_11uxx_lib
@@ -65,24 +66,19 @@ lpc_chip_11uxx_lib:
 nxp_lpcxpresso_11u14_board_lib:
 	make -C nxplib/nxp_lpcxpresso_11u14_board_lib
 
-reflash_ulink2: $(FIRMWARE).axf
-	-(killall -s 9 redlinkserv && sleep 1)
-	crt_emu_cm_redlink -flash-load-exec $< $(NXP_PARAMETERS)
+reflash_ulink2: $(FIRMWARE).axf erase_ulink2
+	(while ! (sleep 0.5 && crt_emu_cm_redlink -flash-load-exec $< $(NXP_PARAMETERS)); do : ; done;)
 
 erase_ulink2:
 	-(killall -s 9 redlinkserv && sleep 1)
-	crt_emu_cm_redlink -flash-erase $(NXP_PARAMETERS)
+	(while ! (sleep 0.5 && crt_emu_cm_redlink -flash-erase $(NXP_PARAMETERS)); do : ; done;)
 
-reflash_lpclink: $(FIRMWARE).axf
-	-(dfu-util -d 0x0471:0xdf55 -c 0 -t 2048 -R -D $(LPCLINK_FIRM) && sleep 1)
-	crt_emu_lpc11_13_nxp -flash-load-exec $< $(NXP_PARAMETERS)
+reflash_lpclink: $(FIRMWARE).axf erase_lpclink
+	(while !(sleep 0.5 && crt_emu_lpc11_13_nxp -flash-load-exec $< $(NXP_PARAMETERS)) do : ; done;)
 
 erase_lpclink:
 	-(dfu-util -d 0x0471:0xdf55 -c 0 -t 2048 -R -D $(LPCLINK_FIRM) && sleep 1)
-	crt_emu_lpc11_13_nxp -flash-erase $(NXP_PARAMETERS)
-
-rungdb:
-	@echo "Find the keypoint at https://en.bitcoin.it/wiki/Avalon_nano#How_to_debug_issues_with_gdb_.28Works_on_OSX.29"
+	(while ! (sleep 0.5 && crt_emu_lpc11_13_nxp -flash-erase $(NXP_PARAMETERS)); do : ; done;)
 
 clean:
 	make -C nxplib/lpc_chip_11uxx_lib clean
