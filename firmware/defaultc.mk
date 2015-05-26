@@ -13,6 +13,7 @@ CC	:= $(CROSS_COMPILE)gcc
 LD	:= $(CROSS_COMPILE)ld
 SIZE	:= $(CROSS_COMPILE)size
 AR	:= $(CROSS_COMPILE)ar
+OBJCOPY	:= $(CROSS_COMPILE)objcopy
 
 # ----- Verbosity control -----------------------------------------------------
 

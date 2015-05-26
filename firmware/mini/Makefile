@@ -57,6 +57,7 @@ ifeq "$(OS)" "Darwin"
 else
 	cd bin/$(DATE) && md5sum -b $^ > md5sums
 endif
+	$(OBJCOPY) -O binary $^ $(FIRMWARE).bin
 	$(SIZE) $^
 
 $(FIRMWARE).axf: $(OBJS) lpc_chip_11uxx_lib nxp_lpcxpresso_11u14_board_lib
