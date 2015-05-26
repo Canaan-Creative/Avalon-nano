@@ -12,8 +12,10 @@ FW_RELEASE = RELEASE
 DATE:=$(shell date +%Y-%m-%d)
 OS:=$(shell uname -s)
 
+NXPLIBS_PATH = ../nxplib/
+
 SRCS	= $(wildcard ./code/src/*.c)
-include make/defaultc.mk
+include ../defaultc.mk
 
 NXP_PARAMETERS = -g -2 -vendor=NXP -pLPC11U14/201 -wire=winUSB -s50 -flash-driver=LPC11_12_13_32K_4K.cfx
 LPCLINK_FIRM ?= LPCXpressoWIN.enc
@@ -22,9 +24,9 @@ GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-7)
 GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
 
 CFLAGS	+= -DAVAM_VERSION='"4M1505-$(GIT_VERSION)$(GIT_STATUS)"' \
-	-I./code/inc -I./nxplib/lpc_chip_11uxx_lib/inc \
-	-I./nxplib/nxp_lpcxpresso_11u14_board_lib/inc \
-	-I./nxplib/lpc_chip_11uxx_lib/inc/usbd
+	-I./code/inc -I$(NXPLIBS_PATH)/lpc_chip_11uxx_lib/inc \
+	-I$(NXPLIBS_PATH)/nxp_lpcxpresso_11u14_board_lib/inc \
+	-I$(NXPLIBS_PATH)/lpc_chip_11uxx_lib/inc/usbd
 
 ifeq ($(DEBUG),1)
 CFLAGS += -DDEBUG
@@ -42,8 +44,8 @@ endif
 
 LDLIBS   += -lnxp_lpcxpresso_11u14_board_lib -llpc_chip_11uxx_lib \
 	-lusbd_11uxx_lib
-LIBPATH  += -L./nxplib/lpc_chip_11uxx_lib/libs \
-	-L./nxplib/nxp_lpcxpresso_11u14_board_lib/libs
+LIBPATH  += -L$(NXPLIBS_PATH)/lpc_chip_11uxx_lib/libs \
+	-L$(NXPLIBS_PATH)/nxp_lpcxpresso_11u14_board_lib/libs
 
 .PHONY: reflash_ulink2 erase_ulink2 reflash_lpclink erase_lpclink
 
@@ -61,10 +63,10 @@ $(FIRMWARE).axf: $(OBJS) lpc_chip_11uxx_lib nxp_lpcxpresso_11u14_board_lib
 	$(CC) -Wl,--start-group $(LDCFLAGS) $(LIBPATH) $(OBJS) $(LDLIBS) -Wl,--end-group -o $@
 
 lpc_chip_11uxx_lib:
-	make -C nxplib/lpc_chip_11uxx_lib
+	make -C $(NXPLIBS_PATH)/lpc_chip_11uxx_lib
 
 nxp_lpcxpresso_11u14_board_lib:
-	make -C nxplib/nxp_lpcxpresso_11u14_board_lib
+	make -C $(NXPLIBS_PATH)/nxp_lpcxpresso_11u14_board_lib
 
 reflash_ulink2: $(FIRMWARE).axf erase_ulink2
 	(while ! (sleep 0.5 && crt_emu_cm_redlink -flash-load-exec $< $(NXP_PARAMETERS)); do : ; done;)
@@ -81,6 +83,6 @@ erase_lpclink:
 	(while ! (sleep 0.5 && crt_emu_lpc11_13_nxp -flash-erase $(NXP_PARAMETERS)); do : ; done;)
 
 clean:
-	make -C nxplib/lpc_chip_11uxx_lib clean
-	make -C nxplib/nxp_lpcxpresso_11u14_board_lib clean
+	make -C $(NXPLIBS_PATH)/lpc_chip_11uxx_lib clean
+	make -C $(NXPLIBS_PATH)/nxp_lpcxpresso_11u14_board_lib clean
 	rm -f $(OBJS) $(FIRMWARE).axf $(FIRMWARE).map

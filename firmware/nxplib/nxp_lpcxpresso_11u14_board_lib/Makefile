@@ -5,7 +5,7 @@
 # For details see the UNLICENSE file at the root of the source tree.
 #
 
-include ../../make/defaultc.mk
+include ../../defaultc.mk
 
 INCLUDES	+= -I../lpc_chip_11uxx_lib/inc/
 
