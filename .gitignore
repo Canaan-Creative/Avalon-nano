@@ -6,8 +6,8 @@
 firmware/mini/avalon4_mini.axf
 firmware/mini/avalon4_mini.map
 firmware/mini/bin/
-firmware/mini/nxplib/lpc_chip_11uxx_lib/libs/liblpc_chip_11uxx_lib.a
-firmware/mini/nxplib/nxp_lpcxpresso_11u14_board_lib/libs/
+firmware/nxplib/lpc_chip_11uxx_lib/libs/liblpc_chip_11uxx_lib.a
+firmware/nxplib/nxp_lpcxpresso_11u14_board_lib/libs/
 firmware/nano/avalon_nano.axf
 firmware/nano/avalon_nano.map
 firmware/nano/bin/2015-05-07/
