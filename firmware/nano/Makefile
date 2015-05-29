@@ -6,41 +6,47 @@
 #
 
 FIRMWARE = avalon_nano
+FW_RELEASE = RELEASE
 
 DATE:=$(shell date +%Y-%m-%d)
 OS:=$(shell uname -s)
+
+NXPLIBS_PATH = ../nxplib/
+
+SRCS	= $(wildcard ./code/src/*.c)
+include ../defaultc.mk
+
+NXP_PARAMETERS = -g -2 -vendor=NXP -pLPC11U14/201 -wire=winUSB -s50 -flash-driver=LPC11_12_13_32K_4K.cfx
+LPCLINK_FIRM ?= LPCXpressoWIN.enc
+
 GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-7)
 GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
 
-include make/fwconfig.mk
-include make/platform_lpc11u14.mk
+CFLAGS	+= -DAVAM_VERSION='"3U1505-$(GIT_VERSION)$(GIT_STATUS)"' \
+	-I./code/inc -I$(NXPLIBS_PATH)/lpc_chip_11uxx_lib/inc \
+	-I$(NXPLIBS_PATH)/nxp_lpcxpresso_11u14_board_lib/inc \
+	-I$(NXPLIBS_PATH)/lpc_chip_11uxx_lib/inc/usbd
 
-SRCS	= $(wildcard ./code/src/*.c)
-OBJS	= $(patsubst %.c,%.o,$(SRCS))
-
-CFLAGS_WARN = -Wall -Wextra -Wshadow -Wmissing-prototypes \
-	      -Wmissing-declarations -Wno-format-zero-length \
-	      -Wno-unused-parameter
-
-CFLAGS	+= $(CFLAGS_WARN) \
-	-DAVAM_VERSION='"3U1504-$(GIT_VERSION)$(GIT_STATUS)"' \
-	-I./code/inc -I./nxplib/lpc_chip_11uxx_lib/inc \
-	-I./nxplib/nxp_lpcxpresso_11u14_board_lib/inc \
-	-I./nxplib/lpc_chip_11uxx_lib/inc/usbd
+ifeq ($(DEBUG),1)
+CFLAGS += -DDEBUG
+endif
 
 LDCFLAGS += -nostdlib -Xlinker -Map=$(FIRMWARE).map \
 	-Xlinker --gc-sections -mcpu=cortex-m0 -mthumb \
-	-T $(FIRMWARE).ld
+	-T $(FIRMWARE).ld -lcr_c -lcr_eabihelpers
 
-ifeq "$(SW_VERSION)" "DEBUG"
-LDCFLAGS += -lcr_semihost -lcr_c -lcr_eabihelpers
+ifeq "$(FW_RELEASE)" "DEBUG"
+LDCFLAGS += -lcr_semihost
 else
-LDCFLAGS += -lcr_nohost -lcr_c -lcr_eabihelpers
+LDCFLAGS += -lcr_nohost
 endif
+
 LDLIBS   += -lnxp_lpcxpresso_11u14_board_lib -llpc_chip_11uxx_lib \
 	-lusbd_11uxx_lib
-LIBPATH  += -L./nxplib/lpc_chip_11uxx_lib/libs \
-	-L./nxplib/nxp_lpcxpresso_11u14_board_lib/libs
+LIBPATH  += -L$(NXPLIBS_PATH)/lpc_chip_11uxx_lib/libs \
+	-L$(NXPLIBS_PATH)/nxp_lpcxpresso_11u14_board_lib/libs
+
+.PHONY: reflash_ulink2 erase_ulink2 reflash_lpclink erase_lpclink
 
 all: $(FIRMWARE).axf
 	mkdir -p bin/$(DATE)
@@ -50,35 +56,33 @@ ifeq "$(OS)" "Darwin"
 else
 	cd bin/$(DATE) && md5sum -b $^ > md5sums
 endif
+	$(OBJCOPY) -O binary $^ $(FIRMWARE).bin
 	$(SIZE) $^
 
 $(FIRMWARE).axf: $(OBJS) lpc_chip_11uxx_lib nxp_lpcxpresso_11u14_board_lib
-	$(CC) -Wl,--start-group $(LDCFLAGS) $(LIBPATH) $(OBJS) $(LDLIBS) -Wl,--end-group -o $(FIRMWARE).axf
+	$(CC) -Wl,--start-group $(LDCFLAGS) $(LIBPATH) $(OBJS) $(LDLIBS) -Wl,--end-group -o $@
 
 lpc_chip_11uxx_lib:
-	make -C nxplib/lpc_chip_11uxx_lib
+	make -C $(NXPLIBS_PATH)/lpc_chip_11uxx_lib
 
 nxp_lpcxpresso_11u14_board_lib:
-	make -C nxplib/nxp_lpcxpresso_11u14_board_lib
+	make -C $(NXPLIBS_PATH)/nxp_lpcxpresso_11u14_board_lib
 
-%.o: %.c
-	$(CC) -c -o $@ $< $(CFLAGS) $(PLATFORM_CFLAGS)
+reflash_ulink2: $(FIRMWARE).axf erase_ulink2
+	(while ! (sleep 0.5 && crt_emu_cm_redlink -flash-load-exec $< $(NXP_PARAMETERS)); do : ; done;)
 
-reflash_ulink2: $(FIRMWARE).axf
-	crt_emu_cm_redlink -flash-load-exec $< -g -2 -vendor=NXP -pLPC11U14/201 -wire=winUSB -s50 -flash-driver=LPC11_12_13_32K_4K.cfx
+erase_ulink2:
+	-(killall -s 9 redlinkserv && sleep 1)
+	(while ! (sleep 0.5 && crt_emu_cm_redlink -flash-erase $(NXP_PARAMETERS)); do : ; done;)
 
-reflash_lpclink: $(FIRMWARE).axf
-	-(dfu-util -d 0x0471:0xdf55 -c 0 -t 2048 -R -D "/opt/lpcxpresso_7.3.0_186/lpcxpresso/bin/LPCXpressoWIN.enc" && sleep 1)
-	crt_emu_lpc11_13_nxp -flash-load-exec $< -g -2 -vendor=NXP -pLPC11U14/201 -wire=winUSB -s50 -flash-driver=LPC11_12_13_32K_4K.cfx
+reflash_lpclink: $(FIRMWARE).axf erase_lpclink
+	(while !(sleep 0.5 && crt_emu_lpc11_13_nxp -flash-load-exec $< $(NXP_PARAMETERS)) do : ; done;)
 
-erase:
-	-(dfu-util -d 0x0471:0xdf55 -c 0 -t 2048 -R -D "/opt/lpcxpresso_7.3.0_186/lpcxpresso/bin/LPCXpressoWIN.enc" && sleep 1)
-	crt_emu_lpc11_13_nxp -flash-erase -g -2 -vendor=NXP -pLPC11U14/201 -wire=winUSB -s50 -flash-driver=LPC11_12_13_32K_4K.cfx
-
-rungdb:
-	@echo "Find the keypoint at https://en.bitcoin.it/wiki/Avalon_nano#How_to_debug_issues_with_gdb_.28Works_on_OSX.29"
+erase_lpclink:
+	-(dfu-util -d 0x0471:0xdf55 -c 0 -t 2048 -R -D $(LPCLINK_FIRM) && sleep 1)
+	(while ! (sleep 0.5 && crt_emu_lpc11_13_nxp -flash-erase $(NXP_PARAMETERS)); do : ; done;)
 
 clean:
-	make -C nxplib/lpc_chip_11uxx_lib clean
-	make -C nxplib/nxp_lpcxpresso_11u14_board_lib clean
+	make -C $(NXPLIBS_PATH)/lpc_chip_11uxx_lib clean
+	make -C $(NXPLIBS_PATH)/nxp_lpcxpresso_11u14_board_lib clean
 	rm -f $(OBJS) $(FIRMWARE).axf $(FIRMWARE).map
