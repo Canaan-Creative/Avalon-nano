@@ -14,7 +14,7 @@ OS:=$(shell uname -s)
 NXPLIBS_PATH = ../nxplib/
 
 SRCS	= $(wildcard ./code/src/*.c)
-include ../defaultc.mk
+include mydefaultc.mk
 
 NXP_PARAMETERS = -g -2 -vendor=NXP -pLPC11U14/201 -wire=winUSB -s50 -flash-driver=LPC11_12_13_32K_4K.cfx
 LPCLINK_FIRM ?= LPCXpressoWIN.enc
@@ -85,4 +85,4 @@ erase_lpclink:
 clean:
 	make -C $(NXPLIBS_PATH)/lpc_chip_11uxx_lib clean
 	make -C $(NXPLIBS_PATH)/nxp_lpcxpresso_11u14_board_lib clean
-	rm -f $(OBJS) $(FIRMWARE).axf $(FIRMWARE).map
+	rm -f $(OBJS) $(FIRMWARE).axf $(FIRMWARE).map $(FIRMWARE).bin
