@@ -24,6 +24,7 @@
 #include "crc.h"
 #include "sha2.h"
 #include "defines.h"
+#include "libfunctions.h"
 #include "protocol.h"
 #include "avalon_a3222.h"
 #include "avalon_usb.h"
@@ -146,7 +147,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_NONCE_M);
 		} else {
 			/* P_STATUS_M: spi speed(4) + led(4) + fan(4) + voltage(4) + frequency(12) + power good(4) */
-			val[0] = 1000000;
+			val[0] = a3222_get_spispeed();
 			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET);
 			val[0] = g_ledstat;
 			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET + 4);
@@ -214,6 +215,12 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 			for (i = 0; i < ASIC_COUNT; i++)
 				a3222_set_freq(g_freq[i], i);
 		}
+		break;
+	case AVAM_P_SETM:
+		memcpy(val, pkg->data, 4);
+		val[0] = be32toh(val[0]);
+		debug32("D: S(%d)\n", val[0]);
+		a3222_set_spispeed(val[0]);
 		break;
 	default:
 		break;

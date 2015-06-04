@@ -33,6 +33,7 @@
 static uint8_t g_asic_index;
 static uint8_t g_freqflag;
 static uint32_t g_freq[ASIC_COUNT][3];
+static uint32_t g_spispeed = 1000000;
 
 static uint8_t g_a3222_works[A3222_WORK_SIZE * A3222_WORK_CNT];
 static uint8_t g_a3222_reports[A3222_REPORT_SIZE * A3222_REPORT_CNT];
@@ -61,7 +62,7 @@ static void spi_init(void)
 
 	Chip_SSP_SetFormat(LPC_SSP1, SSP_BITS_8, SSP_FRAMEFORMAT_SPI, SSP_CLOCK_MODE0);
 	Chip_SSP_SetMaster(LPC_SSP1, 1);
-	Chip_SSP_SetBitRate(LPC_SSP1, 1*1000*1000);
+	Chip_SSP_SetBitRate(LPC_SSP1, g_spispeed);
 	Chip_SSP_Enable(LPC_SSP1);
 }
 
@@ -262,3 +263,18 @@ void a3222_get_freq(uint32_t freq[], uint8_t index)
 
 	memcpy(freq, &g_freq[index], sizeof(uint32_t) * 3);
 }
+
+void a3222_set_spispeed(uint32_t speed)
+{
+	if (g_spispeed == speed)
+		return;
+
+	g_spispeed = speed;
+	Chip_SSP_SetBitRate(LPC_SSP1, speed);
+}
+
+uint32_t a3222_get_spispeed(void)
+{
+	return g_spispeed;
+}
+
