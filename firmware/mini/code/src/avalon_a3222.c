@@ -143,7 +143,7 @@ static int a3222_process_spi(uint8_t *spi_txbuf)
 	xf_setup.tx_cnt = 0;
 	ret = Chip_SSP_RWFrames_Blocking(LPC_SSP1, &xf_setup);
 	if (ret == ERROR) {
-		DEBUGOUT("%s-%d: Chip_SSP_RWFrames_Blocking %d failed!\n", __FUNCTION__, __LINE__, ret);
+		debug32("E: Chip_SSP_RWFrames_Blocking\n");
 		return 1;
 	}
 
@@ -194,6 +194,7 @@ int a3222_push_work(uint8_t *pkg)
 	awork[79] = 0;				/* ntime */
 
 	if ((g_freqflag >> g_asic_index) & 1) {
+		debug32("D: C-%d\n", g_asic_index);
 		g_freqflag &= ~(1 << g_asic_index);
 		UNPACK32(g_freq[g_asic_index][0], awork + 80);
 		UNPACK32(g_freq[g_asic_index][1], awork + 84);
