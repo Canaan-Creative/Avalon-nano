@@ -17,6 +17,7 @@
 #include "avalon_a3222.h"
 #include "protocol.h"
 #include "sha2.h"
+#include "libfunctions.h"
 
 #define A3222_WORK_SIZE		(23 * 4)
 #define A3222_WORK_CNT		8
@@ -39,6 +40,7 @@ static uint8_t g_a3222_works[A3222_WORK_SIZE * A3222_WORK_CNT];
 static uint8_t g_a3222_reports[A3222_REPORT_SIZE * A3222_REPORT_CNT];
 static RINGBUFF_T a3222_txrb;
 static RINGBUFF_T a3222_rxrb;
+static uint8_t g_ntime;
 
 static void load_init(void)
 {
@@ -121,7 +123,9 @@ void a3222_roll_work(uint8_t *pkg, int ntime_offset)
 	uint32_t timev;
 
 	PACK32(pkg + 56, &timev);
+	timev = bswap_32(timev);
 	timev += ntime_offset;
+	timev = bswap_32(timev);
 	UNPACK32(timev, pkg + 56);
 }
 
@@ -191,7 +195,8 @@ int a3222_push_work(uint8_t *pkg)
 
 	memcpy(awork + 72, pkg + 32, 6);	 /* id + reserved */
 	awork[78] = g_asic_index;		/* asic */
-	awork[79] = 0;				/* ntime */
+	awork[79] = g_ntime;			/* ntime */
+	debug32("D: ntime %d\n", g_ntime);
 
 	if ((g_freqflag >> g_asic_index) & 1) {
 		debug32("D: C-%d\n", g_asic_index);
@@ -277,5 +282,10 @@ void a3222_set_spispeed(uint32_t speed)
 uint32_t a3222_get_spispeed(void)
 {
 	return g_spispeed;
+}
+
+void a3222_set_ntime(uint8_t ntime)
+{
+	g_ntime = ntime;
 }
 

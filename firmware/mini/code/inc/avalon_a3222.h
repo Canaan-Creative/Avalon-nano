@@ -27,4 +27,5 @@ void a3222_get_freq(uint32_t freq[], uint8_t index);
 void a3222_set_spispeed(uint32_t speed);
 uint32_t a3222_get_spispeed(void);
 
+void a3222_set_ntime(uint8_t ntime);
 #endif /* __AVALON_A3222_H_ */
