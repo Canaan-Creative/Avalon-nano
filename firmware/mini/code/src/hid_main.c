@@ -32,6 +32,7 @@
 #include "avalon_shifter.h"
 #include "avalon_timer.h"
 #include "avalon_led.h"
+#include "avalon_adc.h"
 
 #ifdef __CODE_RED
 __CRP unsigned int CRP_WORD = CRP_NO_ISP;
@@ -155,7 +156,12 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET + 8);
 			val[0] = get_voltage();
 			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET + 12);
-			/* TODO: temp + adc x 2 */
+			adc_read(ADC_CHANNEL_12V, &val[0]);
+			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET + 16);
+			adc_read(ADC_CHANNEL_COPPER, &val[0]);
+			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET + 20);
+			adc_read(ADC_CHANNEL_FAN, &val[0]);
+			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET + 24);
 			val[0] = read_power_good();
 			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET + 28);
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_STATUS_M);
@@ -270,6 +276,7 @@ int main(void)
 	timer_init();
 	led_init();
 	uart_init();
+	adc_init();
 
 	set_voltage(ASIC_0V);
 	wdt_init(3);	/* 3 seconds */
