@@ -24,11 +24,17 @@ front to back:
 front to back: change setting
 	{type: "setting", pool: ..., param: ...}
 
-back to front: new devices
+back to front: new device
 	{
 		type: "device",
 		deviceId: int,
 		deviceType: "MINI" || "NANO",
+	}
+
+back to front: device removed
+	{
+		type: "delete",
+		deviceId: int,
 	}
 
 back to front: pool status

@@ -136,6 +136,7 @@ var prelude = function() {
 				avalon.stop();
 				delete(avalons[idx]);
 				delete(hashrates[idx]);
+				chrome.runtime.sendMessage({type: "delete", deviceId: deviceId});
 				return;
 			}
 		}
