@@ -180,6 +180,7 @@ var detectDevice = function() {
 					switch( $(this).data('type') ) {
 						case 'enter':
 							mainPage();
+							
 							break;
 						case 'setting-pool':
 							settingPool();
@@ -202,7 +203,7 @@ var poolList = function(data) {
 };
 
 var loadingImg = "<img id='loadImg' src='images/loading.gif'/>";
-var guidePage = function( ){
+var guidePage = function( callback ){
 	var _mainObj = $("#main");
 	_mainObj.addClass('center-img').append(loadingImg);	
 	setTimeout(function(){
@@ -225,9 +226,13 @@ var guidePage = function( ){
 		_mainObj.append(guidTpl);
 		setTimeout(function(){
 			$(".detect p img").attr("src","images/device.png");                
+			callback();
 		},500);
-		
 	},500);
+}
+
+var guideCallback = function() {
+	chrome.runtime.sendMessage({type: "ready"});
 }
 
 var mainPage = function() {
@@ -246,11 +251,14 @@ var mainPage = function() {
 		bindPoolAdd();
 		bindPoolButton();
 		loopNano();
+
+		chrome.runtime.sendMessage({type: "start"});
 		
 	},500);
 	getRemoteData();
 	getPrice();
 	getPoolHashRate();
+	
 }
 var bottom = function() {
 	var _tpl=`<div class="login_panel" isLogin="">
@@ -440,7 +448,7 @@ var poolPart = function( ) {
 var poolTr = function(id , data) {
 	var _tpl = '';	
 	_tpl += '<tr data-id="'+ id +'" id="pool-tr-id-' + id + '" class="pool-tr-line">';
-	_tpl += '<td id="pool-address-'+ id +'">' + data.url + ':' + data.port + '</td>';
+	_tpl += '<td id="pool-address-'+ id +'">' + data.address + ':' + data.port + '</td>';
 	_tpl += '<td id="pool-worker-'+ id +'">' + data.username + '</td>';
 	_tpl += '<td>Normal</td>';
 	_tpl += '<td class="op">';
@@ -546,13 +554,13 @@ var dialog = function( obj  , data ) {
 
 $(function () {
 	// render Highchart
-	guidePage();	
+	guidePage(guideCallback);	
 	// notify background that the page is ready
-	chrome.runtime.sendMessage({info: "Ready"});
 
 	chrome.runtime.onMessage.addListener(function(msg, sender) {
 		if (sender.url.indexOf('background') > -1)
-			switch (msg.info) {
+			switch (msg.type) {
+				/*
 				case "PoolInit":
 					console.log("PoolInit");
 					poolList(msg.setting);
@@ -587,6 +595,30 @@ $(function () {
 				case "Hashrate":
 					updateHashrate(msg.hashrate);
 					break;
+				*/
+				case "setting":
+					console.log("PoolInit");
+					console.log(msg.pool);
+					console.log(msg.param);
+					poolList(msg.pool);
+					break;
+				case "device":
+					console.log("NewNano");
+					nanoList({nanoId:msg.deviceId,deviceType:msg.deviceType});
+					console.log(msg);
+					break;
+				case "pool":
+					console.log(msg);
+					break;
+				case "status":
+					console.log(msg);
+					break;
+				case "hashrate":
+					updateHashrate(msg.hashrate);
+					console.log(msg);
+					break;
+				
+					
 			}
 	});
 
