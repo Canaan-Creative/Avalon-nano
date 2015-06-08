@@ -1,61 +1,54 @@
-importScripts('sha256.js', 'utils.js');
+importScripts('sha256.js', 'utils.js', 'driver.js');
 
-var thread = {
-	enable: true,
-	update: false,
-	nonce2: 0
-};
-
-
-thread.newJob = function(job, jobId, poolId) {
-	thread.update = true;
-	thread.enable = true;
-	thread.job = job;
-	thread.jobId = jobId;
-	thread.poolId = poolId;
-	thread.nonce2 = 0;
-	thread.update = false;
-	thread.nonce2_limit = Math.pow(2, thread.job.nonce2_size * 8);
-};
+var enable, loopId;
+var job, jobId, poolId, nonce2;
 
 onmessage = function(e) {
-	switch (e.data) {
+	switch (e.data.info) {
 		case "pause":
-			thread.enable = false;
+			enable = false;
 			break;
+		case "newJob":
+			enable = false;
+			job = e.data.job;
+			jqId = e.data.jqId;
+			poolId = job.poolId;
+			nonce2 = 0;
+			// nonce2Limit = Math.pow(2, e.data.nonce2Size * 8);
+			/* fall through */
 		case "resume":
-			thread.enable = true;
-			break;
-		default:
-			thread.newJob(e.data.job, e.data.jobId, e.data.poolId);
+			if (enable)
+				break;
+			clearTimeout(loopId);
+			enable = true;
+			loop();
 			break;
 	}
 };
 
-(function loop() {
-	if (thread.enable && (!thread.update) && thread.job !== undefined) {
-		if (thread.nonce2 < thread.nonce2_limit) {
-			var blockheader = get_blockheader(thread.job, thread.nonce2);
+var loop = function() {
+	var blockheader = utils.getBlockheader(job, nonce2);
+	var midstate = utils.getMidstate(blockheader);
+	// Pay attention to the difference of jqId and jobId,
+	// the latter is provided by the pool and used only when submitting.
+	var raw = utils.gwPool2raw(
+		midstate,
+		blockheader,
+		poolId,
+		jqId,
+		nonce2
+	);
 
-			var midstate = get_midstate(blockheader);
-			var raw = gw_pool2raw(
-				midstate,
-				blockheader,
-				thread.poolId,
-				thread.jobId,
-				thread.nonce2
-			);
+	var work = [];
+	var cnt = Math.ceil(raw.byteLength / 33);
+	for (var idx = 1; idx < cnt + 1; idx++)
+		work.push(Avalon.pkgEncode(
+			Avalon.P_WORK, 0, idx, cnt,
+			raw.slice((idx - 1) * 32, idx * 32)
+		));
+	postMessage(work);
+	nonce2++;
 
-			var work = [];
-			var cnt = Math.ceil(raw.byteLength / 33);
-			for (var idx = 1; idx < cnt + 1; idx++)
-				work.push(mm_encode(
-					P_WORK, 0, idx, cnt,
-					raw.slice((idx - 1) * 32, idx * 32)
-				));
-			postMessage(work);
-			thread.nonce2 = (thread.nonce2 + 1) % thread.nonce2_limit;
-		}
-	}
-	setTimeout(loop, 2);
-})();
+	if (enable)
+		loopId = setTimeout(loop, 5);
+};

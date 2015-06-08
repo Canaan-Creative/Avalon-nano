@@ -13,3 +13,5 @@ firmware/nano/avalon_nano.map
 firmware/nano/bin/2015-05-07/
 firmware/nano/nxplib/lpc_chip_11uxx_lib/libs/liblpc_chip_11uxx_lib.a
 firmware/nano/nxplib/nxp_lpcxpresso_11u14_board_lib/libs/
+
+app/compiler.jar

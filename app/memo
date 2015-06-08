@@ -1,0 +1,62 @@
+front to back:
+	{type: "ready"}
+
+back to front:
+	{
+		type: "setting",
+		pool: [{address: str, port: int, username: str, password: str || "1234"}],
+		param: {freqSet: [int, int, int], voltSet: int},
+	}
+
+front to back:
+	{type: "start"}
+
+===================================================================================
+front to back: change setting
+	{type: "setting", pool: ..., param: ...}
+
+back to front: new devices
+	{
+		type: "device",
+		deviceId: int,
+		deviceType: "MINI" || "NANO",
+	}
+
+back to front: pool status
+	{type: "pool", poolId: int, info: "Failed" || "Active" || "Inactive"}
+
+back to front: device status
+	{
+		type: "status",
+		deviceId: int,
+		spiSpeed: int,
+		led: int,
+		voltage: float,
+		voltageSource: float,
+		temperatureCu: float,
+		temperatureFan: float,
+		power: int,
+	}
+
+back to front: hashrate
+	[
+		{
+			deviceId: int,
+			hs1h: float,
+			hs15m: float,
+			hs5m: float,
+			hs1m: float,
+			hs15s: float,
+			hs5s: float,
+		},
+		...
+		{
+			deviceId: null, // sum
+			hs1h: float,
+			hs15m: float,
+			hs5m: float,
+			hs1m: float,
+			hs15s: float,
+			hs5s: float,
+		},
+	]
