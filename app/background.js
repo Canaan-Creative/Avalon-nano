@@ -90,17 +90,6 @@ chrome.app.runtime.onLaunched.addListener(function() {
 			break;
 		}
 	});
-/*
-	var pool = new Pool(0, "stratum.btcchina.com", 3333, "archang.apptest", "1234");
-	pool.connect();
-	chrome.sockets.tcp.onReceive.addListener(function(info) {
-		console.log();
-		if (info.socketId === pool.socketId) {
-			pool.receive(info.data);
-			return;
-		}
-	});
-*/
 });
 
 var prelude = function() {
