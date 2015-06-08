@@ -4,7 +4,16 @@ front to back:
 back to front:
 	{
 		type: "setting",
-		pool: [{address: str, port: int, username: str, password: str || "1234"}],
+		pool: [
+			{
+				address: str,
+				port: int,
+				username: str,
+				password: str || "1234",
+				apiKey: str
+			},
+			...
+		],
 		param: {freqSet: [int, int, int], voltSet: int},
 	}
 
