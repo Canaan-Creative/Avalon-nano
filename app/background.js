@@ -117,8 +117,8 @@ var prelude = function() {
 		avalons[id] = new Avalon(device, workQueue, voltSet, freqSet);
 		chrome.runtime.sendMessage({
 			type: "device",
-			avalonId: id,
-			avalonType: avalons[id].deviceType,
+			deviceId: id,
+			deviceType: avalons[id].deviceType,
 		});
 		avalons[id].onDetect.addListener(detectHandler);
 		avalons[id].onNonce.addListener(nonceHandler);

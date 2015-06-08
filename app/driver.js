@@ -52,7 +52,7 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 				return;
 			}
 			utils.log("debug", ["Sent:     0x%s", utils.ab2hex(pkg)],
-			          header, "color: cadetblue");
+				header, "color: cadetblue");
 		});
 	};
 
@@ -63,7 +63,7 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 				return;
 			}
 			utils.log("debug", ["Received: 0x%s", utils.ab2hex(pkg)],
-			          header, "color: mediumpurple");
+				header, "color: mediumpurple");
 			decode(pkg);
 		});
 	};
@@ -128,7 +128,7 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 				};
 				avalon.onNonce.fire(info);
 				utils.log("log", ["Nonce:    0x%s", info.nonce.toString(16)],
-				          header, "color: blue");
+					header, "color: blue");
 			}
 			break;
 		case Avalon.P_STATUS:
