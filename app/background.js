@@ -230,6 +230,9 @@ var detectHandler = function(info) {
 	var dna = info.dna;
 	var version = info.version;
 	var id = info.deviceId;
+	chrome.runtime.sendMessage(
+		{type: "status", devicId: id, version: version, dna: dna}
+	);
 	avalons[id].run();
 };
 
@@ -259,8 +262,9 @@ var nonceHandler = function(info) {
 	}
 };
 
-var statusHandler = function(status) {
-	chrome.runtime.sendMessage(status);
+var statusHandler = function(stats) {
+	stats.type = "status";
+	chrome.runtime.sendMessage(stats);
 };
 
 var scanDevices = function() {

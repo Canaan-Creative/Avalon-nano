@@ -38,6 +38,8 @@ back to front: device status
 	{
 		type: "status",
 		deviceId: int,
+		dna: str,
+		version: str,
 		spiSpeed: int,
 		led: int,
 		voltage: float,
