@@ -8,7 +8,7 @@ var Pool = function(id, url, port, username, password) {
 	var AUTHORIZE = Pool.stratumEncode({
 		id: 2,
 		method: "mining.authorize",
-		params: [username, password],
+		params: [username, password || "1234"],
 	});
 
 	var header = "POOL" + id;
