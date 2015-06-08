@@ -216,6 +216,8 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 	};
 
 	this.setVoltage = function(volt) {
+		if (this.deviceType === "Avalon nano")
+			return;
 		if (volt === avalon.voltageSet)
 			return;
 		SET_VOLT_PKG = Avalon.pkgEncode(
@@ -227,6 +229,8 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 	};
 
 	this.setFrequency = function(freqs) {
+		if (this.deviceType === "Avalon nano")
+			return;
 		if (freqs[0] === freqSet[0] &&
 			freqs[1] === freqSet[1] &&
 			freqs[2] === freqSet[2])
