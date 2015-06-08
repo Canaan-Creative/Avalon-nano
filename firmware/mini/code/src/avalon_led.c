@@ -16,28 +16,27 @@
 #define PIN_LED_GREEN	9
 #define PIN_LED_RED	11
 
-static void led_set(uint32_t rgb)
+static void led_rgb(uint32_t led, uint8_t led_op)
 {
-	uint8_t r, g, b;
+	if (led == LED_RED) {
+		Chip_IOCON_PinMuxSet(LPC_IOCON, 0, PIN_LED_RED, IOCON_FUNC1 | IOCON_DIGMODE_EN);
+		Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_LED_RED, (led_op == LED_ON) ? true : false);
+	}
 
-	r = (rgb >> 16) & 0xff;
-	g = (rgb >> 8) & 0xff;
-	b = (rgb & 0xff);
+	if (led == LED_GREEN) {
+		Chip_IOCON_PinMuxSet(LPC_IOCON, 0, PIN_LED_GREEN, IOCON_FUNC0);
+		Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_LED_GREEN, (led_op == LED_ON) ? true : false);
+	}
 
-	if (r)
-		Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_LED_RED, true);
-	else
-		Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_LED_RED, false);
+	if (led == LED_BLUE) {
+		Chip_IOCON_PinMuxSet(LPC_IOCON, 0, PIN_LED_BLUE, IOCON_FUNC0);
+		Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_LED_BLUE, (led_op == LED_ON) ? true : false);
+	}
+}
 
-	if (g)
-		Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_LED_GREEN, true);
-	else
-		Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_LED_GREEN, false);
-
-	if (b)
-		Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_LED_BLUE, true);
-	else
-		Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_LED_BLUE, false);
+static void led_breath(uint32_t led)
+{
+	/* TODO */
 }
 
 void led_init(void)
@@ -52,13 +51,11 @@ void led_init(void)
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, PIN_LED_RED);
 }
 
-void led_rgb(unsigned int rgb)
+void led_set(unsigned int led, uint8_t led_op)
 {
-	led_set(rgb);
-}
-
-void led_blink(unsigned int rgb)
-{
-	/* TODO: try to use match */
+	if (led_op == LED_BREATH)
+		led_breath(led);
+	else
+		led_rgb(led, led_op);
 }
 

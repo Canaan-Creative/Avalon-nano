@@ -240,27 +240,35 @@ static inline void led_ctrl(uint8_t led_op)
 	switch(led_op) {
 	case LED_OFF_ALL:
 		g_ledstat = 0;
+		led_set(LED_RED, LED_OFF);
+		led_set(LED_GREEN, LED_OFF);
+		led_set(LED_BLUE, LED_OFF);
 		break;
 	case LED_IDLE:
 		g_ledstat |= 0xff;
+		led_set(LED_BLUE, LED_ON);
 		break;
 	case LED_BUSY:
 		g_ledstat &= 0xffff00;
+		led_set(LED_BLUE, LED_OFF);
 		break;
 	case LED_ERR_ON:
 		g_ledstat |= 0xff0000;
+		led_set(LED_RED, LED_ON);
 		break;
 	case LED_ERR_OFF:
 		g_ledstat &= 0xffff;
+		led_set(LED_RED, LED_OFF);
 		break;
 	case LED_PG_ON:
 		g_ledstat |= 0xff00;
+		led_set(LED_GREEN, LED_ON);
 		break;
 	case LED_PG_OFF:
 		g_ledstat &= 0xff00ff;
+		led_set(LED_GREEN, LED_OFF);
 		break;
 	}
-	led_rgb(g_ledstat);
 }
 
 int main(void)
