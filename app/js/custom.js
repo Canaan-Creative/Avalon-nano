@@ -18,7 +18,7 @@ var renderChart = function() {
 						var x = (new Date()).getTime();
 						for (var i in series)
 							series[i].addPoint([x, hashrate[i]], true, true);
-					}, 2500);
+					}, 5000);
 				}
 			}
 		},
@@ -144,6 +144,7 @@ var updateHashrate = function( hashrates ){
 	hashrate[0] = h.hs5s;
 	hashrate[1] = h.hs1m;
 	hashrate[2] = h.hs1h;
+	updateDeviceGHs5s(hashrates[0].deviceId , (hashrates[0].hs5s/1000000000).toFixed(1));
 };
 var nanoList = function(deviceObj) {
 	nanoObj.push(deviceObj);
@@ -243,12 +244,14 @@ var mainPage = function() {
 		_mainObj.removeClass('center-img');
 		var _tpl = topPart();
 		_tpl += chartPart();
+		_tpl += settingPart();
 		_tpl += tablePart(); 
 		_tpl += bottom();
 		_mainObj.html(_tpl);
 		renderChart();
 		bindPoolAdd();
 		bindPoolButton();
+		bindSettingBtn();
 		loopNano();
 		chrome.runtime.sendMessage({type: "start"});
 		
@@ -277,6 +280,25 @@ var loopNano = function() {
 	for(var i of nanoObj)
 		deviceTr(i);
 }
+var bindSettingBtn = function () {
+	$("#setting-table").delegate("button" , "click" , function(){
+		settingDialog({title:"Setting"});
+		bindSettingSave();
+	});
+}
+
+var bindSettingSave = function () {
+	$("#setting-save-div").delegate("button" , "click" , function(){
+		var _volt = parseInt($("#voltage-input").val());
+		var _freq1 = parseInt($("#frequency1-input").val());	
+		var _freq2 = parseInt($("#frequency2-input").val());	
+		var _freq3 = parseInt($("#frequency3-input").val());	
+		var _param = {freqSet:[_freq1,_freq2,_freq3],voltSet:_volt};
+		chrome.runtime.sendMessage({type: "setting", param:_param});
+		console.log( 'volt:' + _volt + '  freq1:' + _freq1 + 'freq2:' + _freq2 + 'freq3:' + _freq3);	
+		$('#dialogModel').modal('hide');
+	});
+}
 var bindPoolAdd = function () {
 	$(".row-pool").delegate("button","click",function(){
 		dialog({title:'Setting pool'}, poolObj);
@@ -286,7 +308,6 @@ var bindPoolAdd = function () {
 
 var bindSaveButton = function(callback) {
 	$("#setting-pool").delegate("button" , "click" , function(){
-		console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
 		var maxLen = 3;
 		var _pool = [];
 		for( var i = 0; i < maxLen ; i++){
@@ -345,7 +366,7 @@ var removeNano = function(nanoId) {
 	if(!enterFlag)
 		detectDevice();
 	if($('#device tr').size()===1)
-		$("#device").append('<tr id="device-null"><td colspan="4" align="center" style="color:#cfcfcf;">Insert usb device</td></tr>');
+		$("#device").append('<tr id="device-null"><td colspan="5" align="center" style="color:#cfcfcf;">Insert usb device</td></tr>');
 }
 
 
@@ -372,7 +393,8 @@ var chartPart = function() {
 var panelPart = function(type , position , title ) {
 	
 	var partTpl = type === 'device' ? devicePart() : (type ==='pool' ? poolPart() : '');
-	tpl = `<div class="col-xs-6 col-md-6 pull-${position}">
+	var col = type === 'device' ? 7 : 5;
+	tpl = `<div class="col-xs-${col} col-md-${col} pull-${position}">
 		<div class="panel panel-default">
 		  <div class="panel-heading">
 		    <h3 class="panel-title">${title}</h3>
@@ -384,6 +406,38 @@ var panelPart = function(type , position , title ) {
 	</div>`;
 	return tpl;
 }
+var settingPart = function() {
+		var _tpl = `
+		<div class="row col-xs-12">
+			<div class="panel panel-default">
+		  		<div class="panel-heading">
+		    			<h3 class="panel-title">Setting</h3>
+		  		</div>
+		  		<div class="panel-body" id="setting-table">
+					<table class="table" style="margin-bottom:0px;">
+						<tr>
+							<th>Voltage</th>
+							<th>Frequency1</th>
+							<th>Frequency2</th>
+							<th>Frequency3</th>
+							<th></th>
+						</tr>
+						<tr>
+							<td id="voltage" >12</td>
+							<td id="frequency1">22</td>
+							<td id="frequency2">22</td>
+							<td id="frequency3">22</td>
+							<td>
+								<button type="button" class="btn btn-default">Setting </button>
+							</td>
+						</tr>
+					</table>
+				</div>
+		  	</div>
+		</div>
+			`;
+	return _tpl;
+}
 var updatePoolList = function() {
 	_tpl = poolPart();	
 	$("#pool_list").html(_tpl);
@@ -394,14 +448,34 @@ var updatePoolStatus = function ( poolInfo ) {
 	_tpl = "<p class='pool-status-" + poolInfo.info + "'>" + poolInfo.info + "</p>";
 	$("#pool-status-"+poolInfo.poolId).html(_tpl);	
 }
+var updateDeviceStatus = function ( deviceInfo ) {
+	if(deviceInfo.temperatureCu !== undefined)
+		updateDeviceTemp(deviceInfo.deviceId , deviceInfo.temperatureCu , 'cu');
+	if(deviceInfo.temperatureFan !== undefined)
+		updateDeviceTemp(deviceInfo.deviceId , deviceInfo.temperatureFan , 'fan');
+	if(deviceInfo.version !== undefined)
+		updateDeviceVersion(deviceInfo.deviceId , deviceInfo.version);
+}
+var updateDeviceVersion = function ( deviceId , version ) {
+	$("#nano-version-" + deviceId).html( version );
+}
+var updateDeviceGHs5s = function ( deviceId , data ) {
+	console.log('********************');
+	console.log(deviceId);
+	console.log(data);
+	$("#nano-ghs5s-" + deviceId).html( data );
+}
+var updateDeviceTemp = function ( deviceId , temp , type ) {
+	$("#" + type + "-temp-" + deviceId).html( temp );
+}
 var devicePart = function( data ) {
 	var _tpl = '<table class="table table-hover" id="device">';
 	_tpl += '<tr>';
 	_tpl += '<th>Device</th>';
 	_tpl += '<th>ID</th>';
-	_tpl += '<th>Temp</th>';
-	_tpl += '<th>Frequency</th>';
-	_tpl += '<th>Status</th>';
+	_tpl += '<th>Version</th>';
+	_tpl += '<th>Temp(Cu/Fan)</th>';
+	_tpl += '<th>GHs5s</th>';
 	_tpl += '</tr>'; 
 	_tpl += '</table>';
 	return _tpl;
@@ -447,14 +521,14 @@ var deviceTr = function(deviceObj) {
 	_tpl += '<tr class="active" id="nano-tr-id-' + nanoId + '">';
 	_tpl += '<td>'+ deviceType +'</td>';
 	_tpl += '<td id="nano-device-id-' + nanoId + '">' + nanoId + '</td>';
-	_tpl += '<td>null</td>';
-	_tpl += '<td id="nano-frequency-'+ nanoId +'">0</td>';
-	_tpl += '<td id="nano-status-' + nanoId + '">Normal</td>';
+	_tpl += '<td id="nano-version-' + nanoId + '">---</td>';
+	_tpl += '<td id="nano-temp-' + nanoId + '"><span id="cu-temp-' + nanoId + '">0</span> / <span id="fan-temp-' + nanoId + '">0</span></td>';
+	_tpl += '<td id="nano-ghs5s-'+ nanoId +'">0</td>';
 	_tpl += '</tr>';
 	$("#device").append(_tpl);
 }
 var tablePart = function() {
-	var tpl = '<div class="row">';	
+	var tpl = '<div class="row" style="margin-bottom:50px;">';	
 	tpl += panelPart('device' , 'left' , 'Device List'); 
 	tpl += panelPart('pool' , 'right' , 'Pool List');
 	tpl += '</div>';
@@ -531,6 +605,52 @@ var dialog = function( obj  , data ) {
 	})
 }
 
+var settingDialog = function( obj  , data ) {
+	if ($("#dialogModel").length > 0){
+		$("#dialogModel").remove();
+		$(".modal-backdrop").remove();
+	}
+	var neo = {};
+	neo.title = !!obj&&!!obj.title ? obj.title : 'Message';
+	neo.close = !!obj&&!!obj.close ? obj.close : 'Close';
+	neo.fade = !!obj&&!!obj.fade ? 'fade' : ''; /*Show speed*/
+
+	var _tpl = `
+		<div style="margin-bottom:50px;">
+			<div class="form-group">
+			<label for="Voltage">Voltage</label>
+				<input type="text" class="form-control" id="voltage-input" placeholder="Voltage">
+			</div>
+			<div class="form-group">
+			<label for="Frequency1">Frequency1</label>
+				<input type="text" class="form-control" id="frequency1-input" placeholder="Frequency1">
+			</div>
+			<div class="form-group">
+			<label for="Frequency2">Frequency1</label>
+				<input type="text" class="form-control" id="frequency2-input" placeholder="Frequency2">
+			</div>
+			<div class="form-group">
+			<label for="Frequency3">Frequency1</label>
+				<input type="text" class="form-control" id="frequency3-input" placeholder="Frequency3">
+			</div>
+			<div class="form-group" id="setting-save-div">
+			<button type="button" class="btn btn-default pull-right">Save setting</button>
+			</div>
+		</div>
+	`;
+	neo.content = _tpl;
+	neo.html = '<div class="modal '+neo.fade+'" id="dialogModel"><div class="modal-dialog modal-lg"><div class="modal-content">';
+	neo.html += '<div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>';
+	neo.html += '<h4 class="modal-title"><strong>' + neo.title + '</strong></h4></div>';
+	neo.html += '<div class="modal-body">' + neo.content + '</div>';
+	neo.html += '<div class="modal-footer"></div>';
+	neo.html += '</div></div></div>';
+	$("body").append(neo.html);
+	$('#dialogModel').modal({
+	      backdrop: 'static',
+	      keyboard: false
+	})
+}
 
 
 
@@ -542,46 +662,14 @@ $(function () {
 	chrome.runtime.onMessage.addListener(function(msg, sender) {
 		if (sender.url.indexOf('background') > -1)
 			switch (msg.type) {
-				/*
-				case "PoolInit":
-					console.log("PoolInit");
-					poolList(msg.setting);
-					break;
-				case "NewNano":
-					console.log("NewNano");
-					nanoList({nanoId:msg.nanoId,deviceType:msg.deviceType});
-					console.log(msg);
-					break;
-				case "NanoDeleted":
-					console.log("NanoDeleted");
-					removeNano(msg.nanoId);
-					break;
-				case "NanoConnected":
-					console.log("NanoConnected");
-					updateNanoData(msg.nanoId,'status', msg.success);
-					break;
-				case "NanoDetected":
-					console.log("NanoDetected");
-					break;
-				case "NewStatus":
-					console.log("NewStatus");
-					console.log(msg);
-					updateNanoData(msg.nanoId,'frequency', msg.stat.frequency);
-					break;
-				case "PoolSubscribed":
-					console.log("PoolSubscribed");
-					break;
-				case "PoolAuthorized":
-					console.log("PoolAuthorized");
-					break;
-				case "Hashrate":
-					updateHashrate(msg.hashrate);
-					break;
-				*/
 				case "setting":
 					console.log("PoolInit");
+					console.log('******************pool ******************');
 					console.log(msg.pool);
+					console.log('******************pool ******************');
+					console.log('****************** param ****************');
 					console.log(msg.param);
+					console.log('****************** param ****************');
 					poolList(msg.pool);
 					break;
 				case "device":
@@ -589,12 +677,17 @@ $(function () {
 					nanoList({nanoId:msg.deviceId,deviceType:msg.deviceType});
 					console.log(msg);
 					break;
+				case "delete":
+					console.log("NanoDeleted");
+					removeNano(msg.deviceId);
+					break;
 				case "pool":
 					updatePoolStatus(msg);		
 					console.log(msg);
 					break;
 				case "status":
 					console.log(msg);
+					updateDeviceStatus(msg);
 					break;
 				case "hashrate":
 					updateHashrate(msg.hashrate);
