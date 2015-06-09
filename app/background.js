@@ -75,7 +75,6 @@ chrome.app.runtime.onLaunched.addListener(function() {
 						var p = poolSetting[i];
 						pools[i] = new Pool(i, p.address, p.port, p.username, p.password);
 						pools[i].onJob.addListener(jobHandler);
-						pools[i].onError.addListener(errorHandler);
 						pools[i].connect();
 					}
 				}
@@ -188,7 +187,6 @@ var main = function() {
 
 	for (pool of pools) {
 		pool.onJob.addListener(jobHandler);
-		pool.onError.addListener(errorHandler);
 		pool.connect();
 	}
 
@@ -224,20 +222,12 @@ var jobHandler = function(job) {
 	thread.postMessage({info: "newJob", job: job, jqId: jq.thisId});
 };
 
-var errorHandler = function(poolId) {
-	chrome.runtime.sendMessage({
-		info: "Failed",
-		type: "pool",
-		poolId: poolId,
-	});
-};
-
 var detectHandler = function(info) {
 	var dna = info.dna;
 	var version = info.version;
 	var id = info.deviceId;
 	chrome.runtime.sendMessage(
-		{type: "status", devicId: id, version: version, dna: dna}
+		{type: "status", deviceId: id, version: version, dna: dna}
 	);
 	avalons[id].run();
 };
@@ -326,7 +316,6 @@ var calcHashrate = function() {
 			hs15s: utils.arraySum(h.slice(1, 4))/ 15 * 4294967296,
 			hs5s: h[1] / 5 * 4294967296
 		});
-		console.info((hashrate[hashrate.length - 1].hs5s / 1000 / 1000 / 1000).toFixed(1));
 		h.pop();
 		chrome.runtime.sendMessage({
 			type: "hashrate",

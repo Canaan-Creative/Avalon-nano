@@ -17,10 +17,9 @@ var Pool = function(id, url, port, username, password) {
 	this.socketId = null;
 	this.id = id;
 	this.onJob = new MinerEvent();
-	this.onError = new MinerEvent();
 
 	var send = function(data, retry) {
-		utils.log("debug", ["Sent:     %s", utils.ab2asc(data)],
+		utils.log("log", ["Sent:     %s", utils.ab2asc(data)],
 			header, "color: darksalmon");
 		console.log();
 		chrome.sockets.tcp.send(pool.socketId, data, function(sendInfo) {
@@ -36,7 +35,7 @@ var Pool = function(id, url, port, username, password) {
 	};
 
 	this.receive = function(stratum) {
-		utils.log("debug", ["Received: %s", utils.ab2asc(stratum)],
+		utils.log("log", ["Received: %s", utils.ab2asc(stratum)],
 			header, "color: goldenrod");
 		console.log();
 		for (var data of Pool.stratumDecode(stratum)) {
@@ -120,7 +119,6 @@ var Pool = function(id, url, port, username, password) {
 					// TODO: alert somebody !!!
 					//       a setter should work: pool.error = message
 					// pool.log("error", chrome.runtime.lastError.message);
-					pool.onError.fire(pool.id);
 					return;
 				}
 				// pool.log("info", "Connected.");
