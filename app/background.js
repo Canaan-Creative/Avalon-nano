@@ -82,7 +82,7 @@ chrome.app.runtime.onLaunched.addListener(function() {
 			}
 			if (msg.param !== undefined) {
 				paramSetting = msg.param;
-				for (var avalon in avalons) {
+				for (var avalon of avalons) {
 					if (avalon === undefined)
 						continue;
 					avalon.setVoltage(paramSetting.voltSet);
