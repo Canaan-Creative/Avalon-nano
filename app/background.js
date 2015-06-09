@@ -166,6 +166,7 @@ var main = function() {
 						thread.postMessage({
 							info: "newJob",
 							job: jq.value[jq.thisId],
+							jqId: jq.thisId,
 						});
 					}
 				}
@@ -194,7 +195,7 @@ var main = function() {
 var jobHandler = function(job) {
 	var poolId = job.poolId;
 	var jq = jobQueue[poolId];
-	jq.thisId = (jq.thisId + 1) % 1024;
+	jq.thisId = (jq.thisId + 1) % 256;
 	jq.value[jq.thisId] = job;
 	if (poolId < activePool) {
 		activePool = poolId;
