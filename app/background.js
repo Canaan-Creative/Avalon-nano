@@ -310,7 +310,7 @@ var calcHashrate = function() {
 					hs5m: utils.arraySum(h.slice(1, 61)) / 300 * 4294967296,
 					hs1m: utils.arraySum(h.slice(1, 13)) / 60 * 4294967296,
 					hs15s: utils.arraySum(h.slice(1, 4))/ 15 * 4294967296,
-					hs5s: h[1] / 5 * 4294.967296
+					hs5s: h[1] / 5 * 4294967296,
 				});
 				h.pop();
 			}
@@ -324,7 +324,7 @@ var calcHashrate = function() {
 			hs5m: utils.arraySum(h.slice(1, 61)) / 300 * 4294967296,
 			hs1m: utils.arraySum(h.slice(1, 13)) / 60 * 4294967296,
 			hs15s: utils.arraySum(h.slice(1, 4))/ 15 * 4294967296,
-			hs5s: h[1] / 5 * 4294967296
+			hs5s: h[1] / 5 * 4294967296,
 		});
 		h.pop();
 		chrome.runtime.sendMessage({
