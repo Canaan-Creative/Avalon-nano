@@ -75,6 +75,7 @@ chrome.app.runtime.onLaunched.addListener(function() {
 						var p = poolSetting[i];
 						pools[i] = new Pool(i, p.address, p.port, p.username, p.password);
 						pools[i].onJob.addListener(jobHandler);
+						pools[i].onError.addListener(errorHandler);
 						pools[i].connect();
 					}
 				}
@@ -187,6 +188,7 @@ var main = function() {
 
 	for (pool of pools) {
 		pool.onJob.addListener(jobHandler);
+		pool.onError.addListener(errorHandler);
 		pool.connect();
 	}
 
@@ -220,6 +222,14 @@ var jobHandler = function(job) {
 	} else
 		workQueue.init();
 	thread.postMessage({info: "newJob", job: job, jqId: jq.thisId});
+};
+
+var errorHandler = function(poolId) {
+	chrome.runtime.sendMessage({
+		info: "Failed",
+		type: "pool",
+		poolId: poolId,
+	});
 };
 
 var detectHandler = function(info) {

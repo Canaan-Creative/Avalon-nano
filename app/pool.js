@@ -17,6 +17,7 @@ var Pool = function(id, url, port, username, password) {
 	this.socketId = null;
 	this.id = id;
 	this.onJob = new MinerEvent();
+	this.onError = new MinerEvent();
 
 	var send = function(data, retry) {
 		utils.log("debug", ["Sent:     %s", utils.ab2asc(data)],
@@ -119,6 +120,7 @@ var Pool = function(id, url, port, username, password) {
 					// TODO: alert somebody !!!
 					//       a setter should work: pool.error = message
 					// pool.log("error", chrome.runtime.lastError.message);
+					pool.onError.fire(pool.id);
 					return;
 				}
 				// pool.log("info", "Connected.");
