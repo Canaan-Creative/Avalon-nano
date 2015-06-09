@@ -180,7 +180,6 @@ var detectDevice = function() {
 					switch( $(this).data('type') ) {
 						case 'enter':
 							mainPage();
-							
 							break;
 						case 'setting-pool':
 							settingPool();
@@ -251,7 +250,6 @@ var mainPage = function() {
 		bindPoolAdd();
 		bindPoolButton();
 		loopNano();
-
 		chrome.runtime.sendMessage({type: "start"});
 		
 	},500);
@@ -281,40 +279,37 @@ var loopNano = function() {
 }
 var bindPoolAdd = function () {
 	$(".row-pool").delegate("button","click",function(){
-		dialog({title:'Setting pool'});
+		dialog({title:'Setting pool'}, poolObj);
 		bindSaveButton();				
 	});
 }
+
 var bindSaveButton = function(callback) {
-	$(".form-group").delegate("button" , "click" , function(){
-		var Pool_address = $("#address").val();
-		var Pool_worker = $("#worker").val();
-		var apiKey = $("#apiKey").val();
-		if(!Pool_address.length || !Pool_worker){
-			$("#message").html('Pool address or Worker is null').css("color","red");
-			return;
-		}
-		if(Pool_address.indexOf("://") >=0){
-			Pool_f = Pool_address.split("://");
-			Pool_address = Pool_f[1];
-		}
-		var Pool_before = Pool_address.split(":");
-		var Pool_url = Pool_before[0];
-		var Pool_port = parseInt(Pool_before[1] || 3333);
-		var t = parseInt($("#poolId").val());
-		t = (t === -1) ? (maxPoolId() !== undefined ? maxPoolId() + 1 : 0) : t;
-		chrome.runtime.sendMessage({info: "NewPool", data:{url:Pool_url,port:Pool_port,username:Pool_worker,poolId:t,apiKey:apiKey}});
-		if($("#poolId").val()=="-1"){
-			appendPool( t ,{url:Pool_url,port:Pool_port,username:Pool_worker,apiKey:apiKey});
-		}else{
-			changePool(t , Pool_url+':'+Pool_port , Pool_worker,apiKey);
-		}
-		hashrate[3] = 0;
+	$("#setting-pool").delegate("button" , "click" , function(){
+		console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
+		var maxLen = 3;
+		var _pool = [];
+		for( var i = 0; i < maxLen ; i++){
+			var _address = _worker = _apikey = '';
+			_address = $("#pool_address_"+i).val();
+			_worker = $("#pool_worker_"+i).val();
+			_apikey = $("#pool_apikey_"+i).val();
+			if(!_address && !_worker && !_apikey)
+				continue;
+			if(_address.indexOf("://") >=0){
+				var Pool_f = _address.split("://");
+				_address = Pool_f[1];
+			}
+			var Pool_before = _address.split(":");
+			_address = Pool_before[0];
+			var _port = parseInt(Pool_before[1] || 3333);
+			_pool.push({address:_address,port:_port,username:_worker,apiKey:_apikey});
+			console.log(i+ '---'+ _address + '---' + _worker + '---' + _apikey + '-----'+ _port);	
+		}	
+		poolObj = _pool;
+		chrome.runtime.sendMessage({type: "setting", pool:_pool});
+		updatePoolList();	
 		$('#dialogModel').modal('hide');
-		if (callback !== undefined) {
-			poolObj.push({url:Pool_url,port:Pool_port,username:Pool_worker,apiKey:apiKey});
-			callback();
-		}
 	});
 }
 
@@ -353,28 +348,7 @@ var removeNano = function(nanoId) {
 		$("#device").append('<tr id="device-null"><td colspan="4" align="center" style="color:#cfcfcf;">Insert usb device</td></tr>');
 }
 
-var editPool = function(poolId) {
-	var _editObj = {
-		"address": $("#pool-address-"+poolId).html(),
-		"worker" : $("#pool-worker-"+poolId).html(),
-		"apiKey" : $("#pool-api-key-"+poolId).val(),
-		"poolId" : poolId
-	}
-	dialog({title:'Update Pool'} , _editObj);
-	bindSaveButton();
-}
-var changePool = function(id , address , worker,apiKey) {
-	$("#pool-address-" + id).html(address);
-	$("#pool-worker-" + id).html(worker);
-	$("#pool-api-key-"+id).val(apiKey);	
-}
 
-var appendPool =  function(id , data){
-	if($("#pool-null").html()!==undefined)
-		$("#pool-null").remove();
-	$("#pool_info").append(poolTr(id, data));
-	bindPoolButton();
-}
 var maxPoolId = function() {
 	return $("#pool_info tr:last-child").data('id');
 }
@@ -403,12 +377,22 @@ var panelPart = function(type , position , title ) {
 		  <div class="panel-heading">
 		    <h3 class="panel-title">${title}</h3>
 		  </div>
-		  <div class="panel-body">
+		  <div class="panel-body" id="${type}_list">
 		  ${partTpl}
 		  </div>
 		</div>
 	</div>`;
 	return tpl;
+}
+var updatePoolList = function() {
+	_tpl = poolPart();	
+	$("#pool_list").html(_tpl);
+	bindPoolAdd();
+}
+var updatePoolStatus = function ( poolInfo ) {
+	//Object {info: "Active", type: "pool", poolId: 0}
+	_tpl = "<p class='pool-status-" + poolInfo.info + "'>" + poolInfo.info + "</p>";
+	$("#pool-status-"+poolInfo.poolId).html(_tpl);	
 }
 var devicePart = function( data ) {
 	var _tpl = '<table class="table table-hover" id="device">';
@@ -428,7 +412,6 @@ var poolPart = function( ) {
 	_tpl += '<th>Address</th>';
 	_tpl += '<th>Worker</th>';
 	_tpl += '<th>Status</th>';
-	_tpl += '<th>Operation</th>';
 	_tpl += '</tr>'; 
 
 	if(poolObj.length){
@@ -438,10 +421,10 @@ var poolPart = function( ) {
 			
 		}
 	}else{
-		_tpl +='<tr id="pool-null"><td colspan="4" align="center" style="color:#cfcfcf;">Setting pool</td></tr>';
+		_tpl +='<tr id="pool-null"><td colspan="3" align="center" style="color:#cfcfcf;">Setting pool</td></tr>';
 	}
 	_tpl += '</table>';
-	_tpl += '<div class="row row-pool"><button type="button" class="btn btn-default pull-right pool-add">Add Pool</button></div>';
+	_tpl += '<div class="row row-pool"><button type="button" class="btn btn-default pull-right pool-add">Setting Pool</button></div>';
 	return _tpl;
 }
 
@@ -450,11 +433,7 @@ var poolTr = function(id , data) {
 	_tpl += '<tr data-id="'+ id +'" id="pool-tr-id-' + id + '" class="pool-tr-line">';
 	_tpl += '<td id="pool-address-'+ id +'">' + data.address + ':' + data.port + '</td>';
 	_tpl += '<td id="pool-worker-'+ id +'">' + data.username + '</td>';
-	_tpl += '<td>Normal</td>';
-	_tpl += '<td class="op">';
-	_tpl += ' <button class="btn btn-default btn-xs" data-id="' + id + '" data-type="edit">Edit</button>';
-	_tpl += ' <button class="btn btn-default btn-xs" data-id="' + id + '" data-type="remove">Remove</button>';
-	_tpl += '</td>';
+	_tpl += '<td id="pool-status-' + id + '">---</td>';
 	_tpl += '<input type="hidden" id="pool-api-key-'+id+'" value="'+data.apiKey+'"/>';
 	_tpl += '</tr>';
 	return _tpl;
@@ -513,30 +492,33 @@ var dialog = function( obj  , data ) {
 	neo.close = !!obj&&!!obj.close ? obj.close : 'Close';
 	neo.fade = !!obj&&!!obj.fade ? 'fade' : ''; /*Show speed*/
 
-	var _address = !!data&&!!data.address ? data.address : '';
-	var _worker = !!data&&!!data.worker ? data.worker : '';
-	var _apiKey = !!data&&!!data.apiKey ? data.apiKey : '';
-	var _poolId = (data === undefined || data.poolId === undefined) ? '-1' : data.poolId;
-	neo.content = `<div>
-		<div class="form-group">
-		<label for="Pool address">Address</label>
-		<input type="text" class="form-control" id="address" placeholder="Pool address" value="${_address}">
-		</div>
-		<div class="form-group">
-		<label for="Address">Worker</label>
-		<input type="text" class="form-control" id="worker" placeholder="worker" value="${_worker}">
-		</div>
-		<div class="form-group">
-		<label for="apiKey">API Key</label>
-		<input type="text" class="form-control" id="apiKey" placeholder="apiKey" value="${_apiKey}">
-		</div>
-		<div class="form-group">
-		<input type="hidden" id="poolId" value="${_poolId}" />
-		<button type="button" class="btn btn-default" id="add-pool-save"> Save </button>
-		<span id="message"></span>
-		</div>
-	</div>`;
-	neo.html = '<div class="modal '+neo.fade+'" id="dialogModel"><div class="modal-dialog"><div class="modal-content">';
+	var _tpl  = '<div>';
+	_tpl += '<div class="form-group">';
+	_tpl += '<table class="table">';
+	_tpl += '<tr><th>Pool</th><th>Url</th><th>Worker</th><th>apiKey</th></tr>';
+	for(var i= 0 ; i < 3 ; i ++){
+		var _address = _worker = _apiKey = _port = '';
+		if(data[i] !==undefined ){
+			_address = data[i].address || '';
+			_worker = data[i].username || '';
+			_apiKey = data[i].apiKey || '';
+			_port = data[i].port || '';
+		}
+		_tpl +=	'<tr>';
+		_tpl += '<td><label for="">#' + (i+1) + '</label></td>';
+		_tpl += '<td><input type="text" class="form-control" value="' + _address + ':' + _port + '" id="pool_address_' + i + '" placeholder="Pool url"></td>';	
+		_tpl += '<td><input type="text" class="form-control" value="' + _worker + '" id="pool_worker_' + i + '" placeholder="Pool worker"></td>	';
+		_tpl += '<td><input type="text" class="form-control" value="' + _apiKey + '" id="pool_apikey_' + i + '" placeholder="apiKey"></td>';	
+		_tpl += '</tr>';
+	}
+	_tpl += '<tr><td colspan="4">';
+	_tpl += '<div class="form-group" id="setting-pool">';
+	_tpl += '<button typ="button" class="btn btn-default pull-right" id="add-pool-save">Save Setting</button>';
+	_tpl += '<span id="message"></span>';
+	_tpl += '</div></td></tr></table></div></div>';
+	neo.content = _tpl;
+
+	neo.html = '<div class="modal '+neo.fade+'" id="dialogModel"><div class="modal-dialog modal-lg"><div class="modal-content">';
 	neo.html += '<div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>';
 	neo.html += '<h4 class="modal-title"><strong>' + neo.title + '</strong></h4></div>';
 	neo.html += '<div class="modal-body">' + neo.content + '</div>';
@@ -608,6 +590,7 @@ $(function () {
 					console.log(msg);
 					break;
 				case "pool":
+					updatePoolStatus(msg);		
 					console.log(msg);
 					break;
 				case "status":

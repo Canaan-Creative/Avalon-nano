@@ -150,3 +150,13 @@ body{
 .otherInfo ul{
 	list-style-type:none;
 }
+.table>tbody>tr>td{
+	vertical-align:baseline;
+}
+.pool-status-Active{
+	color:green;
+}
+.pool-status-Failed{
+	color:red;
+}
+
