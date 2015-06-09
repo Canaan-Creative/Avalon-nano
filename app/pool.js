@@ -20,7 +20,7 @@ var Pool = function(id, url, port, username, password) {
 
 	var send = function(data, retry) {
 		utils.log("debug", ["Sent:     %s", utils.ab2asc(data)],
-		          header, "color: darksalmon");
+			header, "color: darksalmon");
 		console.log();
 		chrome.sockets.tcp.send(pool.socketId, data, function(sendInfo) {
 			if (chrome.runtime.lastError) {
@@ -36,7 +36,7 @@ var Pool = function(id, url, port, username, password) {
 
 	this.receive = function(stratum) {
 		utils.log("debug", ["Received: %s", utils.ab2asc(stratum)],
-		          header, "color: goldenrod");
+			header, "color: goldenrod");
 		console.log();
 		for (var data of Pool.stratumDecode(stratum)) {
 			decode(data);
@@ -122,6 +122,7 @@ var Pool = function(id, url, port, username, password) {
 					return;
 				}
 				// pool.log("info", "Connected.");
+				utils.log("info", ["Connected"], header, "color: maroon");
 				send(Pool.SUBSCRIBE);
 			});
 		});
@@ -131,13 +132,14 @@ var Pool = function(id, url, port, username, password) {
 		if (this.socketId !== null)
 			chrome.sockets.tcp.disconnect(this.socketId, function() {
 				chrome.sockets.tcp.close(pool.socketId, function(){
+					utils.log("info", ["Disconnected"], header, "color: maroon");
 					// pool.log("info", "Disconnected.");
 				});
 			});
 	};
 
 	this.submit = function(jobId, nonce2, ntime, nonce) {
-		utils.log("info", ["Submit"], header, "color: orangered");
+		utils.log("info", ["Submitted"], header, "color: orangered");
 		var data = {
 			params: [username, jobId, nonce2, ntime, nonce],
 			id: 1000 + submitId,

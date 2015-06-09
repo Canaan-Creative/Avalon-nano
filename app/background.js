@@ -51,6 +51,7 @@ chrome.app.runtime.onLaunched.addListener(function() {
 	});
 
 	chrome.runtime.onMessage.addListener(function(msg, sender) {
+		var i;
 		if (sender.url.indexOf("index.html") === -1)
 			return;
 		switch (msg.type) {
@@ -62,11 +63,15 @@ chrome.app.runtime.onLaunched.addListener(function() {
 			break;
 		case "setting":
 			if (msg.pool !== undefined) {
+				for (i = 0; i < pools.length; i++) {
+					pools[i].disconnect();
+					delete(pools[i]);
+				}
 				poolSetting = msg.pool;
 				if (enabled) {
 					thread.postMessage({info: "pause"});
 					activePool = Infinity;
-					for (var i = 0; i < poolSetting.length; i++) {
+					for (i = 0; i < poolSetting.length; i++) {
 						var p = poolSetting[i];
 						pools[i] = new Pool(i, p.address, p.port, p.username, p.password);
 						pools[i].onJob.addListener(jobHandler);
