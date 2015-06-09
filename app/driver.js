@@ -127,15 +127,14 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 					ntime: dataView.getUint8(i * 16 + 7),
 				};
 				avalon.onNonce.fire(info);
-				utils.log("log", ["Nonce:    0x%s",
-					utils.padLeft((info.nonce >>> 0).toString(16))],
+				utils.log("log", ["Nonce:    0x%s", info.nonce.toString(16)],
 					header, "color: blue");
 			}
 			break;
 		case Avalon.P_STATUS:
 			info = {
 				spiSpeed: dataView.getUint32(0),
-				led: utils.padLeft((dataView.getUint32(4) >>> 0).toString(16)),
+				led: dataView.getUint32(4),
 				voltage: Avalon.voltDecode(dataView.getUint32(12)),
 				voltageSource: Avalon.voltSourceDecode(dataView.getUint32(16)),
 				temperatureCu: Avalon.temperatureDecode(dataView.getUint32(20)),
