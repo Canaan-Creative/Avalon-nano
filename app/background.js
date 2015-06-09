@@ -205,6 +205,12 @@ var jobHandler = function(job) {
 	jq.thisId = (jq.thisId + 1) % 256;
 	jq.value[jq.thisId] = job;
 	if (poolId < activePool) {
+		if (activePool < 3)
+			chrome.runtime.sendMessage({
+				info: "Inactive",
+				type: "pool",
+				poolId: activePool,
+			});
 		activePool = poolId;
 		workQueue.init();
 		chrome.runtime.sendMessage({
