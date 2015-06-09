@@ -85,8 +85,8 @@ chrome.app.runtime.onLaunched.addListener(function() {
 				for (var avalon in avalons) {
 					if (avalon === undefined)
 						continue;
-					avalon.setVoltage(volt);
-					avalon.setVoltage(freqs);
+					avalon.setVoltage(paramSetting.voltSet);
+					avalon.setVoltage(paramSetting.freqSet);
 				}
 			}
 			chrome.storage.local.set({
