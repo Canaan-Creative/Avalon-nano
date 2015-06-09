@@ -237,7 +237,7 @@ var detectHandler = function(info) {
 	var version = info.version;
 	var id = info.deviceId;
 	chrome.runtime.sendMessage(
-		{type: "status", devicId: id, version: version, dna: dna}
+		{type: "status", deviceId: id, version: version, dna: dna}
 	);
 	avalons[id].run();
 };
@@ -326,7 +326,6 @@ var calcHashrate = function() {
 			hs15s: utils.arraySum(h.slice(1, 4))/ 15 * 4294967296,
 			hs5s: h[1] / 5 * 4294967296
 		});
-		console.info((hashrate[hashrate.length - 1].hs5s / 1000 / 1000 / 1000).toFixed(1));
 		h.pop();
 		chrome.runtime.sendMessage({
 			type: "hashrate",

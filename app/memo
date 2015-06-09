@@ -47,7 +47,7 @@ back to front: device status
 		dna: str,
 		version: str,
 		spiSpeed: int,
-		led: int,
+		led: str,
 		voltage: float,
 		voltageSource: float,
 		temperatureCu: float,
