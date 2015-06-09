@@ -226,7 +226,7 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 			Avalon.voltEncode(volt)
 		);
 		if (phase !== null)
-			send(avalon.SET_VOLT_PKG);
+			send(SET_VOLT_PKG);
 	};
 
 	this.setFrequency = function(freqs) {
