@@ -45,7 +45,23 @@ chrome.app.runtime.onLaunched.addListener(function() {
 			minWidth: 1000,
 			minHeight: 700
 		},
-		id: "Avalon miner"
+		id: "Avalon miner",
+	}, function() {
+		chrome.app.window.get("Avalon miner").onClosed.addListener(function() {
+			var i;
+			enable = false;
+			for (i = 0; i < avalons.length; i++)
+				if (avalons[i] !== undefined) {
+					avalons[i].stop();
+					delete(avalons[i]);
+				}
+			for (i = 0; i < pools.length; i++)
+				if (pools[i] !== undefined) {
+					pools[i].disconnect();
+					delete(pools[i]);
+				}
+			thread.postMessage({info: "stop"});
+		});
 	});
 
 	chrome.runtime.onMessage.addListener(function(msg, sender) {
@@ -339,6 +355,7 @@ var calcHashrate = function() {
 			type: "hashrate",
 			hashrate: hashrate,
 		});
-		setTimeout(loop, 5000);
+		if (enabled)
+			setTimeout(loop, 5000);
 	})();
 };

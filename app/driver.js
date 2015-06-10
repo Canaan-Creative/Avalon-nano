@@ -29,6 +29,10 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 		Avalon.P_SET_VOLT, 0, 1, 1,
 		Avalon.voltEncode(voltSet)
 	);
+	var SET_FREQ_PKG0 = Avalon.pkgEncode(
+		Avalon.P_SET_FREQ, 0, 1, 1,
+		Avalon.freqEncode([100, 100, 100])
+	);
 	var SET_FREQ_PKG = Avalon.pkgEncode(
 		Avalon.P_SET_FREQ, 0, 1, 1,
 		Avalon.freqEncode(freqSet)
@@ -207,10 +211,17 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 		if (!enable)
 			return;
 		send(SET_VOLT_PKG);
+		send(Avalon.POLL_PKG);
+		receive();
 		setTimeout(function() {
 			if (!enable)
 				return;
+			send(SET_FREQ_PKG0);
+			send(Avalon.POLL_PKG);
+			receive();
 			send(SET_FREQ_PKG);
+			send(Avalon.POLL_PKG);
+			receive();
 			phase = "push";
 			pushPhase();
 		}, 1000);
