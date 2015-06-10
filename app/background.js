@@ -36,8 +36,6 @@ chrome.app.runtime.onLaunched.addListener(function() {
 	});
 	chrome.storage.local.get("param", function(result) {
 		paramSetting = result.param || [];
-		freqSet = paramSetting.freqSet;
-		voltSet = paramSetting.voltSet;
 	});
 
 	chrome.app.window.create("index.html", {
@@ -109,6 +107,8 @@ var prelude = function() {
 
 	chrome.hid.onDeviceAdded.addListener(function(device) {
 		var id = device.deviceId;
+		var voltSet = paramSetting.voltSet;
+		var freqSet = paramSetting.freqSet;
 		avalons[id] = new Avalon(device, workQueue, voltSet, freqSet);
 		chrome.runtime.sendMessage({
 			type: "device",
@@ -286,6 +286,8 @@ var scanDevices = function() {
 		}
 		for (var device of devices) {
 			var id = device.deviceId;
+			var voltSet = paramSetting.voltSet;
+			var freqSet = paramSetting.freqSet;
 			avalons[id] = new Avalon(device, workQueue, voltSet, freqSet);
 			chrome.runtime.sendMessage({
 				type: "device",
