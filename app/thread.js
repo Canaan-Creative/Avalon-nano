@@ -5,6 +5,9 @@ var job, jobId, poolId, nonce2;
 
 onmessage = function(e) {
 	switch (e.data.info) {
+		case "stop":
+			close();
+			break;
 		case "pause":
 			enable = false;
 			break;
