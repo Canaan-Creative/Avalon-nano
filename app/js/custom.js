@@ -583,10 +583,11 @@ var dialog = function( obj  , data ) {
 			_worker = data[i].username || '';
 			_apiKey = data[i].apiKey || '';
 			_port = data[i].port || '';
+			_address = _address + ':' + _port;
 		}
 		_tpl +=	'<tr>';
 		_tpl += '<td><label for="">#' + (i+1) + '</label></td>';
-		_tpl += '<td><input type="text" class="form-control" value="' + _address + ':' + _port + '" id="pool_address_' + i + '" placeholder="Pool url"></td>';	
+		_tpl += '<td><input type="text" class="form-control" value="' + _address + '" id="pool_address_' + i + '" placeholder="Pool url"></td>';	
 		_tpl += '<td><input type="text" class="form-control" value="' + _worker + '" id="pool_worker_' + i + '" placeholder="Pool worker"></td>	';
 		_tpl += '<td><input type="text" class="form-control" value="' + _apiKey + '" id="pool_apikey_' + i + '" placeholder="apiKey"></td>';	
 		_tpl += '</tr>';
