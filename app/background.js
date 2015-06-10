@@ -66,6 +66,7 @@ chrome.app.runtime.onLaunched.addListener(function() {
 			chrome.hid.onDeviceRemoved.removeListener(hidRemovedHandler);
 			chrome.sockets.tcp.onReceive.removeListener(tcpHandler);
 			chrome.sockets.tcp.onReceiveError.removeListener(tcpErrorHandler);
+			close();
 		});
 	});
 
