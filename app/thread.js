@@ -11,6 +11,9 @@ onmessage = function(e) {
 		case "pause":
 			enable = false;
 			break;
+		case "clean":
+			job = undefined;
+			break;
 		case "newJob":
 			enabled = false;
 			job = e.data.job;
@@ -30,6 +33,8 @@ onmessage = function(e) {
 };
 
 var loop = function() {
+	if (job === undefined)
+		return;
 	var blockheader = utils.getBlockheader(job, nonce2);
 	var midstate = utils.getMidstate(blockheader);
 	// Pay attention to the difference of jqId and jobId,

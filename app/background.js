@@ -99,8 +99,7 @@ var messageHandler = function(msg, sender) {
 			}
 			poolSetting = msg.pool;
 			if (enabled) {
-				thread.postMessage({info: "pause"});
-				threadPaused = true;
+				thread.postMessage({info: "clean"});
 				activePool = Infinity;
 				for (i = 0; i < poolSetting.length; i++) {
 					var p = poolSetting[i];
@@ -213,29 +212,8 @@ var tcpHandler = function(info) {
 
 var tcpErrorHandler = function(info) {
 	for (var pool of pools)
-		if (pool !== undefined && info.socketId === pool.socketId) {
-			if (pool.id === activePool) {
-				thread.postMessage({info: "pause"});
-				threadPaused = true;
-				activePool++;
-				workQueue.init();
-				if (pool.id !== 3) {
-					var jq = jobQueue[activePool];
-					thread.postMessage({
-						info: "newJob",
-						job: jq.value[jq.thisId],
-						jqId: jq.thisId,
-					});
-				}
-			}
-			chrome.runtime.sendMessage({
-				info: "Failed",
-				type: "pool",
-				poolId: pool.id,
-			});
-			pool.connect();
-			return;
-		}
+		if (pool !== undefined && info.socketId === pool.socketId)
+			errorHandler(pool.id);
 };
 
 
@@ -277,14 +255,36 @@ var jobHandler = function(job) {
 };
 
 var errorHandler = function(poolId) {
+	if (poolId === activePool) {
+		thread.postMessage({info: "clean"});
+		for (var i = activePool + 1; i <= 3; i++) {
+			if (pools[i] === undefined) {
+				activePool = Infinity;
+				workQueue.init();
+				break;
+			} else if (pools[i].alive) {
+				activePool = i;
+				workQueue.init();
+				var jq = jobQueue[activePool];
+				if (jq.thisId !== -1) {
+					thread.postMessage({
+						info: "newJob",
+						job: jq.value[jq.thisId],
+						jqId: jq.thisId,
+					});
+				}
+			}
+		}
+	}
+
 	chrome.runtime.sendMessage({
 		info: "Failed",
 		type: "pool",
 		poolId: poolId,
 	});
-	setTimeout(function() {
+	setTimeout(function () {
 		pools[poolId].connect();
-	}, 1000);
+	}, 5000);
 };
 
 var detectHandler = function(info) {

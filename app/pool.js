@@ -17,6 +17,7 @@ var Pool = function(id, url, port, username, password) {
 
 	this.socketId = null;
 	this.id = id;
+	this.alive = true;
 	this.onJob = new MinerEvent();
 	this.onError = new MinerEvent();
 
@@ -26,17 +27,19 @@ var Pool = function(id, url, port, username, password) {
 			var error = false;
 			var wait = setTimeout(function() {
 				error = true;
-				utils.log("warn", ["Connection lost"], header, "color: red");
+				utils.log("warn", ["Connection lost (Timed out)"], header, "color: red");
+				pool.alive = false;
 				pool.onError.fire(pool.id);
 			}, 5000);
 			chrome.sockets.tcp.connect(socketId, url, port, function(result) {
-				if (error) {
-					chrome.sockets.tcp.close(socketId, function() {});
-					return;
-				}
 				clearTimeout(wait);
 				if (chrome.runtime.lastError) {
+					if (error) {
+						chrome.sockets.tcp.close(socketId, function() {});
+						return;
+					}
 					utils.log("warn", ["Connection lost"], header, "color: red");
+					pool.alive = false;
 					pool.onError.fire(pool.id);
 					chrome.sockets.tcp.close(socketId, function() {});
 					return;
@@ -44,7 +47,7 @@ var Pool = function(id, url, port, username, password) {
 				chrome.sockets.tcp.disconnect(socketId, function() {
 					chrome.sockets.tcp.close(socketId, function() {
 						clearTimeout(watcherId);
-						watcherId = setTimeout(watcher, 1000);
+						watcherId = setTimeout(watcher, 5000);
 					});
 				});
 			});
@@ -144,16 +147,30 @@ var Pool = function(id, url, port, username, password) {
 	this.connect = function() {
 		chrome.sockets.tcp.create({}, function(createInfo) {
 			pool.socketId = createInfo.socketId;
+			var error = false;
+			var wait = setTimeout(function() {
+				error = true;
+				utils.log("warn", ["Connection failed (Timed out)"], header, "color: red");
+				pool.alive = false;
+				pool.onError.fire(pool.id);
+			}, 5000);
 			chrome.sockets.tcp.connect(pool.socketId, url, port, function(result) {
+				clearTimeout(wait);
 				if (chrome.runtime.lastError) {
+					if (error) {
+						chrome.sockets.tcp.close(pool.socketId, function() {});
+						return;
+					}
 					utils.log("warn", ["Connection failed"], header, "color: red");
+					pool.alive = false;
 					pool.onError.fire(pool.id);
 					chrome.sockets.tcp.close(pool.socketId, function() {});
 					return;
 				}
 				utils.log("info", ["Connected"], header, "color: maroon");
+				pool.alive = true;
 				send(Pool.SUBSCRIBE);
-				watcherId = setTimeout(watcher, 1000);
+				watcherId = setTimeout(watcher, 5000);
 			});
 		});
 	};
