@@ -132,7 +132,9 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 				};
 				avalon.onNonce.fire(info);
 				utils.log("log",
-					["Nonce:    0x%s", utils.padLeft((info.nonce >>> 0).toString(16))],
+					["Nonce:    0x%s, roll %s",
+						utils.padLeft((info.nonce >>> 0).toString(16)),
+						info.ntime],
 					header, "color: blue");
 			}
 			break;
@@ -187,21 +189,15 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 	};
 
 	var pushPhase = function() {
-		var loopCount = 0;
 		(function loop() {
 			if (!enable)
 				return;
 			var work = workQueue.shift();
 			if (work !== undefined) {
-				loopCount++;
-				for (var pkg of work)
-					send(pkg);
-				if (loopCount === asicCount) {
-					phase = "poll";
-					setTimeout(pollPhase, Math.round(25 * 703 / freqSet[0]));
-					return;
-				} else
-					loop();
+				send(work[0]);
+				send(Avalon.roll(work[1], asicCount - 1));
+				phase = "poll";
+				setTimeout(pollPhase, Math.round(25 * 703 / freqSet[0]));
 			} else
 				setTimeout(loop, 10);
 		})();
@@ -363,6 +359,13 @@ Avalon.pkgEncode = function(type, opt, idx, cnt, data) {
 	pkgView.setUint16(38, crc, false);
 
 	return pkg;
+};
+
+Avalon.roll = function(halfWork, roll) {
+	var view = new DataView(halfWork);
+	view.setUint8(14, roll);
+	view.setUint16(38, utils.crc16(halfWork.slice(6, 38)), false);
+	return halfWork;
 };
 
 Avalon.voltEncode = function(volt) {
