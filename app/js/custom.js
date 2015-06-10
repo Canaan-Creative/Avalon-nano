@@ -2,6 +2,7 @@ var hashrate = [0, 0, 0, 0];
 var enterFlag = false;
 var poolObj = [];
 var nanoObj = [];
+var paramObj = [];
 var renderChart = function() {
 	Highcharts.setOptions({
 		global: {useUTC: false}
@@ -201,7 +202,12 @@ var poolList = function(data) {
 		}
 	}
 };
-
+var globalSetting = function( data ) {
+	if(data.voltSet !== undefined && data.freqSet !== undefined)	
+		paramObj = data;
+	else
+		paramObj = {voltSet:6500,freqSet:[100,100,100]};
+}
 var loadingImg = "<img id='loadImg' src='images/loading.gif'/>";
 var guidePage = function( callback ){
 	var _mainObj = $("#main");
@@ -253,6 +259,7 @@ var mainPage = function() {
 		bindPoolButton();
 		bindSettingBtn();
 		loopNano();
+		updateSetting();
 		chrome.runtime.sendMessage({type: "start"});
 		
 	},500);
@@ -282,7 +289,7 @@ var loopNano = function() {
 }
 var bindSettingBtn = function () {
 	$("#setting-table").delegate("button" , "click" , function(){
-		settingDialog({title:"Setting"});
+		settingDialog({title:"Setting"} , paramObj);
 		bindSettingSave();
 	});
 }
@@ -294,9 +301,11 @@ var bindSettingSave = function () {
 		var _freq2 = parseInt($("#frequency2-input").val());	
 		var _freq3 = parseInt($("#frequency3-input").val());	
 		var _param = {freqSet:[_freq1,_freq2,_freq3],voltSet:_volt};
+		paramObj = _param;
 		chrome.runtime.sendMessage({type: "setting", param:_param});
 		console.log( 'volt:' + _volt + '  freq1:' + _freq1 + 'freq2:' + _freq2 + 'freq3:' + _freq3);	
 		$('#dialogModel').modal('hide');
+		updateSetting();
 	});
 }
 var bindPoolAdd = function () {
@@ -460,9 +469,6 @@ var updateDeviceVersion = function ( deviceId , version ) {
 	$("#nano-version-" + deviceId).html( version );
 }
 var updateDeviceGHs5s = function ( deviceId , data ) {
-	console.log('********************');
-	console.log(deviceId);
-	console.log(data);
 	$("#nano-ghs5s-" + deviceId).html( data );
 }
 var updateDeviceTemp = function ( deviceId , temp , type ) {
@@ -604,6 +610,17 @@ var dialog = function( obj  , data ) {
 	      keyboard: false
 	})
 }
+var updateSetting = function () {
+	var data = paramObj;
+	var _volt= data.voltSet;
+	var _freq1 = data.freqSet[0]; 
+	var _freq2 = data.freqSet[1]; 
+	var _freq3 = data.freqSet[2]; 
+	$("#voltage").html(_volt);	
+	$("#frequency1").html(_freq1);	
+	$("#frequency2").html(_freq2);	
+	$("#frequency3").html(_freq3);	
+}
 
 var settingDialog = function( obj  , data ) {
 	if ($("#dialogModel").length > 0){
@@ -614,24 +631,30 @@ var settingDialog = function( obj  , data ) {
 	neo.title = !!obj&&!!obj.title ? obj.title : 'Message';
 	neo.close = !!obj&&!!obj.close ? obj.close : 'Close';
 	neo.fade = !!obj&&!!obj.fade ? 'fade' : ''; /*Show speed*/
-
+	
+	var _volt= data.voltSet;
+	var _freq1 = data.freqSet[0]; 
+	var _freq2 = data.freqSet[1]; 
+	var _freq3 = data.freqSet[2]; 
+	
+	console.log(_volt);
 	var _tpl = `
 		<div style="margin-bottom:50px;">
 			<div class="form-group">
 			<label for="Voltage">Voltage</label>
-				<input type="text" class="form-control" id="voltage-input" placeholder="Voltage">
+				<input type="text" class="form-control" id="voltage-input" value="${_volt}"placeholder="Voltage">
 			</div>
 			<div class="form-group">
-			<label for="Frequency1">Frequency1</label>
-				<input type="text" class="form-control" id="frequency1-input" placeholder="Frequency1">
+			<label for="Frequency1">Frequency#1</label>
+				<input type="text" class="form-control" id="frequency1-input" value="${_freq1}" placeholder="Frequency1">
 			</div>
 			<div class="form-group">
-			<label for="Frequency2">Frequency1</label>
-				<input type="text" class="form-control" id="frequency2-input" placeholder="Frequency2">
+			<label for="Frequency2">Frequency#2</label>
+				<input type="text" class="form-control" id="frequency2-input" value="${_freq2}" placeholder="Frequency2">
 			</div>
 			<div class="form-group">
-			<label for="Frequency3">Frequency1</label>
-				<input type="text" class="form-control" id="frequency3-input" placeholder="Frequency3">
+			<label for="Frequency3">Frequency#3</label>
+				<input type="text" class="form-control" id="frequency3-input" value="${_freq3}" placeholder="Frequency3">
 			</div>
 			<div class="form-group" id="setting-save-div">
 			<button type="button" class="btn btn-default pull-right">Save setting</button>
@@ -664,12 +687,13 @@ $(function () {
 			switch (msg.type) {
 				case "setting":
 					console.log("PoolInit");
-					console.log('******************pool ******************');
+					console.log('pool start');
 					console.log(msg.pool);
-					console.log('******************pool ******************');
-					console.log('****************** param ****************');
+					console.log('pool end ');
+					console.log('param start');
 					console.log(msg.param);
-					console.log('****************** param ****************');
+					globalSetting(msg.param);
+					console.log('param end ');
 					poolList(msg.pool);
 					break;
 				case "device":
@@ -678,18 +702,21 @@ $(function () {
 					console.log(msg);
 					break;
 				case "delete":
-					console.log("NanoDeleted");
+					console.log("Deleted");
 					removeNano(msg.deviceId);
 					break;
 				case "pool":
-					updatePoolStatus(msg);		
+					console.log('updatePool');
 					console.log(msg);
+					updatePoolStatus(msg);		
 					break;
 				case "status":
+					console.log('updateDeviceStatus');
 					console.log(msg);
 					updateDeviceStatus(msg);
 					break;
 				case "hashrate":
+					console.log('HashRate');
 					updateHashrate(msg.hashrate);
 					console.log(msg);
 					break;
