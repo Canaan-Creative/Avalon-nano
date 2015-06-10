@@ -265,8 +265,14 @@ var jobHandler = function(job) {
 			poolId: poolId,
 		});
 		return;
-	} else
+	} else {
+		chrome.runtime.sendMessage({
+			info: "Active",
+			type: "pool",
+			poolId: poolId,
+		});
 		workQueue.init();
+	}
 	thread.postMessage({info: "newJob", job: job, jqId: jq.thisId});
 };
 
