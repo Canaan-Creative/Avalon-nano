@@ -17,7 +17,7 @@ var workQueue = {
 			thread.postMessage({info: "resume"});
 			threadPaused = false;
 		}
-		if (workQueue.value.length <= 1)
+		if (workQueue.value.length === 1)
 			console.warn("Low on works!!!");
 		return this.value.shift();
 	},
@@ -276,6 +276,9 @@ var errorHandler = function(poolId) {
 		type: "pool",
 		poolId: poolId,
 	});
+	setTimeout(function() {
+		pools[poolId].connect();
+	}, 1000);
 };
 
 var detectHandler = function(info) {

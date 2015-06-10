@@ -336,10 +336,6 @@ Avalon.FREQ_TABLE[363] = 0x382e0447;
 Avalon.FREQ_TABLE[375] = 0x1c070447;
 Avalon.FREQ_TABLE[388] = 0x3c2f0447;
 Avalon.FREQ_TABLE[400] = 0x1e078447;
-Avalon.FREQ_TABLE[413] = 0x40300447;
-Avalon.FREQ_TABLE[425] = 0x20080447;
-Avalon.FREQ_TABLE[438] = 0x44310447;
-Avalon.FREQ_TABLE[450] = 0x22088447;
 
 Avalon.pkgEncode = function(type, opt, idx, cnt, data) {
 	var pkg = new ArrayBuffer(40);
@@ -398,8 +394,9 @@ Avalon.voltSourceDecode = function(raw) {
 };
 
 Avalon.temperatureDecode = function(raw) {
-	return (1 / (1 / (25 + 273.15) - Math.log((1023 / raw) - 1) / 3450) -
-				273.15).toFixed(1);
+	return (1 / (1 / (25 + 273.15) -
+		Math.log((1023 / raw) - 1) /
+		3450) - 273.15).toFixed(1);
 };
 
 Avalon.DETECT_PKG = Avalon.pkgEncode(Avalon.P_DETECT, 0, 1, 1, 0);

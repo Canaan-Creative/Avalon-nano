@@ -22,7 +22,6 @@ var Pool = function(id, url, port, username, password) {
 	var send = function(data, retry) {
 		utils.log("log", ["Sent:     %s", utils.ab2asc(data)],
 			header, "color: darksalmon");
-		console.log();
 		chrome.sockets.tcp.send(pool.socketId, data, function(sendInfo) {
 			if (chrome.runtime.lastError) {
 				utils.log("error", [chrome.runtime.lastError.message], header);
@@ -38,7 +37,6 @@ var Pool = function(id, url, port, username, password) {
 	this.receive = function(stratum) {
 		utils.log("log", ["Received: %s", utils.ab2asc(stratum)],
 			header, "color: goldenrod");
-		console.log();
 		for (var data of Pool.stratumDecode(stratum)) {
 			decode(data);
 		}
