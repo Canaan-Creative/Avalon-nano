@@ -1,7 +1,7 @@
 importScripts('sha256.js', 'utils.js', 'driver.js');
 
-var enable, loopId;
-var job, jobId, poolId, nonce2;
+var enabled = false
+var loopId, job, jobId, poolId, nonce2;
 
 onmessage = function(e) {
 	switch (e.data.info) {
@@ -12,7 +12,7 @@ onmessage = function(e) {
 			enable = false;
 			break;
 		case "newJob":
-			enable = false;
+			enabled = false;
 			job = e.data.job;
 			jqId = e.data.jqId;
 			poolId = job.poolId;
@@ -20,10 +20,10 @@ onmessage = function(e) {
 			// nonce2Limit = Math.pow(2, e.data.nonce2Size * 8);
 			/* fall through */
 		case "resume":
-			if (enable)
+			if (enabled)
 				break;
 			clearTimeout(loopId);
-			enable = true;
+			enabled = true;
 			loop();
 			break;
 	}
@@ -52,6 +52,6 @@ var loop = function() {
 	postMessage(work);
 	nonce2++;
 
-	if (enable)
+	if (enabled)
 		loopId = setTimeout(loop, 5);
 };

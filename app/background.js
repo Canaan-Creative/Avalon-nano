@@ -9,16 +9,23 @@ var jobQueue = [
 	{thisId: -1, value: []},
 ];
 var thread = new Worker("thread.js");
+var threadPaused = false;
 var workQueue = {
 	value: [],
 	shift: function() {
-		if (workQueue.value.length < 1000)
+		if (workQueue.value.length < 1000 && threadPaused) {
 			thread.postMessage({info: "resume"});
+			threadPaused = false;
+		}
+		if (workQueue.value.length <= 1)
+			console.warn("Low on works!!!");
 		return this.value.shift();
 	},
 	push: function(data) {
-		if (workQueue.value.length >= 1023)
+		if (workQueue.value.length >= 1023) {
 			thread.postMessage({info: "pause"});
+			threadPaused = true;
+		}
 		return this.value.push(data);
 	},
 	init: function() {
@@ -93,6 +100,7 @@ var messageHandler = function(msg, sender) {
 			poolSetting = msg.pool;
 			if (enabled) {
 				thread.postMessage({info: "pause"});
+				threadPaused = true;
 				activePool = Infinity;
 				for (i = 0; i < poolSetting.length; i++) {
 					var p = poolSetting[i];
@@ -208,6 +216,7 @@ var tcpErrorHandler = function(info) {
 		if (pool !== undefined && info.socketId === pool.socketId) {
 			if (pool.id === activePool) {
 				thread.postMessage({info: "pause"});
+				threadPaused = true;
 				activePool++;
 				workQueue.init();
 				if (pool.id !== 3) {
