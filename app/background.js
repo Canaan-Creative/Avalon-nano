@@ -61,56 +61,64 @@ chrome.app.runtime.onLaunched.addListener(function() {
 					delete(pools[i]);
 				}
 			thread.postMessage({info: "stop"});
+			chrome.runtime.onMessage.removeListener(messageHandler);
+			chrome.hid.onDeviceAdded.removeListener(hidAddedHandler);
+			chrome.hid.onDeviceRemoved.removeListener(hidRemovedHandler);
+			chrome.sockets.tcp.onReceive.removeListener(tcpHandler);
+			chrome.sockets.tcp.onReceiveError.removeListener(tcpErrorHandler);
 		});
 	});
 
-	chrome.runtime.onMessage.addListener(function(msg, sender) {
-		var i;
-		if (sender.url.indexOf("index.html") === -1)
-			return;
-		switch (msg.type) {
-		case "ready":
-			prelude();
-			break;
-		case "start":
-			main();
-			break;
-		case "setting":
-			if (msg.pool !== undefined) {
-				for (i = 0; i < pools.length; i++) {
-					pools[i].disconnect();
-					delete(pools[i]);
-				}
-				poolSetting = msg.pool;
-				if (enabled) {
-					thread.postMessage({info: "pause"});
-					activePool = Infinity;
-					for (i = 0; i < poolSetting.length; i++) {
-						var p = poolSetting[i];
-						pools[i] = new Pool(i, p.address, p.port, p.username, p.password);
-						pools[i].onJob.addListener(jobHandler);
-						pools[i].onError.addListener(errorHandler);
-						pools[i].connect();
-					}
-				}
-			}
-			if (msg.param !== undefined) {
-				paramSetting = msg.param;
-				for (var avalon of avalons) {
-					if (avalon === undefined)
-						continue;
-					avalon.setVoltage(paramSetting.voltSet);
-					avalon.setFrequency(paramSetting.freqSet);
-				}
-			}
-			chrome.storage.local.set({
-				pool: poolSetting,
-				param: paramSetting,
-			});
-			break;
-		}
-	});
+	chrome.runtime.onMessage.addListener(messageHandler);
 });
+
+var messageHandler = function(msg, sender) {
+	var i;
+	if (sender.url.indexOf("index.html") === -1)
+		return;
+	switch (msg.type) {
+	case "ready":
+		prelude();
+		break;
+	case "start":
+		main();
+		break;
+	case "setting":
+		if (msg.pool !== undefined) {
+			for (i = 0; i < pools.length; i++) {
+				pools[i].disconnect();
+				delete(pools[i]);
+			}
+			poolSetting = msg.pool;
+			if (enabled) {
+				thread.postMessage({info: "pause"});
+				activePool = Infinity;
+				for (i = 0; i < poolSetting.length; i++) {
+					var p = poolSetting[i];
+					pools[i] = new Pool(i, p.address, p.port, p.username, p.password);
+					pools[i].onJob.addListener(jobHandler);
+					pools[i].onError.addListener(errorHandler);
+					pools[i].connect();
+				}
+			}
+		}
+		if (msg.param !== undefined) {
+			paramSetting = msg.param;
+			for (var avalon of avalons) {
+				if (avalon === undefined)
+					continue;
+				avalon.setVoltage(paramSetting.voltSet);
+				avalon.setFrequency(paramSetting.freqSet);
+			}
+		}
+		chrome.storage.local.set({
+			pool: poolSetting,
+			param: paramSetting,
+		});
+		break;
+	}
+};
+
 
 var prelude = function() {
 	chrome.runtime.sendMessage({
@@ -121,45 +129,47 @@ var prelude = function() {
 
 	scanDevices();
 
-	chrome.hid.onDeviceAdded.addListener(function(device) {
-		var id = device.deviceId;
-		var voltSet = paramSetting.voltSet;
-		var freqSet = paramSetting.freqSet;
-		avalons[id] = new Avalon(device, workQueue, voltSet, freqSet);
-		chrome.runtime.sendMessage({
-			type: "device",
-			deviceId: id,
-			deviceType: avalons[id].deviceType,
-		});
-		avalons[id].onDetect.addListener(detectHandler);
-		avalons[id].onNonce.addListener(nonceHandler);
-		avalons[id].onStatus.addListener(statusHandler);
-		hashrates[id] = hashrates[id] ||
-			Array.apply(null, new Array(721)).map(Number.prototype.valueOf, 0);
-		if (enabled)
-			avalons[id].connect();
-	});
-
-	chrome.hid.onDeviceRemoved.addListener(function(deviceId) {
-		for (var idx in avalons) {
-			var avalon = avalons[idx];
-			if (avalon.deviceId === deviceId) {
-				avalon.stop();
-				delete(avalons[idx]);
-				delete(hashrates[idx]);
-				chrome.runtime.sendMessage({type: "delete", deviceId: deviceId});
-				return;
-			}
-		}
-	});
-
+	chrome.hid.onDeviceAdded.addListener(hidAddedHandler);
+	chrome.hid.onDeviceRemoved.addListener(hidRemovedHandler);
 };
 
+var hidAddedHandler = function(device) {
+	var id = device.deviceId;
+	var voltSet = paramSetting.voltSet;
+	var freqSet = paramSetting.freqSet;
+	avalons[id] = new Avalon(device, workQueue, voltSet, freqSet);
+	chrome.runtime.sendMessage({
+		type: "device",
+		deviceId: id,
+		deviceType: avalons[id].deviceType,
+	});
+	avalons[id].onDetect.addListener(detectHandler);
+	avalons[id].onNonce.addListener(nonceHandler);
+	avalons[id].onStatus.addListener(statusHandler);
+	hashrates[id] = hashrates[id] ||
+		Array.apply(null, new Array(721)).map(Number.prototype.valueOf, 0);
+	if (enabled)
+		avalons[id].connect();
+};
+
+var hidRemovedHandler = function(deviceId) {
+	for (var idx in avalons) {
+		var avalon = avalons[idx];
+		if (avalon.deviceId === deviceId) {
+			avalon.stop();
+			delete(avalons[idx]);
+			delete(hashrates[idx]);
+			chrome.runtime.sendMessage({type: "delete", deviceId: deviceId});
+			return;
+		}
+	}
+};
+
+
 var main = function() {
-	var i, pool, avalon;
 	enabled = true;
 	activePool = Infinity;
-	for (i = 0; i < poolSetting.length; i++) {
+	for (var i = 0; i < poolSetting.length; i++) {
 		var p = poolSetting[i];
 		pools[i] = new Pool(i, p.address, p.port, p.username, p.password);
 	}
@@ -168,41 +178,10 @@ var main = function() {
 		workQueue.push(work.data);
 	};
 
-	chrome.sockets.tcp.onReceive.addListener(function(info) {
-		for (var pool of pools)
-			if (pool !== undefined && info.socketId === pool.socketId) {
-				pool.receive(info.data);
-				return;
-			}
-	});
+	chrome.sockets.tcp.onReceive.addListener(tcpHandler);
+	chrome.sockets.tcp.onReceiveError.addListener(tcpErrorHandler);
 
-	chrome.sockets.tcp.onReceiveError.addListener(function(info) {
-		for (var pool of pools)
-			if (pool !== undefined && info.socketId === pool.socketId) {
-				if (pool.id === activePool) {
-					thread.postMessage({info: "pause"});
-					activePool++;
-					workQueue.init();
-					if (pool.id !== 3) {
-						var jq = jobQueue[activePool];
-						thread.postMessage({
-							info: "newJob",
-							job: jq.value[jq.thisId],
-							jqId: jq.thisId,
-						});
-					}
-				}
-				chrome.runtime.sendMessage({
-					info: "Failed",
-					type: "pool",
-					poolId: pool.id,
-				});
-				pool.connect();
-				return;
-			}
-	});
-
-	for (pool of pools) {
+	for (var pool of pools) {
 		pool.onJob.addListener(jobHandler);
 		pool.onError.addListener(errorHandler);
 		pool.connect();
@@ -210,10 +189,45 @@ var main = function() {
 
 	calcHashrate();
 
-	for (avalon of avalons)
+	for (var avalon of avalons)
 		if (avalon !== undefined)
 			avalon.connect();
 };
+
+var tcpHandler = function(info) {
+	for (var pool of pools)
+		if (pool !== undefined && info.socketId === pool.socketId) {
+			pool.receive(info.data);
+			return;
+		}
+};
+
+var tcpErrorHandler = function(info) {
+	for (var pool of pools)
+		if (pool !== undefined && info.socketId === pool.socketId) {
+			if (pool.id === activePool) {
+				thread.postMessage({info: "pause"});
+				activePool++;
+				workQueue.init();
+				if (pool.id !== 3) {
+					var jq = jobQueue[activePool];
+					thread.postMessage({
+						info: "newJob",
+						job: jq.value[jq.thisId],
+						jqId: jq.thisId,
+					});
+				}
+			}
+			chrome.runtime.sendMessage({
+				info: "Failed",
+				type: "pool",
+				poolId: pool.id,
+			});
+			pool.connect();
+			return;
+		}
+};
+
 
 var jobHandler = function(job) {
 	var poolId = job.poolId;
