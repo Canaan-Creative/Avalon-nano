@@ -12,6 +12,7 @@ var Pool = function(id, url, port, username, password) {
 	});
 
 	var header = "POOL" + id;
+	var watcherId;
 	var pool = this;
 
 	this.socketId = null;
@@ -19,14 +20,43 @@ var Pool = function(id, url, port, username, password) {
 	this.onJob = new MinerEvent();
 	this.onError = new MinerEvent();
 
+	var watcher = function() {
+		chrome.sockets.tcp.create({}, function(createInfo) {
+			var socketId = createInfo.socketId;
+			var error = false;
+			var wait = setTimeout(function() {
+				error = true;
+				utils.log("warn", ["Connection lost"], header, "color: red");
+				pool.onError.fire(pool.id);
+			}, 5000);
+			chrome.sockets.tcp.connect(socketId, url, port, function(result) {
+				if (error) {
+					chrome.sockets.tcp.close(socketId, function() {});
+					return;
+				}
+				clearTimeout(wait);
+				if (chrome.runtime.lastError) {
+					utils.log("warn", ["Connection lost"], header, "color: red");
+					pool.onError.fire(pool.id);
+					chrome.sockets.tcp.close(socketId, function() {});
+					return;
+				}
+				chrome.sockets.tcp.disconnect(socketId, function() {
+					chrome.sockets.tcp.close(socketId, function() {
+						clearTimeout(watcherId);
+						watcherId = setTimeout(watcher, 1000);
+					});
+				});
+			});
+		});
+	};
+
 	var send = function(data, retry) {
 		utils.log("log", ["Sent:     %s", utils.ab2asc(data)],
 			header, "color: darksalmon");
 		chrome.sockets.tcp.send(pool.socketId, data, function(sendInfo) {
 			if (chrome.runtime.lastError) {
 				utils.log("error", [chrome.runtime.lastError.message], header);
-				// TODO: net::ERR_SOCKET_NOT_CONNECTED
-				//       alert somebody !!!
 				if (retry)
 					send(data, retry - 1);
 				return;
@@ -35,6 +65,8 @@ var Pool = function(id, url, port, username, password) {
 	};
 
 	this.receive = function(stratum) {
+		clearTimeout(watcherId);
+		watcherId = setTimeout(watcher, 1000);
 		utils.log("log", ["Received: %s", utils.ab2asc(stratum)],
 			header, "color: goldenrod");
 		for (var data of Pool.stratumDecode(stratum)) {
@@ -104,7 +136,6 @@ var Pool = function(id, url, port, username, password) {
 					//	data["reject-reason"]);
 					return false;
 				}
-				// this.log("log1", "Submitted.");
 			}
 			break;
 		}
@@ -115,25 +146,24 @@ var Pool = function(id, url, port, username, password) {
 			pool.socketId = createInfo.socketId;
 			chrome.sockets.tcp.connect(pool.socketId, url, port, function(result) {
 				if (chrome.runtime.lastError) {
-					// TODO: alert somebody !!!
-					//       a setter should work: pool.error = message
-					// pool.log("error", chrome.runtime.lastError.message);
+					utils.log("warn", ["Connection failed"], header, "color: red");
 					pool.onError.fire(pool.id);
+					chrome.sockets.tcp.close(pool.socketId, function() {});
 					return;
 				}
-				// pool.log("info", "Connected.");
 				utils.log("info", ["Connected"], header, "color: maroon");
 				send(Pool.SUBSCRIBE);
+				watcherId = setTimeout(watcher, 1000);
 			});
 		});
 	};
 
 	this.disconnect = function() {
+		clearTimeout(watcherId);
 		if (this.socketId !== null)
 			chrome.sockets.tcp.disconnect(this.socketId, function() {
-				chrome.sockets.tcp.close(pool.socketId, function(){
+				chrome.sockets.tcp.close(pool.socketId, function() {
 					utils.log("info", ["Disconnected"], header, "color: maroon");
-					// pool.log("info", "Disconnected.");
 				});
 			});
 	};
