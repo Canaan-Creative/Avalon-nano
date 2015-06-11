@@ -145,7 +145,10 @@ var updateHashrate = function( hashrates ){
 	hashrate[0] = h.hs5s;
 	hashrate[1] = h.hs1m;
 	hashrate[2] = h.hs1h;
-	updateDeviceGHs5s(hashrates[0].deviceId , (hashrates[0].hs5s/1000000000).toFixed(1));
+	var _len = hashrates.length -1;
+	for(var i = 0; i < _len ; i++){
+		updateDeviceGHs5s(hashrates[i].deviceId , (hashrates[i].hs5s/1000000000).toFixed(1));
+	}
 };
 var nanoList = function(deviceObj) {
 	nanoObj.push(deviceObj);
@@ -167,7 +170,7 @@ var detectDevice = function() {
 			detectFlag = false;
 		}
 		if(!detectFlag){
-			if(nanoObj.length === 1 ){
+			if(nanoObj.length >= 1 ){
 				detectFlag = true;
 				$(".detect p img").remove();	
 				var btnTpl = '<div style="text-align:center;"><button type="button" data-type="enter" class="btn btn-default"> Enter </button>  ';
