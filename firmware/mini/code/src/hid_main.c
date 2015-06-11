@@ -227,8 +227,9 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	case AVAM_P_SETM:
 		memcpy(val, pkg->data, 4);
 		val[0] = be32toh(val[0]);
-		debug32("D: S(%d)\n", val[0]);
-		a3222_set_spispeed(val[0]);
+		debug32("D: S(%x)\n", val[0]);
+		if (val[0] & 0x80000000)
+			a3222_set_spispeed(val[0] & 0x7fffffff);
 		break;
 	default:
 		break;
