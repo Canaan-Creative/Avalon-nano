@@ -21,6 +21,8 @@ front to back:
 	{type: "start"}
 
 ===================================================================================
+front to back: toggle logging
+	{type: "enableLog" || "disableLog"}
 front to back: change setting
 	{type: "setting", pool: ..., param: ...}
 
@@ -65,6 +67,7 @@ back to front: hashrate
 			hs1m: float,
 			hs15s: float,
 			hs5s: float,
+			errorRate: float,
 		},
 		...
 		{

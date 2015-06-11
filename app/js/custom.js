@@ -3,6 +3,7 @@ var enterFlag = false;
 var poolObj = [];
 var nanoObj = [];
 var paramObj = [];
+var highcharts;
 var renderChart = function() {
 	Highcharts.setOptions({
 		global: {useUTC: false}
@@ -12,16 +13,6 @@ var renderChart = function() {
 			type: 'spline',
 			animation: Highcharts.svg, // don't animate in old IE
 			marginRight: 10,
-			events: {
-				load: function() {
-					var series = this.series;
-					setInterval(function() {
-						var x = (new Date()).getTime();
-						for (var i in series)
-							series[i].addPoint([x, hashrate[i]], true, true);
-					}, 5000);
-				}
-			}
 		},
 		title: {text: 'Avalon miner Live Hashrate'},
 		xAxis: {
@@ -76,6 +67,7 @@ var renderChart = function() {
 			return series;
 		})()
 	});
+	highcharts = $('#container').highcharts();
 };
 var getPrice = function() {
 	setInterval(getRemoteData, 1000 * 5);
@@ -145,11 +137,20 @@ var updateHashrate = function( hashrates ){
 	hashrate[0] = h.hs5s;
 	hashrate[1] = h.hs1m;
 	hashrate[2] = h.hs1h;
-	updateDeviceGHs5s(hashrates[0].deviceId , (hashrates[0].hs5s/1000000000).toFixed(1));
+	var _len = hashrates.length -1;
+	for(var i = 0; i < _len ; i++){
+		updateDeviceGHs5s(hashrates[i].deviceId , (hashrates[i].hs5s/1000000000).toFixed(1));	
+		updateErrorRate( hashrates[i].deviceId , (hashrates[i].errorRate * 100).toFixed(2) );
+	}
+
+	var x = (new Date()).getTime();
+	var series = highcharts.series;
+	for (var i in series)
+		series[i].addPoint([x, hashrate[i]], true, true);
+
 };
 var nanoList = function(deviceObj) {
 	nanoObj.push(deviceObj);
-	console.log(nanoObj);
 	if(enterFlag){
 		deviceTr(deviceObj);
 	}else{
@@ -167,7 +168,7 @@ var detectDevice = function() {
 			detectFlag = false;
 		}
 		if(!detectFlag){
-			if(nanoObj.length === 1 ){
+			if(nanoObj.length >= 1 ){
 				detectFlag = true;
 				$(".detect p img").remove();	
 				var btnTpl = '<div style="text-align:center;"><button type="button" data-type="enter" class="btn btn-default"> Enter </button>  ';
@@ -194,7 +195,6 @@ var detectDevice = function() {
 	}
 }
 var poolList = function(data) {
-	console.log(data);
 	if( data !== undefined || data !==null){
 		for (var id in data){
 			if (data[id] !== undefined && data[id] !== null)
@@ -307,7 +307,6 @@ var bindSettingSave = function () {
 		var _param = {freqSet:[_freq1,_freq2,_freq3],voltSet:_volt};
 		paramObj = _param;
 		chrome.runtime.sendMessage({type: "setting", param:_param});
-		console.log( 'volt:' + _volt + '  freq1:' + _freq1 + 'freq2:' + _freq2 + 'freq3:' + _freq3);	
 		$('#dialogModel').modal('hide');
 		updateSetting();
 	});
@@ -338,12 +337,14 @@ var bindSaveButton = function(callback) {
 			_address = Pool_before[0];
 			var _port = parseInt(Pool_before[1] || 3333);
 			_pool.push({address:_address,port:_port,username:_worker,apiKey:_apikey});
-			console.log(i+ '---'+ _address + '---' + _worker + '---' + _apikey + '-----'+ _port);	
 		}	
 		poolObj = _pool;
 		chrome.runtime.sendMessage({type: "setting", pool:_pool});
 		updatePoolList();	
 		$('#dialogModel').modal('hide');
+		if (callback !== undefined) {
+			callback();
+		}
 	});
 }
 
@@ -472,6 +473,9 @@ var updateDeviceStatus = function ( deviceInfo ) {
 var updateDeviceVersion = function ( deviceId , version ) {
 	$("#nano-version-" + deviceId).html( version );
 }
+var updateErrorRate = function ( deviceId , data ) {
+	$("#nano-error-rate-" + deviceId).html( data );
+}
 var updateDeviceGHs5s = function ( deviceId , data ) {
 	$("#nano-ghs5s-" + deviceId).html( data );
 }
@@ -486,6 +490,7 @@ var devicePart = function( data ) {
 	_tpl += '<th>Version</th>';
 	_tpl += '<th>Temp(Cu/Fan)</th>';
 	_tpl += '<th>GHs5s</th>';
+	_tpl += '<th>Error%</th>';
 	_tpl += '</tr>'; 
 	_tpl += '</table>';
 	return _tpl;
@@ -534,6 +539,7 @@ var deviceTr = function(deviceObj) {
 	_tpl += '<td id="nano-version-' + nanoId + '">---</td>';
 	_tpl += '<td id="nano-temp-' + nanoId + '"><span id="cu-temp-' + nanoId + '">0</span> / <span id="fan-temp-' + nanoId + '">0</span></td>';
 	_tpl += '<td id="nano-ghs5s-'+ nanoId +'">0</td>';
+	_tpl += '<td id="nano-error-rate-'+ nanoId +'">0</td>';
 	_tpl += '</tr>';
 	$("#device").append(_tpl);
 }
@@ -582,12 +588,15 @@ var dialog = function( obj  , data ) {
 	_tpl += '<tr><th>Pool</th><th>Url</th><th>Worker</th><th>apiKey</th></tr>';
 	for(var i= 0 ; i < 3 ; i ++){
 		var _address = _worker = _apiKey = _port = '';
-		if(data[i] !==undefined ){
-			_address = data[i].address || '';
-			_worker = data[i].username || '';
-			_apiKey = data[i].apiKey || '';
-			_port = data[i].port || '';
-			_address = _address + ':' + _port;
+
+		if(data !== undefined){
+			if(data[i] !==undefined ){
+				_address = data[i].address || '';
+				_worker = data[i].username || '';
+				_apiKey = data[i].apiKey || '';
+				_port = data[i].port || '';
+				_address = _address + ':' + _port;
+			}
 		}
 		_tpl +=	'<tr>';
 		_tpl += '<td><label for="">#' + (i+1) + '</label></td>';
@@ -642,7 +651,6 @@ var settingDialog = function( obj  , data ) {
 	var _freq2 = data.freqSet[1]; 
 	var _freq3 = data.freqSet[2]; 
 	
-	console.log(_volt);
 	var _tpl = `
 		<div style="margin-bottom:50px;">
 			<div class="form-group">
@@ -691,39 +699,23 @@ $(function () {
 		if (sender.url.indexOf('background') > -1)
 			switch (msg.type) {
 				case "setting":
-					console.log("PoolInit");
-					console.log('pool start');
-					console.log(msg.pool);
-					console.log('pool end ');
-					console.log('param start');
-					console.log(msg.param);
 					globalSetting(msg.param);
-					console.log('param end ');
 					poolList(msg.pool);
 					break;
 				case "device":
-					console.log("NewNano");
 					nanoList({nanoId:msg.deviceId,deviceType:msg.deviceType});
-					console.log(msg);
 					break;
 				case "delete":
-					console.log("Deleted");
 					removeNano(msg.deviceId);
 					break;
 				case "pool":
-					console.log('updatePool');
-					console.log(msg);
 					updatePoolStatus(msg);		
 					break;
 				case "status":
-					console.log('updateDeviceStatus');
-					console.log(msg);
 					updateDeviceStatus(msg);
 					break;
 				case "hashrate":
-					console.log('HashRate');
 					updateHashrate(msg.hashrate);
-					console.log(msg);
 					break;
 				
 					

@@ -35,6 +35,7 @@ var workQueue = {
 var activePool = Infinity; // Bigger than bigger. Low id gets high priority.
 
 var hashrates = [];
+var errors = [];
 var totalHashrate = Array.apply(null, new Array(721)).map(Number.prototype.valueOf, 0);
 
 chrome.app.runtime.onLaunched.addListener(function() {
@@ -90,6 +91,12 @@ var messageHandler = function(msg, sender) {
 		break;
 	case "start":
 		main();
+		break;
+	case "enableLog":
+		utils.enableLog();
+		break;
+	case "disableLog":
+		utils.disableLog();
 		break;
 	case "setting":
 		if (msg.pool !== undefined) {
@@ -156,6 +163,7 @@ var hidAddedHandler = function(device) {
 	avalons[id].onStatus.addListener(statusHandler);
 	hashrates[id] = hashrates[id] ||
 		Array.apply(null, new Array(721)).map(Number.prototype.valueOf, 0);
+	errors[id] = errors[id] || {error: 0, all: 0};
 	if (enabled)
 		avalons[id].connect();
 };
@@ -167,6 +175,7 @@ var hidRemovedHandler = function(deviceId) {
 			avalon.stop();
 			delete(avalons[idx]);
 			delete(hashrates[idx]);
+			delete(errors[idx]);
 			chrome.runtime.sendMessage({type: "delete", deviceId: deviceId});
 			return;
 		}
@@ -260,10 +269,12 @@ var errorHandler = function(poolId) {
 		for (var i = activePool + 1; i <= 3; i++) {
 			if (pools[i] === undefined) {
 				activePool = Infinity;
+				thread.postMessage({info: "clean"});
 				workQueue.init();
 				break;
 			} else if (pools[i].alive) {
 				activePool = i;
+				thread.postMessage({info: "clean"});
 				workQueue.init();
 				var jq = jobQueue[activePool];
 				if (jq.thisId !== -1) {
@@ -304,9 +315,11 @@ var nonceHandler = function(info) {
 	if (job === undefined)
 		return;
 	var ntime = info.ntime + parseInt(job.ntime, 16);
+	errors[info.deviceId].all++;
 	switch (utils.varifyWork(job, info.nonce2, ntime, info.nonce)) {
 		case 2:
 			// hard ware error
+			errors[info.deviceId].error++;
 			return;
 		case 0:
 			pools[info.poolId].submit(
@@ -348,6 +361,7 @@ var scanDevices = function() {
 			avalons[id].onStatus.addListener(statusHandler);
 			hashrates[id] = hashrates[id] ||
 				Array.apply(null, new Array(721)).map(Number.prototype.valueOf, 0);
+			errors[id] = errors[id] || {error: 0, all: 0};
 		}
 	});
 };
@@ -355,9 +369,10 @@ var scanDevices = function() {
 var calcHashrate = function() {
 	(function loop() {
 		var hashrate = [];
-		var h;
+		var h, e;
 		for (var i in hashrates) {
 			h = hashrates[i];
+			e = errors[i];
 			if (h !== undefined) {
 				h.unshift(0);
 				hashrate.push({
@@ -368,6 +383,7 @@ var calcHashrate = function() {
 					hs1m: utils.arraySum(h.slice(1, 13)) / 60 * 4294967296,
 					hs15s: utils.arraySum(h.slice(1, 4))/ 15 * 4294967296,
 					hs5s: h[1] / 5 * 4294967296,
+					errorRate: e.error / e.all,
 				});
 				h.pop();
 			}
