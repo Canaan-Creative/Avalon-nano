@@ -247,7 +247,7 @@ static inline void led_ctrl(uint8_t led_op)
 		break;
 	case LED_IDLE:
 		g_ledstat |= 0xff;
-		led_set(LED_BLUE, LED_ON);
+		led_set(LED_BLUE, LED_BREATH);
 		break;
 	case LED_BUSY:
 		g_ledstat &= 0xffff00;
