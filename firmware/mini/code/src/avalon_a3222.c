@@ -160,6 +160,10 @@ static int a3222_process_spi(uint8_t *spi_txbuf)
 			continue;
 
 		last_nonce = tmp;
+#ifdef DEBUG_VERBOSE
+		if (RingBuffer_GetCount(&a3222_rxrb) == A3222_REPORT_CNT)
+			debug32("E: a3222_process_spi overflow %x\n", last_nonce);
+#endif
 		RingBuffer_Insert(&a3222_rxrb, report);
 	}
 
@@ -211,6 +215,11 @@ int a3222_push_work(uint8_t *pkg)
 
 	g_asic_index++;
 	g_asic_index %= ASIC_COUNT;
+
+#ifdef DEBUG_VERBOSE
+	if (RingBuffer_GetCount(&a3222_txrb) == A3222_WORK_CNT)
+		debug32("E: a3222_push_work overflow \n");
+#endif
 
 	return RingBuffer_Insert(&a3222_txrb, awork);
 }
