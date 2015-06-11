@@ -151,7 +151,6 @@ var updateHashrate = function( hashrates ){
 };
 var nanoList = function(deviceObj) {
 	nanoObj.push(deviceObj);
-	console.log(nanoObj);
 	if(enterFlag){
 		deviceTr(deviceObj);
 	}else{
@@ -196,7 +195,6 @@ var detectDevice = function() {
 	}
 }
 var poolList = function(data) {
-	console.log(data);
 	if( data !== undefined || data !==null){
 		for (var id in data){
 			if (data[id] !== undefined && data[id] !== null)
@@ -309,7 +307,6 @@ var bindSettingSave = function () {
 		var _param = {freqSet:[_freq1,_freq2,_freq3],voltSet:_volt};
 		paramObj = _param;
 		chrome.runtime.sendMessage({type: "setting", param:_param});
-		console.log( 'volt:' + _volt + '  freq1:' + _freq1 + 'freq2:' + _freq2 + 'freq3:' + _freq3);	
 		$('#dialogModel').modal('hide');
 		updateSetting();
 	});
@@ -340,7 +337,6 @@ var bindSaveButton = function(callback) {
 			_address = Pool_before[0];
 			var _port = parseInt(Pool_before[1] || 3333);
 			_pool.push({address:_address,port:_port,username:_worker,apiKey:_apikey});
-			console.log(i+ '---'+ _address + '---' + _worker + '---' + _apikey + '-----'+ _port);	
 		}	
 		poolObj = _pool;
 		chrome.runtime.sendMessage({type: "setting", pool:_pool});
@@ -655,7 +651,6 @@ var settingDialog = function( obj  , data ) {
 	var _freq2 = data.freqSet[1]; 
 	var _freq3 = data.freqSet[2]; 
 	
-	console.log(_volt);
 	var _tpl = `
 		<div style="margin-bottom:50px;">
 			<div class="form-group">
@@ -704,39 +699,23 @@ $(function () {
 		if (sender.url.indexOf('background') > -1)
 			switch (msg.type) {
 				case "setting":
-					console.log("PoolInit");
-					console.log('pool start');
-					console.log(msg.pool);
-					console.log('pool end ');
-					console.log('param start');
-					console.log(msg.param);
 					globalSetting(msg.param);
-					console.log('param end ');
 					poolList(msg.pool);
 					break;
 				case "device":
-					console.log("NewNano");
 					nanoList({nanoId:msg.deviceId,deviceType:msg.deviceType});
-					console.log(msg);
 					break;
 				case "delete":
-					console.log("Deleted");
 					removeNano(msg.deviceId);
 					break;
 				case "pool":
-					console.log('updatePool');
-					console.log(msg);
 					updatePoolStatus(msg);		
 					break;
 				case "status":
-					console.log('updateDeviceStatus');
-					console.log(msg);
 					updateDeviceStatus(msg);
 					break;
 				case "hashrate":
-					console.log('HashRate');
 					updateHashrate(msg.hashrate);
-					console.log(msg);
 					break;
 				
 					
