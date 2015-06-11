@@ -65,6 +65,7 @@ back to front: hashrate
 			hs1m: float,
 			hs15s: float,
 			hs5s: float,
+			errorRate: float,
 		},
 		...
 		{

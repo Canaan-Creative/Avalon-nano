@@ -3,6 +3,7 @@ var enterFlag = false;
 var poolObj = [];
 var nanoObj = [];
 var paramObj = [];
+var highcharts;
 var renderChart = function() {
 	Highcharts.setOptions({
 		global: {useUTC: false}
@@ -12,16 +13,6 @@ var renderChart = function() {
 			type: 'spline',
 			animation: Highcharts.svg, // don't animate in old IE
 			marginRight: 10,
-			events: {
-				load: function() {
-					var series = this.series;
-					setInterval(function() {
-						var x = (new Date()).getTime();
-						for (var i in series)
-							series[i].addPoint([x, hashrate[i]], true, true);
-					}, 5000);
-				}
-			}
 		},
 		title: {text: 'Avalon miner Live Hashrate'},
 		xAxis: {
@@ -76,6 +67,7 @@ var renderChart = function() {
 			return series;
 		})()
 	});
+	highcharts = $('#container').highcharts();
 };
 var getPrice = function() {
 	setInterval(getRemoteData, 1000 * 5);
@@ -149,6 +141,12 @@ var updateHashrate = function( hashrates ){
 	for(var i = 0; i < _len ; i++){
 		updateDeviceGHs5s(hashrates[i].deviceId , (hashrates[i].hs5s/1000000000).toFixed(1));
 	}
+
+	var x = (new Date()).getTime();
+	var series = highcharts.series;
+	for (var i in series)
+		series[i].addPoint([x, hashrate[i]], true, true);
+
 };
 var nanoList = function(deviceObj) {
 	nanoObj.push(deviceObj);
