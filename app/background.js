@@ -260,10 +260,12 @@ var errorHandler = function(poolId) {
 		for (var i = activePool + 1; i <= 3; i++) {
 			if (pools[i] === undefined) {
 				activePool = Infinity;
+				thread.postMessage({info: "clean"});
 				workQueue.init();
 				break;
 			} else if (pools[i].alive) {
 				activePool = i;
+				thread.postMessage({info: "clean"});
 				workQueue.init();
 				var jq = jobQueue[activePool];
 				if (jq.thisId !== -1) {
