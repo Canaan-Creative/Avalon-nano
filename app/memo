@@ -21,6 +21,8 @@ front to back:
 	{type: "start"}
 
 ===================================================================================
+front to back: toggle logging
+	{type: "enableLog" || "disableLog"}
 front to back: change setting
 	{type: "setting", pool: ..., param: ...}
 

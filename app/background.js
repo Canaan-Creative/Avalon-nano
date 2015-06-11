@@ -92,6 +92,12 @@ var messageHandler = function(msg, sender) {
 	case "start":
 		main();
 		break;
+	case "enableLog":
+		utils.enableLog();
+		break;
+	case "disableLog":
+		utils.disableLog();
+		break;
 	case "setting":
 		if (msg.pool !== undefined) {
 			for (i = 0; i < pools.length; i++) {
@@ -379,7 +385,6 @@ var calcHashrate = function() {
 					hs5s: h[1] / 5 * 4294967296,
 					errorRate: e.error / e.all,
 				});
-				console.info(e.error / e.all);
 				h.pop();
 			}
 		}
