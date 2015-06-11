@@ -346,6 +346,9 @@ var bindSaveButton = function(callback) {
 		chrome.runtime.sendMessage({type: "setting", pool:_pool});
 		updatePoolList();	
 		$('#dialogModel').modal('hide');
+		if (callback !== undefined) {
+			callback();
+		}
 	});
 }
 
@@ -589,12 +592,15 @@ var dialog = function( obj  , data ) {
 	_tpl += '<tr><th>Pool</th><th>Url</th><th>Worker</th><th>apiKey</th></tr>';
 	for(var i= 0 ; i < 3 ; i ++){
 		var _address = _worker = _apiKey = _port = '';
-		if(data[i] !==undefined ){
-			_address = data[i].address || '';
-			_worker = data[i].username || '';
-			_apiKey = data[i].apiKey || '';
-			_port = data[i].port || '';
-			_address = _address + ':' + _port;
+
+		if(data !== undefined){
+			if(data[i] !==undefined ){
+				_address = data[i].address || '';
+				_worker = data[i].username || '';
+				_apiKey = data[i].apiKey || '';
+				_port = data[i].port || '';
+				_address = _address + ':' + _port;
+			}
 		}
 		_tpl +=	'<tr>';
 		_tpl += '<td><label for="">#' + (i+1) + '</label></td>';
