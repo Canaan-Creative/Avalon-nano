@@ -196,7 +196,6 @@ int a3222_push_work(uint8_t *pkg)
 	memcpy(awork + 72, pkg + 32, 6);	 /* id + reserved */
 	awork[78] = g_asic_index;		/* asic */
 	awork[79] = g_ntime;			/* ntime */
-	debug32("D: ntime %d\n", g_ntime);
 
 	if ((g_freqflag >> g_asic_index) & 1) {
 		debug32("D: C-%d\n", g_asic_index);
