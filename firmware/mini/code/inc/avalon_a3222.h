@@ -8,6 +8,12 @@
 #ifndef __AVALON_A3222_H_
 #define __AVALON_A3222_H_
 
+#define A3222_WORK_SIZE		(23 * 4)
+#define A3222_WORK_CNT		8
+
+#define A3222_REPORT_SIZE	12 /* work_id (8bytes) + nonce (4bytes) */
+#define A3222_REPORT_CNT	12
+
 #define A3222_DEFAULT_FREQ  0x1e678447  /* 100 Mhz */
 
 void a3222_reset(void);

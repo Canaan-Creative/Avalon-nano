@@ -19,12 +19,6 @@
 #include "sha2.h"
 #include "libfunctions.h"
 
-#define A3222_WORK_SIZE		(23 * 4)
-#define A3222_WORK_CNT		8
-
-#define A3222_REPORT_SIZE	12 /* work_id (8bytes) + nonce (4bytes) */
-#define A3222_REPORT_CNT	12
-
 #define PIN_LOAD	19
 #define PIN_SCK	15
 #define PIN_MISO	22
@@ -106,7 +100,7 @@ void a3222_sw_init(void)
 	load_set(0);
 
 	g_freqflag = 0;
-	g_asic_index = 0;
+	g_asic_index = (ASIC_COUNT - 1);
 
 	for (i = 0; i < ASIC_COUNT; i++) {
 		g_freq[i][0] = 0x01;
@@ -156,7 +150,7 @@ static int a3222_process_spi(uint8_t *spi_txbuf)
 	for (i = 0; i < 8; i++) {
 		memcpy(report + 8, spi_rxbuf + 8 + i * 4, 4);
 		tmp = report[8] << 24 | report[9] << 16 | report[10] << 8 | report[11];
-		if (tmp == 0xbeafbeaf || tmp == last_nonce)
+		if (tmp == 0xbeafbeaf || tmp == last_nonce || (report[6] >= ASIC_COUNT))
 			continue;
 
 		last_nonce = tmp;
@@ -213,8 +207,10 @@ int a3222_push_work(uint8_t *pkg)
 		memcpy(awork + 88, "\x0\x0\x0\x1", 4);
 	}
 
-	g_asic_index++;
-	g_asic_index %= ASIC_COUNT;
+	if (g_asic_index > 0)
+		g_asic_index--;
+	else
+		g_asic_index = ASIC_COUNT - 1;
 
 #ifdef DEBUG_VERBOSE
 	if (RingBuffer_GetCount(&a3222_txrb) == A3222_WORK_CNT)
