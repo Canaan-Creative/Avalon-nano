@@ -9,7 +9,7 @@ onmessage = function(e) {
 			close();
 			break;
 		case "pause":
-			enable = false;
+			enabled = false;
 			break;
 		case "clean":
 			job = undefined;

@@ -1,4 +1,3 @@
-// TODO: error handling
 var Pool = function(id, url, port, username, password) {
 	var difficulty = 1;
 	var nonce1 = null;
