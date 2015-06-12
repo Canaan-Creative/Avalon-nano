@@ -17,8 +17,6 @@ var workQueue = {
 			thread.postMessage({info: "resume"});
 			threadPaused = false;
 		}
-		if (workQueue.value.length === 1)
-			console.warn("Low on works!!!");
 		return this.value.shift();
 	},
 	push: function(data) {
