@@ -73,6 +73,119 @@ static int init_mm_pkg(struct avalon_pkg *pkg, uint8_t type)
 	return 0;
 }
 
+static void led_ctrl(uint8_t led_op)
+{
+	switch(led_op) {
+	case LED_OFF_ALL:
+		g_ledstat = 0;
+		led_set(LED_RED, LED_OFF);
+		led_set(LED_GREEN, LED_OFF);
+		led_set(LED_BLUE, LED_OFF);
+		break;
+	case LED_IDLE:
+		g_ledstat |= 0xff;
+		led_set(LED_BLUE, LED_BREATH);
+		break;
+	case LED_BUSY:
+		g_ledstat &= 0xffff00;
+		led_set(LED_BLUE, LED_OFF);
+		break;
+	case LED_ERR_ON:
+		g_ledstat |= 0xff0000;
+		led_set(LED_RED, LED_ON);
+		break;
+	case LED_ERR_OFF:
+		g_ledstat &= 0xffff;
+		led_set(LED_RED, LED_OFF);
+		break;
+	case LED_PG_ON:
+		g_ledstat |= 0xff00;
+		led_set(LED_GREEN, LED_ON);
+		break;
+	case LED_PG_OFF:
+		g_ledstat &= 0xff00ff;
+		led_set(LED_GREEN, LED_OFF);
+		break;
+	}
+}
+
+int testcores(uint32_t core_num, uint32_t ret)
+{
+	uint32_t result[ASIC_COUNT];
+	uint8_t txdat[20];
+	uint32_t all = ASIC_COUNT * core_num;
+	uint32_t corefailed, i, j;
+	uint8_t golden_ob[] = "\x46\x79\xba\x4e\xc9\x98\x76\xbf\x4b\xfe\x08\x60\x82\xb4\x00\x25\x4d\xf6\xc3\x56\x45\x14\x71\x13\x9a\x3a\xfa\x71\xe4\x8f\x54\x4a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x87\x32\x0b\x1a\x14\x26\x67\x4f\x2f\xa7\x22\xce";
+	uint8_t	report[A3222_REPORT_SIZE];
+
+	a3222_sw_init();
+	corefailed = all;
+	memset(result, 0, ASIC_COUNT * sizeof(uint32_t));
+
+	for (i = 0; i < (core_num + 2); i++) {
+#ifdef DEBUG_VERBOSE
+		debug32("D: core %d\n", i);
+#endif
+		for (j = 0; j < ASIC_COUNT; j++)
+			a3222_push_work(golden_ob);
+
+		a3222_process();
+		delay(40);
+		if (i >= 2) {
+			while (a3222_get_report_count()) {
+				a3222_get_report(report);
+#ifdef DEBUG_VERBOSE
+				debug32("D: N = %x, C = %d\n", report[8] << 24 |
+						report[9] << 16 |
+						report[10] << 8 |
+						report[11], report[6]);
+#endif
+				if (0x0001c7a2 == (report[8] << 24 |
+							report[9] << 16 |
+							report[10] << 8 |
+							report[11])) {
+					corefailed--;
+					result[report[6]]++;
+				}
+			}
+		}
+	}
+
+	txdat[0] = 0;
+	for (i = 0; i < ASIC_COUNT; i++) {
+		txdat[1 + i * 4] = (result[i] >> 24) & 0xff;
+		txdat[2 + i * 4] = (result[i] >> 16) & 0xff;
+		txdat[3 + i * 4] = (result[i] >> 8) & 0xff;
+		txdat[4 + i * 4] = result[i] & 0xff;
+		debug32("%d ", result[i]);
+	}
+	debug32("\n");
+	if (ret) {
+		memset(g_ackpkg, 0, AVAM_P_COUNT);
+		memcpy(g_ackpkg + AVAM_P_DATAOFFSET, txdat, ASIC_COUNT * 4 + 1);
+		init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_TEST_RET);
+		UCOM_Write(g_ackpkg);
+	}
+
+	if (ret) {
+		txdat[0] = (corefailed >> 24) & 0xff;
+		txdat[1] = (corefailed >> 16) & 0xff;
+		txdat[2] = (corefailed >> 8) & 0xff;
+		txdat[3] = corefailed & 0xff;
+		txdat[4] = (all >> 24) & 0xff;
+		txdat[5] = (all >> 16) & 0xff;
+		txdat[6] = (all >> 8) & 0xff;
+		txdat[7] = all & 0xff;
+		memset(g_ackpkg, 0, AVAM_P_COUNT);
+		memcpy(g_ackpkg + AVAM_P_DATAOFFSET, txdat, 8);
+		init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_TEST_RET);
+		UCOM_Write(g_ackpkg);
+	}
+
+	debug32("E/A: %d/%d\n", corefailed, all);
+	return corefailed;
+}
+
 static void process_mm_pkg(struct avalon_pkg *pkg)
 {
 	unsigned int expected_crc;
@@ -236,41 +349,36 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	}
 }
 
-static inline void led_ctrl(uint8_t led_op)
+#ifdef TEST_CORE
+void coretest_main()
 {
-	switch(led_op) {
-	case LED_OFF_ALL:
-		g_ledstat = 0;
-		led_set(LED_RED, LED_OFF);
-		led_set(LED_GREEN, LED_OFF);
-		led_set(LED_BLUE, LED_OFF);
-		break;
-	case LED_IDLE:
-		g_ledstat |= 0xff;
-		led_set(LED_BLUE, LED_BREATH);
-		break;
-	case LED_BUSY:
-		g_ledstat &= 0xffff00;
-		led_set(LED_BLUE, LED_OFF);
-		break;
-	case LED_ERR_ON:
-		g_ledstat |= 0xff0000;
-		led_set(LED_RED, LED_ON);
-		break;
-	case LED_ERR_OFF:
-		g_ledstat &= 0xffff;
-		led_set(LED_RED, LED_OFF);
-		break;
-	case LED_PG_ON:
-		g_ledstat |= 0xff00;
-		led_set(LED_GREEN, LED_ON);
-		break;
-	case LED_PG_OFF:
-		g_ledstat &= 0xff00ff;
-		led_set(LED_GREEN, LED_OFF);
-		break;
-	}
+	uint8_t i;
+	uint32_t val[3];
+
+	debug32("D: coretest\n");
+
+	led_set(LED_GREEN, LED_OFF);
+	led_set(LED_BLUE, LED_OFF);
+
+	set_voltage(ASIC_CORETEST_VOLT);
+	a3222_reset();
+	val[0] = val[1] = val[2] = ASIC_CORETEST_FREQ;
+	for (i = 0; i < ASIC_COUNT; i++)
+		a3222_set_freq(&val, i);
+
+	if (testcores(TEST_CORE_COUNT, 0) > 2 * TEST_CORE_COUNT)
+		led_ctrl(LED_ERR_ON);
+	else
+		led_ctrl(LED_ERR_OFF);
+
+	set_voltage(ASIC_0V);
+	led_set(LED_GREEN, LED_BREATH);
+	led_set(LED_BLUE, LED_BREATH);
+
+	while (42)
+		__WFI();
 }
+#endif
 
 int main(void)
 {
@@ -288,13 +396,17 @@ int main(void)
 	led_init();
 	uart_init();
 	adc_init();
+	wdt_init(WDT_IDLE);
 
-	set_voltage(ASIC_0V);
-	wdt_init(3);	/* 3 seconds */
+	debug32("Ver:%s\n", AVAM_VERSION);
+	led_ctrl(LED_OFF_ALL);
+
+#ifdef TEST_CORE
+	coretest_main();
+#endif
 	wdt_enable();
 	timer_set(TIMER_ID1, IDLE_TIME);
-	led_ctrl(LED_OFF_ALL);
-	debug32("Ver:%s\n", AVAM_VERSION);
+	set_voltage(ASIC_0V);
 
 	while (42) {
 		if (dfu_sig()) {
