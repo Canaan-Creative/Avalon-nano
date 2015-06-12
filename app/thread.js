@@ -54,7 +54,7 @@ var loop = function() {
 			Avalon.P_WORK, 0, idx, cnt,
 			raw.slice((idx - 1) * 32, idx * 32)
 		));
-	postMessage(work);
+	postMessage(work, work);
 	nonce2++;
 
 	if (enabled)
