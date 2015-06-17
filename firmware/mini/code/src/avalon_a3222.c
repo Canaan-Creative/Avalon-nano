@@ -24,9 +24,10 @@
 #define PIN_MISO	22
 #define PIN_MOSI	21
 #define PIN_FPGARESET	2
+#define DEFALUT_FREQ_SETTIMES	4
 
 static uint8_t g_asic_index;
-static uint8_t g_freqflag;
+static uint8_t g_freqflag[ASIC_COUNT];
 static uint32_t g_freq[ASIC_COUNT][3];
 static uint32_t g_spispeed = 1000000;
 
@@ -99,13 +100,13 @@ void a3222_sw_init(void)
 
 	load_set(0);
 
-	g_freqflag = 0;
 	g_asic_index = (ASIC_COUNT - 1);
 
 	for (i = 0; i < ASIC_COUNT; i++) {
 		g_freq[i][0] = 0x01;
 		g_freq[i][1] = 0x01;
 		g_freq[i][2] = 0x01;
+		g_freqflag[i] = 0;
 	}
 
 	RingBuffer_Flush(&a3222_txrb);
@@ -195,9 +196,9 @@ int a3222_push_work(uint8_t *pkg)
 	awork[78] = g_asic_index;		/* asic */
 	awork[79] = g_ntime;			/* ntime */
 
-	if ((g_freqflag >> g_asic_index) & 1) {
+	if (g_freqflag[g_asic_index]) {
 		debug32("D: C-%d\n", g_asic_index);
-		g_freqflag &= ~(1 << g_asic_index);
+		g_freqflag[g_asic_index]--;
 		UNPACK32(g_freq[g_asic_index][0], awork + 80);
 		UNPACK32(g_freq[g_asic_index][1], awork + 84);
 		UNPACK32(g_freq[g_asic_index][2], awork + 88);
@@ -262,7 +263,7 @@ void a3222_set_freq(uint32_t *freq, uint8_t index)
 	if (index >= ASIC_COUNT)
 		return;
 
-	g_freqflag |= (1 << index);
+	g_freqflag[index] = DEFALUT_FREQ_SETTIMES;
 	memcpy(g_freq[index], freq, sizeof(uint32_t) * 3);
 }
 
