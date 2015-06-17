@@ -12,13 +12,15 @@
 #include "board.h"
 #include "libfunctions.h"
 
+/* FIXME: SystemCoreClock / 10000 is not accurate */
+#define TICKS (48000000 / 10000)
+
 void delay(unsigned int ms)
 {
 	unsigned int i;
-	unsigned int msticks = SystemCoreClock/16000; /* FIXME: 16000 is not accurate */
 
 	while (ms && ms--) {
-		for(i = 0; i < msticks; i++)
+		for(i = 0; i < TICKS; i++)
 			__NOP();
 	}
 }
