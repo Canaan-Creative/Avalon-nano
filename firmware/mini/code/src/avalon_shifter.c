@@ -19,7 +19,7 @@
 #define PIN_SHCP	17
 #define PIN_STCP	16
 #define PIN_PG	7
-#define VOLTAGE_DELAY   100
+#define VOLTAGE_DELAY	40
 static uint16_t g_voltage = ASIC_0V;
 
 static void init_mux(void)
@@ -73,16 +73,11 @@ int set_voltage(uint16_t vol)
 	shifter_byte(vol & 0xff);
 
 	g_voltage = vol;
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_STCP, 1);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_STCP, 0);
+	Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_OE, 0);
 	if (poweron && vol != ASIC_0V)
 		delay(VOLTAGE_DELAY);
-
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_STCP, 1);
-	__NOP();
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_STCP, 0);
-	__NOP();
-	__NOP();
-	__NOP();
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, PIN_OE, 0);
 
 	if (vol == ASIC_0V)
 			return 0;
