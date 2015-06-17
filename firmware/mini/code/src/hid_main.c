@@ -118,7 +118,6 @@ int testcores(uint32_t core_num, uint32_t ret)
 	uint8_t golden_ob[] = "\x46\x79\xba\x4e\xc9\x98\x76\xbf\x4b\xfe\x08\x60\x82\xb4\x00\x25\x4d\xf6\xc3\x56\x45\x14\x71\x13\x9a\x3a\xfa\x71\xe4\x8f\x54\x4a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x87\x32\x0b\x1a\x14\x26\x67\x4f\x2f\xa7\x22\xce";
 	uint8_t	report[A3222_REPORT_SIZE];
 
-	a3222_sw_init();
 	corefailed = all;
 	memset(result, 0, ASIC_COUNT * sizeof(uint32_t));
 
@@ -361,6 +360,7 @@ void coretest_main()
 	led_set(LED_BLUE, LED_OFF);
 
 	set_voltage(ASIC_CORETEST_VOLT);
+	a3222_sw_init();
 	a3222_reset();
 	val[0] = val[1] = val[2] = ASIC_CORETEST_FREQ;
 	for (i = 0; i < ASIC_COUNT; i++)
