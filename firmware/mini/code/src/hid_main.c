@@ -314,9 +314,9 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		}
 
 		if (pkg->opt) {
-			val[0] = g_freq[pkg->opt - 1][0];
+			val[0] = g_freq[pkg->opt - 1][2];
 			val[1] = g_freq[pkg->opt - 1][1];
-			val[2] = g_freq[pkg->opt - 1][2];
+			val[2] = g_freq[pkg->opt - 1][0];
 
 			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET);
 			UNPACK32(val[1], g_ackpkg + AVAM_P_DATAOFFSET + 4);
