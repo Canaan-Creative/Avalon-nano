@@ -59,20 +59,7 @@ var Utils = function() {
 		0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
 	];
 
-	var NANO_LOG_LIMIT = 1;
-	var POOL_LOG_LIMIT = 1;
-	var NANO_LOG1_STYLE = 'color: green';
-	var NANO_LOG2_STYLE = 'color: blue';
-	var NANO_DEBUG_STYLE = 'color: black';
-	var POOL_LOG1_STYLE = 'color: orange';
-	var POOL_LOG2_STYLE = 'color: orangered';
-	var POOL_DEBUG_STYLE = 'color: grey';
-	var MINER_LOG1_STYLE = 'color: pink';
-	var MINER_LOG2_STYLE = 'color: magenta';
-	var MINER_DEBUG_STYLE = 'color: silver';
-
 	this.check_version = function(version) {
-		//return version.slice(0, 15) === '3U1504-88c2f620';
 		return version.slice(0, 6) === '3U1504' ||
 			version.slice(0, 6) === '4M1505';
 	};

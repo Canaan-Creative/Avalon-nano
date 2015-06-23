@@ -207,17 +207,17 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 		if (!enable)
 			return;
 		send(SET_VOLT_PKG);
-		send(Avalon.POLL_PKG);
-		receive();
+		//send(Avalon.POLL_PKG);
+		//receive();
 		setTimeout(function() {
 			if (!enable)
 				return;
 			send(SET_FREQ_PKG0);
-			send(Avalon.POLL_PKG);
-			receive();
+			//send(Avalon.POLL_PKG);
+			//receive();
 			send(SET_FREQ_PKG);
-			send(Avalon.POLL_PKG);
-			receive();
+			//send(Avalon.POLL_PKG);
+			//receive();
 			phase = "push";
 			pushPhase();
 		}, 1000);
