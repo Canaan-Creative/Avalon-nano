@@ -1,65 +1,67 @@
-//-----------------------------------------------------------------------------
-// Software that is described herein is for illustrative purposes only
-// which provides customers with programming information regarding the
-// products. This software is supplied "AS IS" without any warranties.
-// NXP Semiconductors assumes no responsibility or liability for the
-// use of the software, conveys no license or title under any patent,
-// copyright, or mask work right to the product. NXP Semiconductors
-// reserves the right to make changes in the software without
-// notification. NXP Semiconductors also make no representation or
-// warranty that such application will be suitable for the specified
-// use without further testing or modification.
-//-----------------------------------------------------------------------------
+/*
+ * @brief
+ *
+ * @note
+ * Author: Mikeqin Fengling.Qin@gmail.com
+ *
+ * @par
+ * This is free and unencumbered software released into the public domain.
+ * For details see the UNLICENSE file at the root of the source tree.
+ */
 #include <string.h>
-
-#include "sbl_iap.h"
-#include "sbl_config.h"
-
 #include "board.h"
+#include "sbl_iap.h"
 #include "libfunctions.h"
 
-#define iap_entry ((void (*)(unsigned [],unsigned []))(IAP_ENTRY_LOCATION))
+#define FLASH_BUF_SIZE	512
+#define SECTOR_0_START_ADDR	0
+#define SECTOR_SIZE	4096
+#define MAX_USER_SECTOR	8
+#define CCLK	48000	/* 48,000 KHz for IAP call */
+#define iap_entry ((void (*)(unsigned int [],unsigned int []))(IAP_ENTRY_LOCATION))
 
-unsigned g_param_table[5];
-unsigned g_result_table[5];
-unsigned g_cclk;
-char g_flash_buf[FLASH_BUF_SIZE];
-unsigned *g_flash_address;
-unsigned g_byte_ctr;
+unsigned char g_flash_buf[FLASH_BUF_SIZE];
 
-static void write_data(unsigned cclk,unsigned flash_address,unsigned * flash_data_buf, unsigned count)
+static int write_data(unsigned int flash_address, unsigned char *data_addr, unsigned int count)
 {
-	g_param_table[0] = COPY_RAM_TO_FLASH;
-	g_param_table[1] = flash_address;
-	g_param_table[2] = (unsigned)flash_data_buf;
-	g_param_table[3] = count;
-	g_param_table[4] = cclk;
-	iap_entry(g_param_table, g_result_table);
+	unsigned int param_table[5];
+	unsigned int result_table[5];
+
+	param_table[0] = COPY_RAM_TO_FLASH;
+	param_table[1] = flash_address;
+	param_table[2] = (unsigned int)data_addr;
+	param_table[3] = count;
+	param_table[4] = CCLK;
+	iap_entry(param_table, result_table);
+
+	return result_table[0];
 }
 
-static void erase_sector_usb(unsigned start_sector, unsigned end_sector, unsigned cclk)
+static int erase_sector_usb(unsigned int start_sector, unsigned int end_sector)
 {
-	g_param_table[0] = ERASE_SECTOR;
-	g_param_table[1] = start_sector;
-	g_param_table[2] = end_sector;
-	g_param_table[3] = cclk;
-	iap_entry(g_param_table, g_result_table);
+	unsigned int param_table[5];
+	unsigned int result_table[5];
+
+	param_table[0] = ERASE_SECTOR;
+	param_table[1] = start_sector;
+	param_table[2] = end_sector;
+	param_table[3] = CCLK;
+	iap_entry(param_table, result_table);
+
+	return result_table[0];
 }
 
-static void prepare_sector_usb(unsigned start_sector,unsigned end_sector,unsigned cclk)
+static int prepare_sector_usb(unsigned int start_sector, unsigned int end_sector)
 {
-	g_param_table[0] = PREPARE_SECTOR_FOR_WRITE;
-	g_param_table[1] = start_sector;
-	g_param_table[2] = end_sector;
-	g_param_table[3] = cclk;
-	iap_entry(g_param_table, g_result_table);
-}
+	unsigned int param_table[5];
+	unsigned int result_table[5];
 
-void init_usb_iap(void)
-{
-	g_cclk = CCLK;
-	g_byte_ctr = 0;
-	g_flash_address = (unsigned *)UPDATE_REQD;
+	param_table[0] = PREPARE_SECTOR_FOR_WRITE;
+	param_table[1] = start_sector;
+	param_table[2] = end_sector;
+	iap_entry(param_table, result_table);
+
+	return result_table[0];
 }
 
 /*
@@ -68,10 +70,10 @@ void init_usb_iap(void)
  */
 int iap_readserialid(char *dna)
 {
-	uint32_t param_table[5];
-	uint32_t result_table[5];
+	unsigned int param_table[5];
+	unsigned int result_table[5];
 
-	param_table[0] = IAP_CMD_READUID;
+	param_table[0] = READ_UID;
 	iap_entry(param_table, result_table);
 	if (!result_table[0]) {
 		result_table[1] = be32toh(result_table[1]);
@@ -84,52 +86,45 @@ int iap_readserialid(char *dna)
 	return 1;
 }
 
-static void find_erase_prepare_sector(unsigned cclk, unsigned flash_address)
+static int find_erase_prepare_sector(unsigned int flash_address)
 {
-	unsigned i;
-	unsigned end_sector;
+	unsigned int i;
+	unsigned int end_sector;
 
 	end_sector = MAX_USER_SECTOR;
 	for (i = 0; i <= end_sector; i++) {
 		if (flash_address < (SECTOR_0_START_ADDR + ((i + 1) * SECTOR_SIZE))) {
 			if (flash_address == SECTOR_0_START_ADDR + (SECTOR_SIZE * i)) {
-				prepare_sector_usb(i, i, cclk);
-				erase_sector_usb(i, i, cclk);
+				if (prepare_sector_usb(i, i))
+					return 1;
+				if (erase_sector_usb(i, i))
+					return 1;
 			}
-			prepare_sector_usb(i, i, cclk);
+
+			if (prepare_sector_usb(i, i))
+				return 1;
 			break;
 		}
 	}
+
+	return 0;
 }
 
-unsigned write_flash(unsigned * dst, char * src, unsigned no_of_bytes)
+unsigned int write_flash(unsigned int dst, unsigned char *src, unsigned int no_of_bytes)
 {
-	unsigned enabled_irqs;
+	static unsigned int byte_cnt = 0;
 
-	enabled_irqs = NVIC->ISER[0];
+	memcpy(&g_flash_buf[byte_cnt], src, no_of_bytes);
+	byte_cnt += no_of_bytes;
 
-	if (g_flash_address == (unsigned *)UPDATE_REQD) {
-		/* Store flash start address */
-		g_flash_address = (unsigned *)dst;
+	if (byte_cnt == FLASH_BUF_SIZE) {
+		byte_cnt = 0;
+		if (find_erase_prepare_sector(dst))
+			return 1;
+		if (write_data(dst, g_flash_buf, FLASH_BUF_SIZE))
+			return 1;
 	}
-	memcpy(&g_flash_buf[g_byte_ctr], src, no_of_bytes);
-	g_byte_ctr = g_byte_ctr + no_of_bytes;
 
-	if (g_byte_ctr == FLASH_BUF_SIZE) {
-		/* We have accumulated enough bytes to trigger a flash write */
-		NVIC->ICER[0] = enabled_irqs;
-		find_erase_prepare_sector(g_cclk, (unsigned)g_flash_address);
-		if(g_result_table[0] != CMD_SUCCESS) {
-			while(1); /* No way to recover. Just let Windows report a write failure */
-		}
-		write_data(g_cclk,(unsigned)g_flash_address,(unsigned *)g_flash_buf,FLASH_BUF_SIZE);
-		if(g_result_table[0] != CMD_SUCCESS) {
-			while(1); /* No way to recover. Just let Windows report a write failure */
-		}
-		/* Reset byte counter and flash address */
-		g_byte_ctr = 0;
-		g_flash_address = (unsigned *)UPDATE_REQD;
-	}
-	NVIC->ISER[0] = enabled_irqs;
-	return (CMD_SUCCESS);
+	return 0;
 }
+

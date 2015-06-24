@@ -1,28 +1,19 @@
-//-----------------------------------------------------------------------------
-// Software that is described herein is for illustrative purposes only
-// which provides customers with programming information regarding the
-// products. This software is supplied "AS IS" without any warranties.
-// NXP Semiconductors assumes no responsibility or liability for the
-// use of the software, conveys no license or title under any patent,
-// copyright, or mask work right to the product. NXP Semiconductors
-// reserves the right to make changes in the software without
-// notification. NXP Semiconductors also make no representation or
-// warranty that such application will be suitable for the specified
-// use without further testing or modification.
-//-----------------------------------------------------------------------------
-
+/*
+ * @brief
+ *
+ * @note
+ * Author: Mikeqin Fengling.Qin@gmail.com
+ *
+ * @par
+ * This is free and unencumbered software released into the public domain.
+ * For details see the UNLICENSE file at the root of the source tree.
+ */
 #ifndef  _SBL_IAP_H
 #define  _SBL_IAP_H
 
-
 #define IAP_ADDRESS 	0x1FFF1FF1
-#define IAP_CMD_READUID 58
-#define CMD_SUCCESS 	0
-#define UPDATE_REQD 	133
 
-extern const unsigned crp;
-
-typedef enum {
+enum iap_cmd_code {
 	PREPARE_SECTOR_FOR_WRITE=50,
 	COPY_RAM_TO_FLASH=51,
 	ERASE_SECTOR=52,
@@ -30,12 +21,11 @@ typedef enum {
 	READ_PART_ID=54,
 	READ_BOOT_VER=55,
 	COMPARE=56,
-	REINVOKE_ISP=57
-} IAP_Command_Code;
+	REINVOKE_ISP=57,
+	READ_UID=58
+};
 
-unsigned write_flash(unsigned *dst, char *src, unsigned no_of_bytes);
-void erase_user_flash(void);
-void init_usb_iap(void);
+unsigned int write_flash(unsigned int dst, unsigned char *src, unsigned int no_of_bytes);
 int iap_readserialid(char *dna);
 
 #endif /* _SBL_IAP_H */

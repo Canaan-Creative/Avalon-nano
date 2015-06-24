@@ -40,6 +40,7 @@
 
 #define HID_INPUT_REPORT_BYTES       40				/* size of report in Bytes */
 #define HID_OUTPUT_REPORT_BYTES      40				/* size of report in Bytes */
+#define HID_DFU_XFER_BYTES	(USB_DFU_XFER_SIZE / 4)
 
 #ifdef __GNUC__
 #define ALIGN4 __attribute__ ((aligned(4)))
@@ -126,7 +127,7 @@ ALIGNED(4) uint8_t USB_FsConfigDescriptor[] = {
 	USB_DFU_DESCRIPTOR_TYPE,           /* bDescriptorType */
 	USB_DFU_CAN_DOWNLOAD | USB_DFU_CAN_UPLOAD | USB_DFU_MANIFEST_TOL | USB_DFU_WILL_DETACH, /* bmAttributes */
 	WBVAL(0xFF00),                     /* wDetachTimeout */
-	WBVAL(USB_DFU_XFER_SIZE),          /* wTransferSize */
+	WBVAL(HID_DFU_XFER_BYTES),          /* wTransferSize */
 	WBVAL(0x100),                      /* bcdDFUVersion */
 
 	/* Interface 1, Alternate Setting 0, HID Class */
@@ -195,7 +196,7 @@ ALIGN4 const uint8_t USB_dfuConfigDescriptor[] = {
 	USB_DFU_DESCRIPTOR_TYPE,           /* bDescriptorType */
 	USB_DFU_CAN_DOWNLOAD | USB_DFU_CAN_UPLOAD | USB_DFU_MANIFEST_TOL | USB_DFU_WILL_DETACH,
 	WBVAL(0xFF00),                     /* wDetachTimeout */
-	WBVAL(USB_DFU_XFER_SIZE),          /* wTransferSize */
+	WBVAL(HID_DFU_XFER_BYTES),          /* wTransferSize */
 	WBVAL(0x100),                      /* bcdDFUVersion */
 	/* Terminator */
 	0                                  /* bLength */
