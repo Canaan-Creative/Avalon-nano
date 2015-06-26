@@ -18,7 +18,6 @@
 #define SECTOR_SIZE	4096
 #define MAX_USER_SECTOR	8
 #define CCLK	48000	/* 48,000 KHz for IAP call */
-#define iap_entry ((void (*)(unsigned int [],unsigned int []))(IAP_ENTRY_LOCATION))
 
 unsigned char g_flash_buf[FLASH_BUF_SIZE];
 
@@ -89,10 +88,8 @@ int iap_readserialid(char *dna)
 static int find_erase_prepare_sector(unsigned int flash_address)
 {
 	unsigned int i;
-	unsigned int end_sector;
 
-	end_sector = MAX_USER_SECTOR;
-	for (i = 0; i <= end_sector; i++) {
+	for (i = 0; i < MAX_USER_SECTOR; i++) {
 		if (flash_address < (SECTOR_0_START_ADDR + ((i + 1) * SECTOR_SIZE))) {
 			if (flash_address == SECTOR_0_START_ADDR + (SECTOR_SIZE * i)) {
 				if (prepare_sector_usb(i, i))
@@ -113,18 +110,24 @@ static int find_erase_prepare_sector(unsigned int flash_address)
 unsigned int write_flash(unsigned int dst, unsigned char *src, unsigned int no_of_bytes)
 {
 	static unsigned int byte_cnt = 0;
+	unsigned int enabled_irqs;
+	int ret = 0;
+
+	enabled_irqs = NVIC->ISER[0];
 
 	memcpy(&g_flash_buf[byte_cnt], src, no_of_bytes);
 	byte_cnt += no_of_bytes;
 
 	if (byte_cnt == FLASH_BUF_SIZE) {
+		NVIC->ICER[0] = enabled_irqs;
 		byte_cnt = 0;
-		if (find_erase_prepare_sector(dst))
-			return 1;
-		if (write_data(dst, g_flash_buf, FLASH_BUF_SIZE))
-			return 1;
+		if (find_erase_prepare_sector(dst - FLASH_BUF_SIZE + 1))
+			ret = 1;
+		if (write_data(dst - FLASH_BUF_SIZE + 1, g_flash_buf, FLASH_BUF_SIZE))
+			ret = 1;
 	}
+	NVIC->ISER[0] = enabled_irqs;
 
-	return 0;
+	return ret;
 }
 

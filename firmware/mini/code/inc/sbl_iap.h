@@ -11,8 +11,6 @@
 #ifndef  _SBL_IAP_H
 #define  _SBL_IAP_H
 
-#define IAP_ADDRESS 	0x1FFF1FF1
-
 enum iap_cmd_code {
 	PREPARE_SECTOR_FOR_WRITE=50,
 	COPY_RAM_TO_FLASH=51,
