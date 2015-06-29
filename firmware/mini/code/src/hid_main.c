@@ -35,7 +35,7 @@
 #include "avalon_adc.h"
 
 #ifdef __CODE_RED
-__CRP unsigned int CRP_WORD = CRP_NO_ISP;
+__CRP unsigned int CRP_WORD = CRP_NO_CRP;
 #endif
 
 #define LED_OFF_ALL	0
