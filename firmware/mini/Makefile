@@ -58,6 +58,7 @@ else
 	cd bin/$(DATE) && md5sum -b $^ > md5sums
 endif
 	$(OBJCOPY) -O binary $^ $(FIRMWARE).bin
+	$(OBJCOPY) -O ihex $^ $(FIRMWARE).hex
 	$(SIZE) $^
 
 $(FIRMWARE).axf: $(OBJS) lpc_chip_11uxx_lib nxp_lpcxpresso_11u14_board_lib
@@ -86,4 +87,4 @@ erase_lpclink:
 clean:
 	make -C $(NXPLIBS_PATH)/lpc_chip_11uxx_lib clean
 	make -C $(NXPLIBS_PATH)/nxp_lpcxpresso_11u14_board_lib clean
-	rm -f $(OBJS) $(FIRMWARE).axf $(FIRMWARE).map
+	rm -f $(OBJS) $(FIRMWARE).axf $(FIRMWARE).map $(FIRMWARE).bin $(FIRMWARE).hex
