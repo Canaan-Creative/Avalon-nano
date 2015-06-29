@@ -25,5 +25,6 @@ enum iap_cmd_code {
 
 unsigned int write_flash(unsigned int dst, unsigned char *src, unsigned int no_of_bytes);
 int iap_readserialid(char *dna);
+void reinvokeisp(void);
 
 #endif /* _SBL_IAP_H */

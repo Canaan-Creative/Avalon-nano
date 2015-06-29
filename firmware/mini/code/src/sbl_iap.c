@@ -85,6 +85,29 @@ int iap_readserialid(char *dna)
 	return 1;
 }
 
+void reinvokeisp(void)
+{
+	unsigned int param_table[5];
+	unsigned int result_table[5];
+
+	__disable_irq();
+	Chip_Clock_EnablePeriphClock(SYSCTL_CLOCK_CT32B1);
+	Chip_Clock_EnablePeriphClock(SYSCTL_CLOCK_GPIO);
+	Chip_Clock_EnablePeriphClock(SYSCTL_CLOCK_IOCON);
+	Chip_Clock_SetSysClockDiv(1);
+
+	/* Set stack pointer to ROM value (reset default).
+	 This must be the last piece of code executed before calling ISP,
+	 because most C expressions and function returns will fail after
+	 the stack pointer is changed.
+	 UM10462 20.15 Debug notes
+	 */
+	__set_MSP(*((uint32_t *) 0x1FFF0000));
+	param_table[0] = REINVOKE_ISP;
+	/* It will not return */
+	iap_entry(param_table, result_table);
+}
+
 static int find_erase_prepare_sector(unsigned int flash_address)
 {
 	unsigned int i;
