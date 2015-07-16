@@ -71,6 +71,7 @@ static void clk_init(void)
 
 void a3222_reset(void)
 {
+	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, PIN_FPGARESET, (IOCON_FUNC0 | IOCON_DIGMODE_EN));
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, PIN_FPGARESET);
 
 	/* high -> low -> high */
