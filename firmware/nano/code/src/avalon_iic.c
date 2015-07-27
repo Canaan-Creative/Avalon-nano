@@ -24,6 +24,8 @@ static void i2c_nop(void)
 {
 	__NOP();
 	__NOP();
+	__NOP();
+	__NOP();
 }
 
 static void i2c_start(void)
@@ -137,9 +139,9 @@ int i2c_readtemp(void)
 
 	i2c_start();
 	i2c_wbyte(TMP102_ADDR_R);
-	temp = i2c_rbyte();
+	temp = i2c_rbyte() & 0xff;
 	temp = temp << 8;
-	temp = (temp & 0xffffff00) | i2c_rbyte();
+	temp = (temp & 0xffffff00) | (i2c_rbyte() & 0xff);
 	i2c_stop();
 	temp >>= 4;
 
