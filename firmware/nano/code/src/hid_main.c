@@ -58,7 +58,7 @@ static uint8_t g_reqpkg[AVAM_P_COUNT];
 static uint8_t g_ackpkg[AVAM_P_COUNT];
 static uint32_t	a3233_freqneeded = A3233_FREQ_ADJMAX;
 static uint32_t	a3233_adjstat = A3233_ADJSTAT_T;
-static bool	a3323_istoohot = false;
+static bool	a3233_istoohot = false;
 static uint8_t gwork_id[4];
 
 /*
@@ -70,15 +70,15 @@ static void a3233_monitor()
 {
 	static unsigned int adc_cnt = 0;
 	static unsigned int temp_cnt = 0;
-	static unsigned int lasttemp = 0;
+	static int lasttemp = 0;
 	uint16_t adc_val;
 	int temp;
 	Bool	adjtemp = false;
 
 	if (!a3233_power_isenable()) {
 		temp = i2c_readtemp();
-		if (a3323_istoohot && (temp < A3233_TEMP_MIN))
-			a3323_istoohot = false;
+		if (a3233_istoohot && (temp < A3233_TEMP_MIN))
+			a3233_istoohot = false;
 		return;
 	}
 
@@ -124,17 +124,17 @@ static void a3233_monitor()
 					if (a3233_freqneeded < A3233_FREQ_ADJMIN)
 						a3233_freqneeded = A3233_FREQ_ADJMIN;
 
-					a3323_istoohot = true;
+					a3233_istoohot = true;
 					return;
 				}
 			} else if (temp < A3233_TEMP_MIN) {
-				a3323_istoohot = false;
+				a3233_istoohot = false;
 				if (a3233_freqneeded <= A3233_FREQ_ADJMAX)
 					a3233_freqneeded += 20;
 				if (a3233_freqneeded > A3233_FREQ_ADJMAX)
 					a3233_freqneeded = A3233_FREQ_ADJMAX;
 			} else {
-				a3323_istoohot = false;
+				a3233_istoohot = false;
 			}
 		}
 		break;
@@ -299,7 +299,7 @@ int main(void)
 				a3233_stat = A3233_STAT_IDLE;
 
 			/* NOTE: protect is high priority than others */
-			if (a3323_istoohot)
+			if (a3233_istoohot)
 				a3233_stat = A3233_STAT_PROTECT;
 			break;
 		case A3233_STAT_IDLE:
@@ -313,7 +313,7 @@ int main(void)
 			__WFI();
 			break;
 		case A3233_STAT_PROTECT:
-			if (!a3323_istoohot) {
+			if (!a3233_istoohot) {
 				timestart = false;
 				timer_kill(A3233_TIMER_TIMEOUT);
 				a3233_stat = A3233_STAT_WORK;
