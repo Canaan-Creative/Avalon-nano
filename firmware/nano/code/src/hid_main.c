@@ -82,7 +82,7 @@ static void a3233_monitor()
 		return;
 	}
 
-	switch(a3233_adjstat){
+	switch (a3233_adjstat) {
 	case A3233_ADJSTAT_T:
 		adc_read(ADC_CHANNEL_V_25, &adc_val);
 		if (adc_val < A3233_V25_ADJMIN) {
@@ -112,6 +112,7 @@ static void a3233_monitor()
 			} else
 				temp_cnt++;
 		}
+		lasttemp = temp;
 
 		if (adjtemp) {
 			if (temp >= A3233_TEMP_MAX) {
@@ -241,10 +242,10 @@ static unsigned int process_mm_pkg(struct avalon_pkg *pkg)
 			memcpy(g_ackpkg + AVAM_P_DATAOFFSET, gwork_id, 4);
 			UNPACK32(0,  g_ackpkg + AVAM_P_DATAOFFSET + 4);
 			UNPACK32(nonce_value,  g_ackpkg + AVAM_P_DATAOFFSET + 8);
+			g_ackpkg[AVAM_P_DATAOFFSET + 12] = 0;
 			g_ackpkg[AVAM_P_DATAOFFSET + 13] = 0;
 			g_ackpkg[AVAM_P_DATAOFFSET + 14] = 0;
 			g_ackpkg[AVAM_P_DATAOFFSET + 15] = 0;
-
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_NONCE_M);
 		} else {
 			/* P_STATUS_M: spi speed(4) + led(4) + fan(4) + voltage(4) + frequency(12) + power good(4) */
