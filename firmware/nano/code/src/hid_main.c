@@ -254,7 +254,10 @@ static unsigned int process_mm_pkg(struct avalon_pkg *pkg)
 			UNPACK32((uint32_t)-1, g_ackpkg + AVAM_P_DATAOFFSET + 8);
 			UNPACK32(3, g_ackpkg + AVAM_P_DATAOFFSET + 12);
 			/* TODO: temp + adc x 2 */
-			UNPACK32(i2c_readtemp(), g_ackpkg + AVAM_P_DATAOFFSET + 16);
+
+			UNPACK32(0, g_ackpkg + AVAM_P_DATAOFFSET + 16);
+			UNPACK32(i2c_readtemp(), g_ackpkg + AVAM_P_DATAOFFSET + 20);
+			UNPACK32(0, g_ackpkg + AVAM_P_DATAOFFSET + 24);
 			UNPACK32(a3233_power_isenable(), g_ackpkg + AVAM_P_DATAOFFSET + 28);
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_STATUS_M);
 		}
