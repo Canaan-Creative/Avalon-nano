@@ -1,3 +1,5 @@
+v1.2.2
+	Avalon nano: Fix waiting time to 900ms between pushing works.
 v1.2.1
 	Fix work queue growing.
 
