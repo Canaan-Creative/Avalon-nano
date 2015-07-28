@@ -59,7 +59,7 @@ static uint8_t g_ackpkg[AVAM_P_COUNT];
 static uint32_t	a3233_freqneeded = A3233_FREQ_ADJMAX;
 static uint32_t	a3233_adjstat = A3233_ADJSTAT_T;
 static bool	a3233_istoohot = false;
-static uint8_t gwork_id[4];
+static uint8_t gwork_id[6];
 
 /*
  * temp [A3233_TEMP_MIN, A3233_TEMP_MAX]
@@ -212,7 +212,7 @@ static unsigned int process_mm_pkg(struct avalon_pkg *pkg)
 
 		memcpy(gica_pkg + ((pkg->idx - 1) * 32), pkg->data, 32);
 		if (pkg->idx == 2 && pkg->cnt == 2) {
-			memcpy(gwork_id, gica_pkg + 32, 4);
+			memcpy(gwork_id, gica_pkg + 32, 6);
 			if (!a3233_power_isenable()
 					|| (last_freq != a3233_freqneeded)) {
 				last_freq = a3233_freqneeded;
@@ -239,8 +239,9 @@ static unsigned int process_mm_pkg(struct avalon_pkg *pkg)
 		memset(g_ackpkg, 0xff, AVAM_P_COUNT);
 		if (!a3222_get_nonce(&nonce_value)) {
 			/* P_NONCE: id(6) + chip_id(1) + ntime(1) + nonce(4) + reserved(1) + usb rb(1) + work rb(1) + nonce rb(1) */
-			memcpy(g_ackpkg + AVAM_P_DATAOFFSET, gwork_id, 4);
-			UNPACK32(0,  g_ackpkg + AVAM_P_DATAOFFSET + 4);
+			memcpy(g_ackpkg + AVAM_P_DATAOFFSET, gwork_id, 6);
+			g_ackpkg[AVAM_P_DATAOFFSET + 6] = 0;
+			g_ackpkg[AVAM_P_DATAOFFSET + 7] = 0;
 			UNPACK32(nonce_value,  g_ackpkg + AVAM_P_DATAOFFSET + 8);
 			g_ackpkg[AVAM_P_DATAOFFSET + 12] = 0;
 			g_ackpkg[AVAM_P_DATAOFFSET + 13] = 0;
