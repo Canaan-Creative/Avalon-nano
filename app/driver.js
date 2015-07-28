@@ -197,7 +197,10 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 				send(work[0]);
 				send(Avalon.roll(work[1], asicCount - 1));
 				phase = "poll";
-				setTimeout(pollPhase, Math.round(25 * 703 / freqSet[0]));
+				setTimeout(
+				  pollPhase,
+				  deviceType === "Avalon nano" ? 900 : Math.round(25 * 703 / freqSet[0])
+				);
 			} else
 				setTimeout(loop, 10);
 		})();
