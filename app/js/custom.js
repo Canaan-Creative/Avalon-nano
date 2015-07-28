@@ -289,7 +289,7 @@ var loopNano = function() {
 }
 var bindSettingBtn = function () {
 	$("#setting-table").delegate("button" , "click" , function(){
-		settingDialog({title:"Setting"} , paramObj);
+		settingDialog({title:"Configuration for Avalon4 mini"} , paramObj);
 		bindSettingSave();
 	});
 }
@@ -313,7 +313,7 @@ var bindSettingSave = function () {
 }
 var bindPoolAdd = function () {
 	$(".row-pool").delegate("button","click",function(){
-		dialog({title:'Setting pool'}, poolObj);
+		dialog({title:'Pool Setting'}, poolObj);
 		bindSaveButton();				
 	});
 }
@@ -365,7 +365,7 @@ var removePool = function(poolId) {
 	chrome.runtime.sendMessage({info: "DeletePool", data:{poolId:poolId}});
 	$("#pool-tr-id-"+poolId).remove();
 	if($('#pool_info tr').size()===1)
-		$("#pool_info").append('<tr id="pool-null"><td colspan="4" align="center" style="color:#cfcfcf;">Setting pool</td></tr>');
+		$("#pool_info").append('<tr id="pool-null"><td colspan="4" align="center" style="color:#cfcfcf;">Setting</td></tr>');
 	 
 }
 var removeNano = function(nanoId) {
@@ -425,7 +425,7 @@ var settingPart = function() {
 		<div class="row col-xs-12">
 			<div class="panel panel-default">
 		  		<div class="panel-heading">
-		    			<h3 class="panel-title">Setting</h3>
+		    			<h3 class="panel-title">Configuration for Avalon4 mini</h3>
 		  		</div>
 		  		<div class="panel-body" id="setting-table">
 					<table class="table" style="margin-bottom:0px;">
@@ -442,7 +442,7 @@ var settingPart = function() {
 							<td id="frequency2">22</td>
 							<td id="frequency3">22</td>
 							<td>
-								<button type="button" class="btn btn-default">Setting </button>
+								<button type="button" class="btn btn-default">Setting</button>
 							</td>
 						</tr>
 					</table>
@@ -510,10 +510,10 @@ var poolPart = function( ) {
 			
 		}
 	}else{
-		_tpl +='<tr id="pool-null"><td colspan="3" align="center" style="color:#cfcfcf;">Setting pool</td></tr>';
+		_tpl +='<tr id="pool-null"><td colspan="3" align="center" style="color:#cfcfcf;">Setting</td></tr>';
 	}
 	_tpl += '</table>';
-	_tpl += '<div class="row row-pool"><button type="button" class="btn btn-default pull-right pool-add">Setting Pool</button></div>';
+	_tpl += '<div class="row row-pool"><button type="button" class="btn btn-default pull-right pool-add">Setting</button></div>';
 	return _tpl;
 }
 
@@ -607,7 +607,7 @@ var dialog = function( obj  , data ) {
 	}
 	_tpl += '<tr><td colspan="4">';
 	_tpl += '<div class="form-group" id="setting-pool">';
-	_tpl += '<button typ="button" class="btn btn-default pull-right" id="add-pool-save">Save Setting</button>';
+	_tpl += '<button typ="button" class="btn btn-default pull-right" id="add-pool-save">Save</button>';
 	_tpl += '<span id="message"></span>';
 	_tpl += '</div></td></tr></table></div></div>';
 	neo.content = _tpl;
@@ -670,7 +670,7 @@ var settingDialog = function( obj  , data ) {
 				<input type="text" class="form-control" id="frequency3-input" value="${_freq3}" placeholder="Frequency3">
 			</div>
 			<div class="form-group" id="setting-save-div">
-			<button type="button" class="btn btn-default pull-right">Save setting</button>
+			<button type="button" class="btn btn-default pull-right">Save</button>
 			</div>
 		</div>
 	`;
