@@ -259,8 +259,8 @@ static unsigned int process_mm_pkg(struct avalon_pkg *pkg)
 			g_ackpkg[AVAM_P_DATAOFFSET + 15] = 0;
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_NONCE_M);
 		} else {
-			/* P_STATUS_M: spi speed(4) + led(4) + fan(4) + v2_5(4) + vcore(4) + temp(4) + v1_8 & V0_9(4) + power good(4) */
-			UNPACK32(0, g_ackpkg + AVAM_P_DATAOFFSET);
+			/* P_STATUS_M: freq(4) + led(4) + fan(4) + v2_5(4) + vcore(4) + temp(4) + v1_8 & V0_9(4) + power good(4) */
+			UNPACK32(a3233_freqneeded, g_ackpkg + AVAM_P_DATAOFFSET);
 			UNPACK32(g_ledstatus, g_ackpkg + AVAM_P_DATAOFFSET + 4);
 			UNPACK32((uint32_t)-1, g_ackpkg + AVAM_P_DATAOFFSET + 8);
 			adc_read(ADC_CHANNEL_V_25, &adc_val);
