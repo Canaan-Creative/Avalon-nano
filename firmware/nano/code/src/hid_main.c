@@ -185,6 +185,7 @@ static unsigned int process_mm_pkg(struct avalon_pkg *pkg)
 	int ret;
 	uint32_t nonce_value = 0;
 	static unsigned int last_freq = 0;
+	char dna[AVAM_MM_DNA_LEN];
 
 	expected_crc = (pkg->crc[1] & 0xff)
 			| ((pkg->crc[0] & 0xff) << 8);
@@ -197,7 +198,8 @@ static unsigned int process_mm_pkg(struct avalon_pkg *pkg)
 	switch (pkg->type) {
 	case AVAM_P_DETECT:
 		memset(g_ackpkg, 0, AVAM_P_COUNT);
-		/* TODO: iap read serial id */
+		if (!iap_readserialid(dna))
+			memcpy(g_ackpkg + AVAM_P_DATAOFFSET, dna, AVAM_MM_DNA_LEN);
 		memcpy(g_ackpkg + AVAM_P_DATAOFFSET + AVAM_MM_DNA_LEN, AVAM_VERSION, AVAM_MM_VER_LEN);
 		UNPACK32(ASIC_COUNT, g_ackpkg + AVAM_P_DATAOFFSET + AVAM_MM_DNA_LEN + AVAM_MM_VER_LEN);
 		init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_ACKDETECT);
