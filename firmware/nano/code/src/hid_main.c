@@ -186,6 +186,8 @@ static unsigned int process_mm_pkg(struct avalon_pkg *pkg)
 	uint32_t nonce_value = 0;
 	static unsigned int last_freq = 0;
 	char dna[AVAM_MM_DNA_LEN];
+	uint16_t adc_val;
+	uint32_t tmp;
 
 	expected_crc = (pkg->crc[1] & 0xff)
 			| ((pkg->crc[0] & 0xff) << 8);
@@ -257,16 +259,22 @@ static unsigned int process_mm_pkg(struct avalon_pkg *pkg)
 			g_ackpkg[AVAM_P_DATAOFFSET + 15] = 0;
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_NONCE_M);
 		} else {
-			/* P_STATUS_M: spi speed(4) + led(4) + fan(4) + voltage(4) + frequency(12) + power good(4) */
+			/* P_STATUS_M: spi speed(4) + led(4) + fan(4) + v2_5(4) + vcore(4) + temp(4) + v1_8 & V0_9(4) + power good(4) */
 			UNPACK32(0, g_ackpkg + AVAM_P_DATAOFFSET);
 			UNPACK32(g_ledstatus, g_ackpkg + AVAM_P_DATAOFFSET + 4);
 			UNPACK32((uint32_t)-1, g_ackpkg + AVAM_P_DATAOFFSET + 8);
-			UNPACK32(3, g_ackpkg + AVAM_P_DATAOFFSET + 12);
-			/* TODO: temp + adc x 2 */
-
-			UNPACK32(0, g_ackpkg + AVAM_P_DATAOFFSET + 16);
+			adc_read(ADC_CHANNEL_V_25, &adc_val);
+			tmp = adc_val;
+			UNPACK32(tmp, g_ackpkg + AVAM_P_DATAOFFSET + 12);
+			adc_read(ADC_CHANNEL_V_CORE, &adc_val);
+			tmp = adc_val;
+			UNPACK32(tmp, g_ackpkg + AVAM_P_DATAOFFSET + 16);
 			UNPACK32(i2c_readtemp(), g_ackpkg + AVAM_P_DATAOFFSET + 20);
-			UNPACK32(0, g_ackpkg + AVAM_P_DATAOFFSET + 24);
+			adc_read(ADC_CHANNEL_V_18, &adc_val);
+			tmp = (adc_val << 16) & 0xffff0000;
+			adc_read(ADC_CHANNEL_V_09, &adc_val);
+			tmp |= adc_val;
+			UNPACK32(tmp, g_ackpkg + AVAM_P_DATAOFFSET + 24);
 			UNPACK32(a3233_power_isenable(), g_ackpkg + AVAM_P_DATAOFFSET + 28);
 			init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_STATUS_M);
 		}
