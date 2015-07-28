@@ -37,7 +37,6 @@ __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 
 #define A3233_STAT_IDLE	1
 #define A3233_STAT_WORK	2
-#define A3233_STAT_PROTECT	3
 
 #define A3233_TEMP_MIN	60
 #define A3233_TEMP_MAX	65
@@ -60,6 +59,7 @@ static uint32_t	a3233_freqneeded = A3233_FREQ_ADJMAX;
 static uint32_t	a3233_adjstat = A3233_ADJSTAT_T;
 static bool	a3233_istoohot = false;
 static uint8_t gwork_id[6];
+static uint32_t g_ledstatus = LED_GREEN;
 
 /*
  * temp [A3233_TEMP_MIN, A3233_TEMP_MAX]
@@ -207,6 +207,11 @@ static unsigned int process_mm_pkg(struct avalon_pkg *pkg)
 		ret = 0;
 		break;
 	case AVAM_P_WORK:
+		if (a3233_istoohot) {
+			ret = 1;
+			break;
+		}
+
 		if (pkg->idx != 1 && pkg->idx != 2 && pkg->cnt != 2) {
 			ret = 1;
 			break;
@@ -230,7 +235,8 @@ static unsigned int process_mm_pkg(struct avalon_pkg *pkg)
 					r = 255;
 				g = 0;
 				b = 255 - r;
-				led_rgb((r << 16) | (g << 8) | b);
+				g_ledstatus = (r << 16) | (g << 8) | b;
+				led_rgb(g_ledstatus);
 			}
 			a3233_push_work(gica_pkg);
 		}
@@ -253,7 +259,7 @@ static unsigned int process_mm_pkg(struct avalon_pkg *pkg)
 		} else {
 			/* P_STATUS_M: spi speed(4) + led(4) + fan(4) + voltage(4) + frequency(12) + power good(4) */
 			UNPACK32(0, g_ackpkg + AVAM_P_DATAOFFSET);
-			UNPACK32(0, g_ackpkg + AVAM_P_DATAOFFSET + 4);
+			UNPACK32(g_ledstatus, g_ackpkg + AVAM_P_DATAOFFSET + 4);
 			UNPACK32((uint32_t)-1, g_ackpkg + AVAM_P_DATAOFFSET + 8);
 			UNPACK32(3, g_ackpkg + AVAM_P_DATAOFFSET + 12);
 			/* TODO: temp + adc x 2 */
@@ -306,11 +312,17 @@ int main(void)
 				a3233_stat = A3233_STAT_IDLE;
 
 			/* NOTE: protect is high priority than others */
-			if (a3233_istoohot)
-				a3233_stat = A3233_STAT_PROTECT;
-			break;
+			if (a3233_istoohot) {
+				if (a3233_power_isenable()) {
+					a3233_enable_power(false);
+					g_ledstatus = LED_RED;
+					led_blink(g_ledstatus);
+				}
+			}
+		break;
 		case A3233_STAT_IDLE:
-			led_rgb(LED_GREEN);
+			g_ledstatus = LED_GREEN;
+			led_rgb(g_ledstatus);
 			icarus_buflen = hid_rxrb_cnt();
 			if (icarus_buflen >= AVAM_P_COUNT)
 				a3233_stat = A3233_STAT_WORK;
@@ -318,26 +330,6 @@ int main(void)
 			if (a3233_power_isenable())
 				a3233_enable_power(false);
 			__WFI();
-			break;
-		case A3233_STAT_PROTECT:
-			if (!a3233_istoohot) {
-				timestart = false;
-				timer_kill(A3233_TIMER_TIMEOUT);
-				a3233_stat = A3233_STAT_WORK;
-				break;
-			}
-
-			if (a3233_power_isenable())
-				a3233_enable_power(false);
-
-			if (!timestart) {
-				timer_set(A3233_TIMER_TIMEOUT, 10000, NULL);
-				led_blink(LED_RED);
-				timestart = true;
-			}
-
-			if (timer_istimeout(A3233_TIMER_TIMEOUT))
-				timer_set(A3233_TIMER_TIMEOUT, 10000, NULL);
 			break;
 		default:
 			a3233_stat = A3233_STAT_IDLE;
