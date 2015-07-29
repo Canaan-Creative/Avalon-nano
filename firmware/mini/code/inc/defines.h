@@ -15,6 +15,8 @@
 #define ASIC_CORETEST_VOLT	0x93	/* 0.7000 */
 #define ASIC_CORETEST_FREQ	0x1e278447	/* 200 */
 #define TEST_CORE_COUNT	16
+#define ADC_CUT	200	/* 66 ℃ */
+#define ADC_RESUME	230 /* 60 ℃ */
 
 #ifdef DEBUG
 #include "avalon_uart.h"

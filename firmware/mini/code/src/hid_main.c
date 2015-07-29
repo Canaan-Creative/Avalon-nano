@@ -46,6 +46,7 @@ __CRP unsigned int CRP_WORD = CRP_NO_CRP;
 #define LED_ERR_OFF	4
 #define LED_PG_ON	5 /* led green */
 #define LED_PG_OFF	6
+#define LED_ON_ALL	7
 
 #define STATE_NORMAL	0
 #define STATE_IDLE	1
@@ -56,6 +57,7 @@ static uint8_t g_ackpkg[AVAM_P_COUNT];
 static uint32_t g_freq[ASIC_COUNT][3];
 static uint32_t g_ledstat = LED_OFF_ALL;
 static uint8_t g_state = STATE_NORMAL;
+static bool g_toohot = false;
 
 static int init_mm_pkg(struct avalon_pkg *pkg, uint8_t type)
 {
@@ -107,6 +109,12 @@ static void led_ctrl(uint8_t led_op)
 		g_ledstat &= 0xff00ff;
 		led_set(LED_GREEN, LED_OFF);
 		break;
+	case LED_ON_ALL:
+		g_ledstat = 0xffffff;
+		led_set(LED_RED, LED_ON);
+		led_set(LED_GREEN, LED_ON);
+		led_set(LED_BLUE, LED_ON);
+		break;
 	}
 }
 
@@ -144,6 +152,8 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		UCOM_Write(g_ackpkg);
 		break;
 	case AVAM_P_WORK:
+		if (g_toohot)
+			break;
 		/*
 		 * idx-1: midstate(32)
 		 * idx-2: id(6) + reserved(2) + ntime(1) + fan(3) + led(4) + reserved(4) + data(12)
@@ -211,6 +221,9 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		UCOM_Write(g_ackpkg);
 		break;
 	case AVAM_P_SET_FREQ:
+		if (g_toohot)
+			break;
+
 		PACK32(pkg->data, &val[2]);
 		PACK32(pkg->data + 4, &val[1]);
 		PACK32(pkg->data + 8, &val[0]);
@@ -256,6 +269,9 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		UCOM_Write(g_ackpkg);
 		break;
 	case AVAM_P_SET_VOLT:
+		if (g_toohot)
+			break;
+
 		val[0] = (pkg->data[0] << 8) | pkg->data[1];
 		debug32("D: V(%x)\n", val[0]);
 		if(set_voltage((uint16_t)val[0])) {
@@ -384,10 +400,26 @@ void coretest_main()
 }
 #endif
 
-int main(void)
+void prcess_idle(void)
 {
 	uint8_t i;
 	uint32_t val[3];
+	/* Power off the AISC */
+	set_voltage(ASIC_0V);
+
+	val[0] = val[1] = val[2] = 0;
+	for (i = 0; i < ASIC_COUNT; i++) {
+		memcpy(g_freq[i], val, sizeof(uint32_t) * 3);
+		a3222_set_freq(val, i);
+	}
+
+	a3222_sw_init();
+	UCOM_Flush();
+}
+
+int main(void)
+{
+	uint16_t adc_val;
 
 	Board_Init();
 	SystemCoreClockUpdate();
@@ -428,22 +460,27 @@ int main(void)
 				}
 
 				if (timer_istimeout(TIMER_ID1)) {
-					/* Power off the AISC */
-					set_voltage(ASIC_0V);
-
-					val[0] = val[1] = val[2] = 0;
-					for (i = 0; i < ASIC_COUNT; i++) {
-						memcpy(g_freq[i], val, sizeof(uint32_t) * 3);
-						a3222_set_freq(val, i);
-					}
-
-					a3222_sw_init();
-					UCOM_Flush();
-
+					prcess_idle();
 					led_ctrl(LED_IDLE);
 					led_ctrl(LED_PG_OFF);
 					g_state = STATE_IDLE;
-					continue;
+					break;
+				}
+
+				adc_read(ADC_CHANNEL_COPPER, &adc_val);
+				if (g_toohot || (adc_val <= ADC_CUT)) {
+					if (!g_toohot) {
+						prcess_idle();
+						led_ctrl(LED_ON_ALL);
+						g_toohot = true;
+					}
+
+					if (adc_val >= ADC_RESUME) {
+						g_toohot = false;
+						led_ctrl(LED_OFF_ALL);
+						led_ctrl(LED_PG_OFF);
+					}
+					break;
 				}
 
 				led_ctrl(LED_BUSY);
@@ -453,7 +490,6 @@ int main(void)
 					led_ctrl(LED_PG_OFF);
 
 				a3222_process();
-
 				break;
 			case STATE_IDLE:
 				if (UCOM_Read_Cnt())
@@ -461,6 +497,5 @@ int main(void)
 				__WFI();
 				break;
 		}
-
 	}
 }
