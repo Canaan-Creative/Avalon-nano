@@ -47,6 +47,7 @@ __CRP unsigned int CRP_WORD = CRP_NO_CRP;
 #define LED_PG_ON	5 /* led green */
 #define LED_PG_OFF	6
 #define LED_ON_ALL	7
+#define LED_HOT_ALERT	8
 
 #define STATE_NORMAL	0
 #define STATE_IDLE	1
@@ -86,7 +87,7 @@ static void led_ctrl(uint8_t led_op)
 		led_set(LED_BLUE, LED_OFF);
 		break;
 	case LED_IDLE:
-		g_ledstat |= 0xff;
+		g_ledstat |= 0x10000ff;
 		led_set(LED_BLUE, LED_BREATH);
 		break;
 	case LED_BUSY:
@@ -114,6 +115,10 @@ static void led_ctrl(uint8_t led_op)
 		led_set(LED_RED, LED_ON);
 		led_set(LED_GREEN, LED_ON);
 		led_set(LED_BLUE, LED_ON);
+		break;
+	case LED_HOT_ALERT:
+		g_ledstat |= 0x200ff00;
+		led_set(LED_GREEN, LED_BREATH);
 		break;
 	}
 }
@@ -471,13 +476,12 @@ int main(void)
 				if (g_toohot || (adc_val <= ADC_CUT)) {
 					if (!g_toohot) {
 						prcess_idle();
-						led_ctrl(LED_ON_ALL);
+						led_ctrl(LED_HOT_ALERT);
 						g_toohot = true;
 					}
 
 					if (adc_val >= ADC_RESUME) {
 						g_toohot = false;
-						led_ctrl(LED_OFF_ALL);
 						led_ctrl(LED_PG_OFF);
 					}
 					break;
