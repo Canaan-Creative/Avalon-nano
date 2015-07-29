@@ -33,6 +33,7 @@
 #include "avalon_timer.h"
 #include "avalon_led.h"
 #include "avalon_adc.h"
+#include "avalon_uart.h"
 
 #ifdef __CODE_RED
 __CRP unsigned int CRP_WORD = CRP_NO_CRP;
@@ -109,82 +110,6 @@ static void led_ctrl(uint8_t led_op)
 	}
 }
 
-int testcores(uint32_t core_num, uint32_t ret)
-{
-	uint32_t result[ASIC_COUNT];
-	uint8_t txdat[20];
-	uint32_t all = ASIC_COUNT * core_num;
-	uint32_t corefailed, i, j;
-	uint8_t golden_ob[] = "\x46\x79\xba\x4e\xc9\x98\x76\xbf\x4b\xfe\x08\x60\x82\xb4\x00\x25\x4d\xf6\xc3\x56\x45\x14\x71\x13\x9a\x3a\xfa\x71\xe4\x8f\x54\x4a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x87\x32\x0b\x1a\x14\x26\x67\x4f\x2f\xa7\x22\xce";
-	uint8_t	report[A3222_REPORT_SIZE];
-
-	corefailed = all;
-	memset(result, 0, ASIC_COUNT * sizeof(uint32_t));
-
-	for (i = 0; i < (core_num + 2); i++) {
-#ifdef DEBUG_VERBOSE
-		debug32("D: core %d\n", i);
-#endif
-		for (j = 0; j < ASIC_COUNT; j++)
-			a3222_push_work(golden_ob);
-
-		a3222_process();
-		delay(40);
-		if (i >= 2) {
-			while (a3222_get_report_count()) {
-				a3222_get_report(report);
-#ifdef DEBUG_VERBOSE
-				debug32("D: N = %x, C = %d\n", report[8] << 24 |
-						report[9] << 16 |
-						report[10] << 8 |
-						report[11], report[6]);
-#endif
-				if (0x0001c7a2 == (report[8] << 24 |
-							report[9] << 16 |
-							report[10] << 8 |
-							report[11])) {
-					corefailed--;
-					result[report[6]]++;
-				}
-			}
-		}
-	}
-
-	txdat[0] = 0;
-	for (i = 0; i < ASIC_COUNT; i++) {
-		txdat[1 + i * 4] = (result[i] >> 24) & 0xff;
-		txdat[2 + i * 4] = (result[i] >> 16) & 0xff;
-		txdat[3 + i * 4] = (result[i] >> 8) & 0xff;
-		txdat[4 + i * 4] = result[i] & 0xff;
-		debug32("%d ", result[i]);
-	}
-	debug32("\n");
-	if (ret) {
-		memset(g_ackpkg, 0, AVAM_P_COUNT);
-		memcpy(g_ackpkg + AVAM_P_DATAOFFSET, txdat, ASIC_COUNT * 4 + 1);
-		init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_TEST_RET);
-		UCOM_Write(g_ackpkg);
-	}
-
-	if (ret) {
-		txdat[0] = (corefailed >> 24) & 0xff;
-		txdat[1] = (corefailed >> 16) & 0xff;
-		txdat[2] = (corefailed >> 8) & 0xff;
-		txdat[3] = corefailed & 0xff;
-		txdat[4] = (all >> 24) & 0xff;
-		txdat[5] = (all >> 16) & 0xff;
-		txdat[6] = (all >> 8) & 0xff;
-		txdat[7] = all & 0xff;
-		memset(g_ackpkg, 0, AVAM_P_COUNT);
-		memcpy(g_ackpkg + AVAM_P_DATAOFFSET, txdat, 8);
-		init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_TEST_RET);
-		UCOM_Write(g_ackpkg);
-	}
-
-	debug32("E/A: %d/%d\n", corefailed, all);
-	return corefailed;
-}
-
 static void process_mm_pkg(struct avalon_pkg *pkg)
 {
 	unsigned int expected_crc;
@@ -192,7 +117,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	uint8_t i;
 	uint32_t val[3];
 	uint8_t roll_pkg[AVAM_P_WORKLEN];
-	uint16_t ntime_offset;
+	uint16_t ntime_offset, adc_val;
 	char dna[8];
 
 	expected_crc = (pkg->crc[1] & 0xff) | ((pkg->crc[0] & 0xff) << 8);
@@ -270,11 +195,14 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET + 8);
 			val[0] = get_voltage();
 			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET + 12);
-			adc_read(ADC_CHANNEL_12V, &val[0]);
+			adc_read(ADC_CHANNEL_12V, &adc_val);
+			val[0] = adc_val;
 			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET + 16);
-			adc_read(ADC_CHANNEL_COPPER, &val[0]);
+			adc_read(ADC_CHANNEL_COPPER, &adc_val);
+			val[0] = adc_val;
 			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET + 20);
-			adc_read(ADC_CHANNEL_FAN, &val[0]);
+			adc_read(ADC_CHANNEL_FAN, &adc_val);
+			val[0] = adc_val;
 			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET + 24);
 			val[0] = read_power_good();
 			UNPACK32(val[0], g_ackpkg + AVAM_P_DATAOFFSET + 28);
@@ -349,6 +277,82 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 }
 
 #ifdef TEST_CORE
+int testcores(uint32_t core_num, uint32_t ret)
+{
+	uint32_t result[ASIC_COUNT];
+	uint8_t txdat[20];
+	uint32_t all = ASIC_COUNT * core_num;
+	uint32_t corefailed, i, j;
+	uint8_t golden_ob[] = "\x46\x79\xba\x4e\xc9\x98\x76\xbf\x4b\xfe\x08\x60\x82\xb4\x00\x25\x4d\xf6\xc3\x56\x45\x14\x71\x13\x9a\x3a\xfa\x71\xe4\x8f\x54\x4a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x87\x32\x0b\x1a\x14\x26\x67\x4f\x2f\xa7\x22\xce";
+	uint8_t	report[A3222_REPORT_SIZE];
+
+	corefailed = all;
+	memset(result, 0, ASIC_COUNT * sizeof(uint32_t));
+
+	for (i = 0; i < (core_num + 2); i++) {
+#ifdef DEBUG_VERBOSE
+		debug32("D: core %d\n", i);
+#endif
+		for (j = 0; j < ASIC_COUNT; j++)
+			a3222_push_work(golden_ob);
+
+		a3222_process();
+		delay(40);
+		if (i >= 2) {
+			while (a3222_get_report_count()) {
+				a3222_get_report(report);
+#ifdef DEBUG_VERBOSE
+				debug32("D: N = %x, C = %d\n", report[8] << 24 |
+						report[9] << 16 |
+						report[10] << 8 |
+						report[11], report[6]);
+#endif
+				if (0x0001c7a2 == (report[8] << 24 |
+							report[9] << 16 |
+							report[10] << 8 |
+							report[11])) {
+					corefailed--;
+					result[report[6]]++;
+				}
+			}
+		}
+	}
+
+	txdat[0] = 0;
+	for (i = 0; i < ASIC_COUNT; i++) {
+		txdat[1 + i * 4] = (result[i] >> 24) & 0xff;
+		txdat[2 + i * 4] = (result[i] >> 16) & 0xff;
+		txdat[3 + i * 4] = (result[i] >> 8) & 0xff;
+		txdat[4 + i * 4] = result[i] & 0xff;
+		debug32("%d ", result[i]);
+	}
+	debug32("\n");
+	if (ret) {
+		memset(g_ackpkg, 0, AVAM_P_COUNT);
+		memcpy(g_ackpkg + AVAM_P_DATAOFFSET, txdat, ASIC_COUNT * 4 + 1);
+		init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_TEST_RET);
+		UCOM_Write(g_ackpkg);
+	}
+
+	if (ret) {
+		txdat[0] = (corefailed >> 24) & 0xff;
+		txdat[1] = (corefailed >> 16) & 0xff;
+		txdat[2] = (corefailed >> 8) & 0xff;
+		txdat[3] = corefailed & 0xff;
+		txdat[4] = (all >> 24) & 0xff;
+		txdat[5] = (all >> 16) & 0xff;
+		txdat[6] = (all >> 8) & 0xff;
+		txdat[7] = all & 0xff;
+		memset(g_ackpkg, 0, AVAM_P_COUNT);
+		memcpy(g_ackpkg + AVAM_P_DATAOFFSET, txdat, 8);
+		init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_TEST_RET);
+		UCOM_Write(g_ackpkg);
+	}
+
+	debug32("E/A: %d/%d\n", corefailed, all);
+	return corefailed;
+}
+
 void coretest_main()
 {
 	uint8_t i;
