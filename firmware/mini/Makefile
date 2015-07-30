@@ -51,14 +51,14 @@ LIBPATH  += -L$(NXPLIBS_PATH)/lpc_chip_11uxx_lib/libs \
 
 all: $(FIRMWARE).axf
 	mkdir -p bin/$(DATE)
-	cp $^ bin/$(DATE)
-ifeq "$(OS)" "Darwin"
-	cd bin/$(DATE) && md5 $^ > md5sums
-else
-	cd bin/$(DATE) && md5sum -b $^ > md5sums
-endif
 	$(OBJCOPY) -O binary $^ $(FIRMWARE).bin
 	$(OBJCOPY) -O ihex $^ $(FIRMWARE).hex
+	cp $(FIRMWARE).bin $(FIRMWARE).hex $^ bin/$(DATE)
+ifeq "$(OS)" "Darwin"
+	cd bin/$(DATE) && md5 $(FIRMWARE).bin $(FIRMWARE).hex $^ > md5sums
+else
+	cd bin/$(DATE) && md5sum -b $(FIRMWARE).bin $(FIRMWARE).hex $^ > md5sums
+endif
 	$(SIZE) $^
 
 $(FIRMWARE).axf: $(OBJS) lpc_chip_11uxx_lib nxp_lpcxpresso_11u14_board_lib
