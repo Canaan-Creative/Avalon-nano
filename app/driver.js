@@ -139,15 +139,24 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 			}
 			break;
 		case Avalon.P_STATUS:
-			info = {
-				spiSpeed: dataView.getUint32(0),
-				led: utils.padLeft((dataView.getUint32(4) >>> 0).toString(16)),
-				voltage: Avalon.voltDecode(dataView.getUint32(12)),
-				voltageSource: Avalon.voltSourceDecode(dataView.getUint32(16)),
-				temperatureCu: Avalon.temperatureDecode(dataView.getUint32(20)),
-				temperatureFan: Avalon.temperatureDecode(dataView.getUint32(24)),
-				power: dataView.getUint32(28),
-			};
+			info = (deviceType === "Avalon nano") ? {
+					frequency: dataView.getUint32(0),
+					led: utils.padLeft((dataView.getUint32(4) >>> 0).toString(16)),
+					voltage25: dataView.getUint32(12),
+					voltageCore: dataView.getUint32(16),
+					temperature: dataView.getUint32(20),
+					voltage18: dataView.getUint16(24),
+					voltage09: dataView.getUint16(26),
+					power: dataView.getUint32(28),
+				} : {
+					spiSpeed: dataView.getUint32(0),
+					led: utils.padLeft((dataView.getUint32(4) >>> 0).toString(16)),
+					voltage: Avalon.voltDecode(dataView.getUint32(12)),
+					voltageSource: Avalon.voltSourceDecode(dataView.getUint32(16)),
+					temperatureCu: Avalon.temperatureDecode(dataView.getUint32(20)),
+					temperatureFan: Avalon.temperatureDecode(dataView.getUint32(24)),
+					power: dataView.getUint32(28),
+				};
 			if (phase === "poll")
 				phase = (info.power === 1) ? "push" : "init";
 			for (var key in info)

@@ -390,10 +390,10 @@ var maxPoolId = function() {
 var topPart = function() {
 	var tpl = `<div class="row top-div">
 		<ul>
-			<li><p>HUOBI (USD/CNY) : <span id="_huobi">0</span></p></li>
-			<li><p>Difficulty : <span id="_difficulty">0</span></p></li>
-			<li><p>Next : <span id="_next">0</span></p></li>
-			<li><p>Hash Rate : <span id="_hash_rate">0</span></p></li>
+			<li><p>BTC Price (USD/CNY): <span id="_huobi">0</span></p></li>
+			<li><p>Difficulty: <span id="_difficulty">0</span></p></li>
+			<li><p>Next Diff: <span id="_next">0</span></p></li>
+			<li><p>Hash Rate: <span id="_hash_rate">0</span></p></li>
 		</ul>
 		<!--<p><button class="button button-small">BTC Price : <span id="Price">------<span></button></p>-->
         </div>
@@ -467,6 +467,8 @@ var updateDeviceStatus = function ( deviceInfo ) {
 		updateDeviceTemp(deviceInfo.deviceId , deviceInfo.temperatureCu , 'cu');
 	if(deviceInfo.temperatureFan !== undefined)
 		updateDeviceTemp(deviceInfo.deviceId , deviceInfo.temperatureFan , 'fan');
+	if(deviceInfo.temperature !== undefined)
+		updateDeviceTemp(deviceInfo.deviceId , deviceInfo.temperature , 'all');
 	if(deviceInfo.version !== undefined)
 		updateDeviceVersion(deviceInfo.deviceId , deviceInfo.version);
 }
@@ -488,7 +490,7 @@ var devicePart = function( data ) {
 	_tpl += '<th>Device</th>';
 	_tpl += '<th>ID</th>';
 	_tpl += '<th>Version</th>';
-	_tpl += '<th>Temp(Cu/Fan)</th>';
+	_tpl += '<th>Temp(&deg;C)</th>';
 	_tpl += '<th>GHs5s</th>';
 	_tpl += '<th>Error%</th>';
 	_tpl += '</tr>'; 
@@ -537,7 +539,10 @@ var deviceTr = function(deviceObj) {
 	_tpl += '<td>'+ deviceType +'</td>';
 	_tpl += '<td id="nano-device-id-' + nanoId + '">' + nanoId + '</td>';
 	_tpl += '<td id="nano-version-' + nanoId + '">---</td>';
-	_tpl += '<td id="nano-temp-' + nanoId + '"><span id="cu-temp-' + nanoId + '">0</span> / <span id="fan-temp-' + nanoId + '">0</span></td>';
+	if (deviceType === 'Avalon nano')
+		_tpl += '<td id="nano-temp-' + nanoId + '"><span id="all-temp-' + nanoId + '">0</span></td>';
+	else
+		_tpl += '<td id="nano-temp-' + nanoId + '"><span id="cu-temp-' + nanoId + '">0</span> / <span id="fan-temp-' + nanoId + '">0</span></td>';
 	_tpl += '<td id="nano-ghs5s-'+ nanoId +'">0</td>';
 	_tpl += '<td id="nano-error-rate-'+ nanoId +'">0</td>';
 	_tpl += '</tr>';
