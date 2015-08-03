@@ -227,7 +227,7 @@ var tcpErrorHandler = function(info) {
 var jobHandler = function(job) {
 	var poolId = job.poolId;
 	var jq = jobQueue[poolId];
-	jq.thisId = (jq.thisId + 1) % 16;
+	jq.thisId = (jq.thisId + 1) % 8;
 	jq.value[jq.thisId] = job;
 	if (poolId < activePool) {
 		if (activePool < 3)
