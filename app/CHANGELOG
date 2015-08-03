@@ -1,3 +1,6 @@
+v1.2.3
+	Reduce memory usage.
+	Avalon nano: Correct status of frequency, temperature, etc.
 v1.2.2
 	Avalon nano: Fix waiting time to 900ms between pushing works.
 v1.2.1
