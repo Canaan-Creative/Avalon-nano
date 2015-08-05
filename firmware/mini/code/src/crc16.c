@@ -26,7 +26,7 @@ static inline unsigned short shitfer(unsigned char ch, unsigned short init)
 unsigned short crc16(const unsigned char *buffer, int len)
 {
 	unsigned short crc;
-	unsigned char *p = buffer;
+	unsigned char *p = (unsigned char *)buffer;
 
 	crc = 0;
 	while (len-- > 0)
