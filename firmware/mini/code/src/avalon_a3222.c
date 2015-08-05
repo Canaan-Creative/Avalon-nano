@@ -198,7 +198,6 @@ int a3222_push_work(uint8_t *pkg)
 	awork[79] = g_ntime;			/* ntime */
 
 	if (g_freqflag[g_asic_index]) {
-		debug32("D: C-%d\n", g_asic_index);
 		g_freqflag[g_asic_index]--;
 		UNPACK32(g_freq[g_asic_index][0], awork + 80);
 		UNPACK32(g_freq[g_asic_index][1], awork + 84);
