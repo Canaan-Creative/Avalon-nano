@@ -107,14 +107,14 @@ SECTIONS
 		*(.data*)
 		. = ALIGN(4);
 		_edata = .;
-	    } > RamLoc4 AT>MFlash32
+	} > RamLoc4 AT>MFlash32
 
-	    /* BSS section for RamUsb2 */
-	    .bss_RAM2 : ALIGN(4)
-	    {
-		    *(.bss.$RAM2*)
-		    *(.bss.$RamUsb2*)
-		    . = ALIGN(4);
+	/* BSS section for RamUsb2 */
+	.bss_RAM2 : ALIGN(4)
+	{
+		*(.bss.$RAM2*)
+		*(.bss.$RamUsb2*)
+		. = ALIGN(4);
 	} > RamUsb2
 
 	/* MAIN BSS SECTION */
