@@ -13,14 +13,14 @@ var threadPaused = false;
 var workQueue = {
 	value: [],
 	shift: function() {
-		if (workQueue.value.length < 1000 && threadPaused) {
+		if (workQueue.value.length < 250 && threadPaused) {
 			thread.postMessage({info: "resume"});
 			threadPaused = false;
 		}
 		return this.value.shift();
 	},
 	push: function(data) {
-		if (workQueue.value.length >= 1023) {
+		if (workQueue.value.length >= 255) {
 			thread.postMessage({info: "pause"});
 			threadPaused = true;
 		}
@@ -227,7 +227,7 @@ var tcpErrorHandler = function(info) {
 var jobHandler = function(job) {
 	var poolId = job.poolId;
 	var jq = jobQueue[poolId];
-	jq.thisId = (jq.thisId + 1) % 256;
+	jq.thisId = (jq.thisId + 1) % 8;
 	jq.value[jq.thisId] = job;
 	if (poolId < activePool) {
 		if (activePool < 3)
