@@ -19,7 +19,7 @@
 #define MAX_USER_SECTOR	8
 #define CCLK	48000	/* 48,000 KHz for IAP call */
 
-unsigned char g_flash_buf[FLASH_BUF_SIZE];
+static unsigned char g_flash_buf[FLASH_BUF_SIZE];
 
 static int write_data(unsigned int flash_address, unsigned char *data_addr, unsigned int count)
 {

@@ -20,8 +20,8 @@
 
 #ifdef DEBUG
 #include "avalon_uart.h"
-char printf_buf32[32];
 #define debug32(...)	do {				\
+		char printf_buf32[32];	\
 		sprintf(printf_buf32, __VA_ARGS__);	\
 		uart_puts(printf_buf32);		\
 	} while(0)

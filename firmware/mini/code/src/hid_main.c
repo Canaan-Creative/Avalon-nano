@@ -57,7 +57,6 @@ static uint8_t g_reqpkg[AVAM_P_COUNT];
 static uint8_t g_ackpkg[AVAM_P_COUNT];
 static uint32_t g_freq[ASIC_COUNT][3];
 static uint32_t g_ledstat = LED_OFF_ALL;
-static uint8_t g_state = STATE_NORMAL;
 static bool g_toohot = false;
 
 static int init_mm_pkg(struct avalon_pkg *pkg, uint8_t type)
@@ -425,6 +424,7 @@ void prcess_idle(void)
 int main(void)
 {
 	uint16_t adc_val;
+	uint8_t cur_state = STATE_NORMAL;
 
 	Board_Init();
 	SystemCoreClockUpdate();
@@ -456,7 +456,7 @@ int main(void)
 		}
 
 		wdt_feed();
-		switch (g_state) {
+		switch (cur_state) {
 			case STATE_NORMAL:
 				while (UCOM_Read_Cnt()) {
 					memset(g_reqpkg, 0, AVAM_P_COUNT);
@@ -468,7 +468,7 @@ int main(void)
 					prcess_idle();
 					led_ctrl(LED_IDLE);
 					led_ctrl(LED_PG_OFF);
-					g_state = STATE_IDLE;
+					cur_state = STATE_IDLE;
 					break;
 				}
 
@@ -497,7 +497,7 @@ int main(void)
 				break;
 			case STATE_IDLE:
 				if (UCOM_Read_Cnt())
-					g_state = STATE_NORMAL;
+					cur_state = STATE_NORMAL;
 				__WFI();
 				break;
 		}
