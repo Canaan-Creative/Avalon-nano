@@ -14,6 +14,7 @@ LD	:= $(CROSS_COMPILE)ld
 SIZE	:= $(CROSS_COMPILE)size
 AR	:= $(CROSS_COMPILE)ar
 OBJCOPY	:= $(CROSS_COMPILE)objcopy
+OBJDUMP	:= $(CROSS_COMPILE)objdump
 
 # ----- Verbosity control -----------------------------------------------------
 

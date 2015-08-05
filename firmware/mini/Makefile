@@ -53,7 +53,8 @@ all: $(FIRMWARE).axf
 	mkdir -p bin/$(DATE)
 	$(OBJCOPY) -O binary $^ $(FIRMWARE).bin
 	$(OBJCOPY) -O ihex $^ $(FIRMWARE).hex
-	cp $(FIRMWARE).bin $(FIRMWARE).hex $^ bin/$(DATE)
+	$(OBJDUMP) -D $^ > $(FIRMWARE).objdump
+	cp $(FIRMWARE).bin $(FIRMWARE).hex $(FIRMWARE).objdump $^ bin/$(DATE)
 ifeq "$(OS)" "Darwin"
 	cd bin/$(DATE) && md5 $(FIRMWARE).bin $(FIRMWARE).hex $^ > md5sums
 else
@@ -87,4 +88,4 @@ erase_lpclink:
 clean:
 	make -C $(NXPLIBS_PATH)/lpc_chip_11uxx_lib clean
 	make -C $(NXPLIBS_PATH)/nxp_lpcxpresso_11u14_board_lib clean
-	rm -f $(OBJS) $(FIRMWARE).axf $(FIRMWARE).map $(FIRMWARE).bin $(FIRMWARE).hex
+	rm -f $(OBJS) $(FIRMWARE).axf $(FIRMWARE).map $(FIRMWARE).bin $(FIRMWARE).hex $(FIRMWARE).objdump
