@@ -17,4 +17,4 @@ firmware/nano/nxplib/nxp_lpcxpresso_11u14_board_lib/libs/
 app/compiler.jar
 app/*.pem
 app/*.crx
-app/compile/
+app/tmp/

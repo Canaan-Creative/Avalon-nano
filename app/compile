@@ -6,8 +6,8 @@
 
 [[ -f ./compiler.jar ]] || (wget http://dl.google.com/closure-compiler/compiler-latest.zip && unzip compiler-latest.zip compiler.jar && rm compiler-latest.zip)
 
-[[ -d compile ]] || mkdir compile
-cd compile
+[[ -d tmp ]] || mkdir tmp
+cd tmp
 cp ../sha256.js ./
 cp ../index.html ./
 cp -r ../images ./
@@ -40,11 +40,11 @@ mv js/custom.min.js js/custom.js
 # pip2 install crxmake
 
 cd ..
-crxmake -o app.crx compile
+crxmake -o app.crx tmp
 mv app.crx Avalon_miner_v`< ./manifest.json jq -r -M '.version'`.`git ls-tree master . | git mktree | cut -c-8`.crx
 
 
 #
 # Clean
 #
-rm -rf compile
+rm -rf tmp
