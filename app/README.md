@@ -1,6 +1,22 @@
 # Chrome App for Avalon Nano
 
-## Launch
+## Compile and Launch from CRX
+
+* Compile
+	```
+	sudo apt-get install jq python-dev swig
+	sudo pip2 install crxmake
+	./compile
+	```
+
+* Bring up the apps and extensions management page by clicking the settings icon and choosing Tools > Extensions.
+
+* Drag and drop the crx file to the chrome/chromium page.
+
+* Click OK to install.
+
+
+## Launch from Folder
 Ref: https://developer.chrome.com/apps/first_app#load
 
 * Bring up the apps and extensions management page by clicking the settings icon and choosing Tools > Extensions.

@@ -1,5 +1,4 @@
 #!/bin/bash
-
 #
 # Compile
 #
@@ -35,9 +34,6 @@ mv js/custom.min.js js/custom.js
 #
 # Pack
 #
-# TO BEGIN, INSTALL swig & crxmake:
-# apt-get install swig
-# pip2 install crxmake
 
 cd ..
 crxmake -o app.crx tmp
