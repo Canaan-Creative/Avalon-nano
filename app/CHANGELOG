@@ -1,0 +1,17 @@
+v1.2.4
+	Add default pool.
+	Always show pool setting button on welcome page.
+v1.2.3
+	Reduce memory usage.
+	Avalon nano: Correct status of frequency, temperature, etc.
+v1.2.2
+	Avalon nano: Fix waiting time to 900ms between pushing works.
+v1.2.1
+	Fix work queue growing.
+
+v1.2
+	Enable ntime rolling;
+	Enable adjusting voltage and frequency of Avalon4 mini;
+
+v1.0
+	Initial release.
