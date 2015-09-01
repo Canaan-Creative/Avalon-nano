@@ -172,8 +172,7 @@ var detectDevice = function() {
 				detectFlag = true;
 				$(".detect p img").remove();	
 				var btnTpl = '<div style="text-align:center;"><button type="button" data-type="enter" class="btn btn-default"> Enter </button>  ';
-				if(!poolObj.length)
-					btnTpl +='  <button type="button" data-type="setting-pool" class="btn btn-default"> Set Pool </button>';
+				btnTpl +='  <button type="button" data-type="setting-pool" class="btn btn-default">Pool Setting</button>';
 				btnTpl +='</div>';
 				$(".detect p").append(btnTpl);
 
@@ -557,7 +556,7 @@ var tablePart = function() {
 }
 
 var settingPool = function() {
-	dialog({title:'Setting pool'});
+	dialog({title:'Pool Setting'}, poolObj);
 	bindSaveButton(mainPage);
 
 }
