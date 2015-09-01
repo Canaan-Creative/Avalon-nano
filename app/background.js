@@ -38,7 +38,12 @@ var totalHashrate = Array.apply(null, new Array(721)).map(Number.prototype.value
 
 chrome.app.runtime.onLaunched.addListener(function() {
 	chrome.storage.local.get("pool", function(result) {
-		poolSetting = result.pool || [];
+		poolSetting = result.pool || [{
+			address: "stratum.kano.is",
+			port: 3333,
+			username: "canaan.chromeapp",
+			apiKey: "",
+		}];
 	});
 	chrome.storage.local.get("param", function(result) {
 		paramSetting = result.param || [];
