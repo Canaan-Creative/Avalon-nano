@@ -140,7 +140,7 @@ var updateHashrate = function( hashrates ){
 	var _len = hashrates.length -1;
 	for(var i = 0; i < _len ; i++){
 		updateDeviceGHs5s(hashrates[i].deviceId , (hashrates[i].hs5s/1000000000).toFixed(1));	
-		updateErrorRate( hashrates[i].deviceId , (hashrates[i].errorRate * 100).toFixed(2) );
+		//updateErrorRate( hashrates[i].deviceId , (hashrates[i].errorRate * 100).toFixed(2) );
 	}
 
 	var x = (new Date()).getTime();
@@ -457,7 +457,6 @@ var updatePoolList = function() {
 	bindPoolAdd();
 }
 var updatePoolStatus = function ( poolInfo ) {
-	//Object {info: "Active", type: "pool", poolId: 0}
 	_tpl = "<p class='pool-status-" + poolInfo.info + "'>" + poolInfo.info + "</p>";
 	$("#pool-status-"+poolInfo.poolId).html(_tpl);	
 }
@@ -474,9 +473,6 @@ var updateDeviceStatus = function ( deviceInfo ) {
 var updateDeviceVersion = function ( deviceId , version ) {
 	$("#nano-version-" + deviceId).html( version );
 }
-var updateErrorRate = function ( deviceId , data ) {
-	$("#nano-error-rate-" + deviceId).html( data );
-}
 var updateDeviceGHs5s = function ( deviceId , data ) {
 	$("#nano-ghs5s-" + deviceId).html( data );
 }
@@ -491,7 +487,6 @@ var devicePart = function( data ) {
 	_tpl += '<th>Version</th>';
 	_tpl += '<th>Temp(&deg;C)</th>';
 	_tpl += '<th>GHs5s</th>';
-	_tpl += '<th>Error%</th>';
 	_tpl += '</tr>'; 
 	_tpl += '</table>';
 	return _tpl;
@@ -543,7 +538,6 @@ var deviceTr = function(deviceObj) {
 	else
 		_tpl += '<td id="nano-temp-' + nanoId + '"><span id="cu-temp-' + nanoId + '">0</span> / <span id="fan-temp-' + nanoId + '">0</span></td>';
 	_tpl += '<td id="nano-ghs5s-'+ nanoId +'">0</td>';
-	_tpl += '<td id="nano-error-rate-'+ nanoId +'">0</td>';
 	_tpl += '</tr>';
 	$("#device").append(_tpl);
 }
