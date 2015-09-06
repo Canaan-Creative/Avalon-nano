@@ -113,7 +113,7 @@ body{
 	text-align:center;}
 .guide .detect{
 	background:#f4f4f4;	
-	height:200px;
+	height:275px;
 }
 .guide .detect p{
 	text-align:center;
@@ -130,7 +130,7 @@ body{
 	color:#888888;
 }
 .guide>p{
-	margin-top:200px;
+	margin-top:125px;
 	color:#888888;
 	text-align:center;
 }

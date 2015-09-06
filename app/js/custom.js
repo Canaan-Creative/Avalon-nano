@@ -226,8 +226,16 @@ var guidePage = function(callback) {
 				<p>
 					<img src="images/loading-m.gif"/>
 				</p>
-				<h4>To begin, plug your Avalon devices into the USB port of the computer</h4>
-				<h5>If your Avalon devices are not recognized, please contact us by <a href="mailto:service@cannan-creative.com" target="_blank">service@cannan-creative.com</a></h5>
+				<h4>To begin, plug your Avalon devices into the USB ports</h4>
+				<br />
+				<h5>Current support: Avalon nano 2, Avalon4 mini.</h5>
+				<br />
+				<h5>If your Avalon devices are not recognized</h5>
+				<h5>Please contact us by <a href="mailto:service@canaan-creative.com" target="_blank">service@canaan-creative.com</a></h5>
+				<br />
+				<h4 style="color:red;font-weight:bold">&#9888; WARNING</h4>
+				<h5 style="color:red;font-weight:bold">DO NOT TOUCH THE USB DEVICES IN OPERATION</h5>
+				<h5 style="color:red;font-weight:bold">SURFACES MAY GET HOT</h5>
 			</div>
 			<p>${chrome.runtime.getManifest().name} v${chrome.runtime.getManifest().version}<br />
 			Powered by <a href="http://www.canaan-creative.com" target="_blank">Canaan-Creative</a></p>
