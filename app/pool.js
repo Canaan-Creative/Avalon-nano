@@ -12,13 +12,12 @@ var Pool = function(id, url, port, username, password) {
 
 	var header = "POOL" + id;
 	var watcherId;
-	var pool = this;
 
-	this.socketId = null;
-	this.id = id;
-	this.alive = true;
-	this.onJob = new MinerEvent();
-	this.onError = new MinerEvent();
+	var socketId = null;
+	var alive = true;
+
+	var onJob = new MinerEvent();
+	var onError = new MinerEvent();
 
 	var watcher = function() {
 		chrome.sockets.tcp.create({}, function(createInfo) {
@@ -27,8 +26,8 @@ var Pool = function(id, url, port, username, password) {
 			var wait = setTimeout(function() {
 				error = true;
 				utils.log("warn", ["Connection lost (Timed out)"], header, "color: red");
-				pool.alive = false;
-				pool.onError.fire(pool.id);
+				alive = false;
+				onError.fire(id);
 			}, 5000);
 			chrome.sockets.tcp.connect(socketId, url, port, function(result) {
 				clearTimeout(wait);
@@ -38,8 +37,8 @@ var Pool = function(id, url, port, username, password) {
 						return;
 					}
 					utils.log("warn", ["Connection lost"], header, "color: red");
-					pool.alive = false;
-					pool.onError.fire(pool.id);
+					alive = false;
+					onError.fire(id);
 					chrome.sockets.tcp.close(socketId, function() {});
 					return;
 				}
@@ -56,7 +55,7 @@ var Pool = function(id, url, port, username, password) {
 	var send = function(data, retry) {
 		utils.log("log", ["Sent:     %s", utils.ab2asc(data)],
 			header, "color: darksalmon");
-		chrome.sockets.tcp.send(pool.socketId, data, function(sendInfo) {
+		chrome.sockets.tcp.send(socketId, data, function(sendInfo) {
 			if (chrome.runtime.lastError) {
 				utils.log("error", [chrome.runtime.lastError.message], header);
 				if (retry)
@@ -66,7 +65,7 @@ var Pool = function(id, url, port, username, password) {
 		});
 	};
 
-	this.receive = function(stratum) {
+	var receive = function(stratum) {
 		clearTimeout(watcherId);
 		watcherId = setTimeout(watcher, 1000);
 		utils.log("log", ["Received: %s", utils.ab2asc(stratum)],
@@ -83,7 +82,7 @@ var Pool = function(id, url, port, username, password) {
 			break;
 		case "mining.notify":
 			var job = {
-				poolId: pool.id,
+				poolId: id,
 				nonce1: nonce1,
 				nonce2Size: nonce2Size,
 				jobId: data.params[0],
@@ -97,7 +96,7 @@ var Pool = function(id, url, port, username, password) {
 				cleanJobs: data.params[8],
 				target: utils.getTarget(difficulty)
 			};
-			pool.onJob.fire(job);
+			onJob.fire(job);
 			break;
 		case "mining.ping":
 			send(Pool.stratumEncode({
@@ -107,35 +106,32 @@ var Pool = function(id, url, port, username, password) {
 			}));
 			break;
 		case "client.reconnect":
-			pool.disconnect();
-			pool.connect();
+			disconnect();
+			connect();
 			break;
 		default:
 			if (data.id === 1) {
+				// subscription
 				if (data.error) {
-					// this.log("warn", "Subscription Failed.");
 					return false;
 				}
-				// this.log("log1", "Subscribed.");
 				nonce1 = data.result[data.result.length - 2];
 				nonce2Size = data.result[data.result.length - 1];
 				if (data.result[0][0][0] === 'mining.set_difficulty')
 					difficulty = data.result[0][0][1];
 				send(AUTHORIZE);
 			} else if (data.id === 2) {
+				// authorization
 				if (data.error) {
-					// this.log("warn", "Authorization Failed.");
 					return false;
 				}
-				// this.log("log1", "Authorized.");
 			} else if (data.id >= 1000){
+				// submission
 				if (data.error) {
-					// this.log("warn", "Submission Failed.");
 					return false;
 				}
 				if (!data.result) {
-					// this.log("log2", "Submission Failed: %s.",
-					//	data["reject-reason"]);
+					// data["reject-reason"];
 					return false;
 				}
 			}
@@ -143,48 +139,48 @@ var Pool = function(id, url, port, username, password) {
 		}
 	};
 
-	this.connect = function() {
+	var connect = function() {
 		chrome.sockets.tcp.create({}, function(createInfo) {
-			pool.socketId = createInfo.socketId;
+			socketId = createInfo.socketId;
 			var error = false;
 			var wait = setTimeout(function() {
 				error = true;
 				utils.log("warn", ["Connection failed (Timed out)"], header, "color: red");
-				pool.alive = false;
-				pool.onError.fire(pool.id);
+				alive = false;
+				onError.fire(id);
 			}, 5000);
-			chrome.sockets.tcp.connect(pool.socketId, url, port, function(result) {
+			chrome.sockets.tcp.connect(socketId, url, port, function(result) {
 				clearTimeout(wait);
 				if (chrome.runtime.lastError) {
 					if (error) {
-						chrome.sockets.tcp.close(pool.socketId, function() {});
+						chrome.sockets.tcp.close(socketId, function() {});
 						return;
 					}
 					utils.log("warn", ["Connection failed"], header, "color: red");
-					pool.alive = false;
-					pool.onError.fire(pool.id);
-					chrome.sockets.tcp.close(pool.socketId, function() {});
+					alive = false;
+					onError.fire(id);
+					chrome.sockets.tcp.close(socketId, function() {});
 					return;
 				}
 				utils.log("info", ["Connected"], header, "color: maroon");
-				pool.alive = true;
+				alive = true;
 				send(Pool.SUBSCRIBE);
 				watcherId = setTimeout(watcher, 5000);
 			});
 		});
 	};
 
-	this.disconnect = function() {
+	var disconnect = function() {
 		clearTimeout(watcherId);
-		if (this.socketId !== null)
-			chrome.sockets.tcp.disconnect(this.socketId, function() {
-				chrome.sockets.tcp.close(pool.socketId, function() {
+		if (socketId !== null)
+			chrome.sockets.tcp.disconnect(socketId, function() {
+				chrome.sockets.tcp.close(socketId, function() {
 					utils.log("info", ["Disconnected"], header, "color: maroon");
 				});
 			});
 	};
 
-	this.submit = function(jobId, nonce2, ntime, nonce) {
+	var submit = function(jobId, nonce2, ntime, nonce) {
 		utils.log("info", ["Submitted"], header, "color: orangered");
 		var data = {
 			params: [username, jobId, nonce2, ntime, nonce],
@@ -194,6 +190,23 @@ var Pool = function(id, url, port, username, password) {
 		submitId = (submitId + 1) % 1000;
 		send(Pool.stratumEncode(data), 3);
 	};
+
+	// getters
+	Object.defineProperties(this, {
+		id: {get: function() {return id;}},
+		socketId: {get: function() {return socketId;}},
+		alive: {get: function() {return alive;}},
+	});
+
+	// events
+	this.onJob = onJob;
+	this.onError = onError;
+
+	// public functions
+	this.receive = receive;
+	this.connect = connect;
+	this.disconnect = disconnect;
+	this.submit = submit;
 };
 
 Pool.stratumEncode = function(data) {

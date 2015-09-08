@@ -16,6 +16,8 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 
 	var version = null;
 	var asicCount = 1;
+	var dna = null;
+	var stat = {};
 
 	var phase = null;
 	var pass = false;
@@ -38,17 +40,10 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 		Avalon.freqEncode(freqSet)
 	);
 
-	// public
-	this.deviceId = device.deviceId;
-	this.deviceType = deviceType;
-	this.dna = null;
+	var onDetect = new MinerEvent();
+	var onNonce = new MinerEvent();
+	var onStatus = new MinerEvent();
 
-	// Events
-	this.onDetect = new MinerEvent();
-	this.onNonce = new MinerEvent();
-	this.onStatus = new MinerEvent();
-
-	var avalon = this;
 	var send = function(pkg) {
 		chrome.hid.send(connectionId, 0, pkg, function() {
 			if (chrome.runtime.lastError) {
@@ -88,9 +83,6 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 				return false;
 		}
 		var type = view.getUint8(2);
-		// var opt = view.getUint8(3);
-		// var idx = view.getUint8(4);
-		// var cnt = view.getUint8(5);
 
 		var data = pkg.slice(6, 38);
 		var crc = view.getUint16(38, false);
@@ -105,16 +97,16 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 		switch (type) {
 		case Avalon.P_ACKDETECT:
 			info = {
-				deviceId: avalon.deviceId,
+				deviceId: device.deviceId,
 				version: utils.ab2asc(data.slice(8, 23)),
 				dna: utils.ab2hex(data.slice(0, 8)),
 				asicCount: dataView.getUint32(23, false),
 			};
-			avalon.dna = info.dna;
+			dna = info.dna;
 			asicCount = info.asicCount;
-			// if version pass check
+			// if version check passed
 			pass = true;
-			avalon.onDetect.fire(info);
+			onDetect.fire(info);
 			utils.log("info", ["Version:  %s", info.version], header, "color: green");
 			utils.log("info", ["DNA:      0x%s", info.dna], header, "color: green");
 			break;
@@ -123,14 +115,14 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 				if (dataView.getUint8(i * 16 + 6) === 0xff)
 					continue;
 				info = {
-					deviceId: avalon.deviceId,
+					deviceId: device.deviceId,
 					nonce: dataView.getUint32(i * 16 + 8) - 0x4000,
 					nonce2: dataView.getUint32(i * 16 + 2),
 					jqId: dataView.getUint8(i * 16 + 1),
 					poolId: dataView.getUint8(i * 16 + 0),
 					ntime: dataView.getUint8(i * 16 + 7),
 				};
-				avalon.onNonce.fire(info);
+				onNonce.fire(info);
 				utils.log("log",
 					["Nonce:    0x%s, roll %s",
 						utils.padLeft((info.nonce >>> 0).toString(16)),
@@ -160,18 +152,18 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 			if (phase === "poll")
 				phase = (info.power === 1) ? "push" : "init";
 			for (var key in info)
-				if (info[key] === avalon[key])
+				if (info[key] === stat[key])
 					delete(info[key]);
 			if (Object.keys(info).length > 0) {
 				args =["Status:   "];
 				for (key in info) {
-					avalon[key] = info[key];
+					stat[key] = info[key];
 					args[0] += key + " %s, ";
 					args.push(info[key]);
 				}
 				utils.log("log", args, header, "color: green");
-				info.deviceId = avalon.deviceId;
-				avalon.onStatus.fire(info);
+				info.deviceId = device.deviceId;
+				onStatus.fire(info);
 			}
 			break;
 		}
@@ -219,24 +211,18 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 		if (!enable)
 			return;
 		send(SET_VOLT_PKG);
-		//send(Avalon.POLL_PKG);
-		//receive();
 		setTimeout(function() {
 			if (!enable)
 				return;
 			send(SET_FREQ_PKG0);
-			//send(Avalon.POLL_PKG);
-			//receive();
 			send(SET_FREQ_PKG);
-			//send(Avalon.POLL_PKG);
-			//receive();
 			phase = "push";
 			pushPhase();
 		}, 1000);
 	};
 
-	this.setVoltage = function(volt) {
-		if (this.deviceType === "Avalon nano")
+	var setVoltage = function(volt) {
+		if (deviceType === "Avalon nano")
 			return;
 		if (volt === voltSet)
 			return;
@@ -249,8 +235,8 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 			send(SET_VOLT_PKG);
 	};
 
-	this.setFrequency = function(freqs) {
-		if (this.deviceType === "Avalon nano")
+	var setFrequency = function(freqs) {
+		if (deviceType === "Avalon nano")
 			return;
 		if (freqs[0] === freqSet[0] &&
 			freqs[1] === freqSet[1] &&
@@ -265,7 +251,7 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 			send(SET_FREQ_PKG);
 	};
 
-	this.run = function() {
+	var run = function() {
 		if (!pass || enable)
 			return false;
 		enable = true;
@@ -273,8 +259,8 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 		initPhase();
 	};
 
-	this.connect = function() {
-		chrome.hid.connect(avalon.deviceId, function(connection) {
+	var connect = function() {
+		chrome.hid.connect(device.deviceId, function(connection) {
 			if (chrome.runtime.lastError) {
 				utils.log("error", [chrome.runtime.lastError.message], header);
 				// TODO: Alert failure.
@@ -285,17 +271,34 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 		});
 	};
 
-	this.disconnect = function() {
-		chrome.hid.disconnect(connectionId, function() {
-			// avalon.log("info", "Disconnected.");
-		});
+	var disconnect = function() {
+		chrome.hid.disconnect(connectionId, function() {});
 	};
 
-	this.stop = function() {
+	var halt = function() {
 		enable = false;
 		phase = null;
-		// avalon.log("info", "Stopped.");
 	};
+
+	// getters
+	Object.defineProperties(this, {
+		deviceId: {get: function() {return device.deviceId;}},
+		deviceType: {get: function() {return deviceType;}},
+		dna: {get: function() {return dna;}},
+	});
+
+	// events
+	this.onDetect = onDetect;
+	this.onNonce = onNonce;
+	this.onStatus = onStatus;
+
+	// public functions
+	this.setVoltage = setVoltage;
+	this.setFrequency = setFrequency;
+	this.run = run;
+	this.halt = halt;
+	this.connect = connect;
+	this.disconnct = disconnect;
 };
 
 Avalon.VENDOR_ID = 10737; //0x29f1;

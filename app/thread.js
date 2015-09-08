@@ -20,7 +20,6 @@ onmessage = function(e) {
 			jqId = e.data.jqId;
 			poolId = job.poolId;
 			nonce2 = 0;
-			// nonce2Limit = Math.pow(2, e.data.nonce2Size * 8);
 			/* fall through */
 		case "resume":
 			if (enabled)

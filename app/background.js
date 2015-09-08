@@ -63,7 +63,7 @@ chrome.app.runtime.onLaunched.addListener(function() {
 			enable = false;
 			for (i = 0; i < avalons.length; i++)
 				if (avalons[i] !== undefined) {
-					avalons[i].stop();
+					avalons[i].halt();
 					delete(avalons[i]);
 				}
 			for (i = 0; i < pools.length; i++)
@@ -175,7 +175,7 @@ var hidRemovedHandler = function(deviceId) {
 	for (var idx in avalons) {
 		var avalon = avalons[idx];
 		if (avalon.deviceId === deviceId) {
-			avalon.stop();
+			avalon.halt();
 			delete(avalons[idx]);
 			delete(hashrates[idx]);
 			delete(errors[idx]);
