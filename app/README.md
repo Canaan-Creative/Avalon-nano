@@ -33,6 +33,3 @@ Ref: https://developer.chrome.com/apps/first_app#load
 * https://github.com/progranism/Bitcoin-JavaScript-Miner
 * https://github.com/bitcoinjs/bitcoinjs-lib
 * https://github.com/derjanb/hamiyoca
-
-## Third Party
-* [jsSHA](https://github.com/Caligatio/jsSHA)(BSD-licensed) for SHA-256 algorithm

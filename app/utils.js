@@ -122,17 +122,10 @@ var Utils = function() {
 		return raw;
 	};
 
-	this.sha256 = function(hex) {
-		var shaObj = new jsSHA(hex, "HEX");
-		return shaObj.getHash("SHA-256", "HEX");
-	};
-
 	this.getBlockheader = function(job, nonce2) {
 		nonce2 = this.uInt2LeHex(nonce2, job.nonce2Size);
 		var coinbase = job.coinbase1 + job.nonce1 + nonce2 + job.coinbase2;
-		var merkleRoot = this.sha256(this.sha256(coinbase));
-		for (var branch of job.merkleBranch)
-			merkleRoot = this.sha256(this.sha256(merkleRoot + branch));
+		var merkleRoot = _calc_merkle_root(coinbase, job.merkleBranch);
 		var arraybuffer = new ArrayBuffer(76);
 		var view = new DataView(arraybuffer);
 		view.setUint32(0, parseInt(job.version, 16));
@@ -141,11 +134,7 @@ var Utils = function() {
 				(i + 1) * 4,
 				parseInt(job.prevhash.slice(i * 8, i * 8 + 8), 16)
 			);
-			view.setUint32(
-				(i + 9) * 4,
-				parseInt(merkleRoot.slice(i * 8, i * 8 + 8), 16),
-				true
-			);
+			view.setUint32((i + 9) * 4, merkleRoot[i], true);
 		}
 		view.setUint32(17 * 4, parseInt(job.ntime, 16));
 		view.setUint32(18 * 4, parseInt(job.nbits, 16));
@@ -156,9 +145,7 @@ var Utils = function() {
 	this.varifyWork = function(job, nonce2, ntime, nonce) {
 		nonce2 = this.uInt2LeHex(nonce2, job.nonce2Size);
 		var coinbase = job.coinbase1 + job.nonce1 + nonce2 + job.coinbase2;
-		var merkleRoot = this.sha256(this.sha256(coinbase));
-		for (var branch of job.merkleBranch)
-			merkleRoot = this.sha256(this.sha256(merkleRoot + branch));
+		var merkleRoot = _calc_merkle_root(coinbase, job.merkleBranch);
 		var arraybuffer = new ArrayBuffer(80);
 		var view = new DataView(arraybuffer);
 		view.setUint32(0, parseInt(job.version, 16), true);
@@ -168,77 +155,146 @@ var Utils = function() {
 				parseInt(job.prevhash.slice(i * 8, i * 8 + 8), 16),
 				true
 			);
-			view.setUint32(
-				(i + 9) * 4,
-				parseInt(merkleRoot.slice(i * 8, i * 8 + 8), 16)
-			);
+			view.setUint32((i + 9) * 4, merkleRoot[i]);
 		}
 		view.setUint32(17 * 4, ntime, true);
 		view.setUint32(18 * 4, parseInt(job.nbits, 16), true);
 		view.setUint32(19 * 4, nonce);
 
-		var hash = this.sha256(this.sha256(this.ab2hex(arraybuffer)));
-		if (hash.slice(56, 64) !== '00000000')
+		var hash = _double_sha256(this.ab2hex(arraybuffer));
+		if (hash[7] !== 0)
 			// hard ware error
 			return 2;
-			var targetView = new Uint8Array(job.target);
-			var hashView = new Uint8Array(this.hex2ab(hash));
-			for (var j = 0; j < 32; j++) {
-				if (hashView[31 - j] > targetView[j])
-					// above target
-					return 1;
-				else if (hashView[31 - j] < targetView[j])
-					return 0;
-			}
-			return 0;
+		var targetView = new Uint32Array(job.target);
+		for (var j = 1; j < 8; j++) {
+			var h = bswap32(hash[7 - j]);
+			if (h > targetView[j])
+				// above target
+				return 1;
+			else if (h < targetView[j])
+				return 0;
+		}
+		return 0;
 	};
 
 	this.getMidstate = function(data) {
 		var view = new DataView(this.hex2ab(data.slice(0, 128)));
+		var input = [], output = [];
+		for (i = 0; i < 16; i++)
+			input[i] = view.getUint32(i * 4, true);
+		_sha256_core(input, output, false);
+
+		var arraybuffer = new ArrayBuffer(32);
+		view = new DataView(arraybuffer);
+		for (i = 0; i < 8; i++)
+			view.setUint32(i * 4, output[i], true);
+		return this.ab2hex(arraybuffer);
+	};
+
+	var _calc_merkle_root = function(coinbase, merkles) {
+		var root = _double_sha256(coinbase);
+		var padding = [0x80000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x200];
+		for (var branch of merkles) {
+			for (var i = 8; i < 16; i++)
+				root[i] = parseInt(branch.substr((i - 8) * 8, 8), 16);
+			_sha256_core(root, root, false);
+			_sha256_core(padding, root, root);
+			root[8] = 0x80000000;
+			for (i = 9; i < 15; i++)
+				root[i] = 0;
+			root[15] = 0x100;
+			_sha256_core(root, root, false);
+		}
+		return root.slice(0, 8);
+	};
+
+	var _double_sha256 = function(input_str) {
+		var input = [], output = [];
+
+		input = _sha256(input_str);
+
+		input[8] = 0x80000000;
+		for (var i = 9; i < 15; i++)
+			input[i] = 0;
+		input[15] = 0x100;
+
+		_sha256_core(input, output, false);
+		return output;
+	};
+
+	var _sha256 = function(input_str) {
+		var len = input_str.length;
+		var pre = parseInt(len / 128);
+		var i, j;
+		var input = [], output = [];
+
+		for (i = 0; i < pre; i++) {
+			for (j = 0; j < 16; j++)
+				input[j] = parseInt(input_str.substr(i * 128 + j * 8, 8), 16);
+			_sha256_core(input, output, output);
+		}
+		input_str += '8000000000';
+		for (j = 0; j <= parseInt((len + 2 - pre * 128) / 8); j++)
+			input[j] = parseInt(input_str.substr(pre * 128 + j * 8, 8), 16);
+		if (len - pre * 128 > 110) {
+			for (; j < 16; j++)
+				input[j] = 0;
+			_sha256_core(input, output, output);
+			j = 0;
+		}
+		for (; j < 15; j++)
+			input[j] = 0;
+		input[15] = len * 4;
+		_sha256_core(input, output, output);
+
+		return output;
+
+	};
+
+	var _sha256_core = function(input, output, init) {
+		if (init === false || init === undefined || init.length === 0)
+			init = SHA256_INIT;
 		var w = [], v = [];
 		var i, s0, s1, ma, ch;
-		for (i = 0; i < 16; i++)
-			w[i] = view.getUint32(i * 4, true);
 		for (i = 0; i < 8; i++)
-			v[i] = SHA256_INIT[i];
-		for (var k of SHA256_TABLE) {
+			v[i] = init[i];
+		for (i = 0; i < 16; i++)
+			w[i] = input[i];
+
+		for (i = 0; i < 64; i++) {
+			var k = SHA256_TABLE[i];
 			s0 = _rotateright(v[0], 2) ^ _rotateright(v[0], 13) ^ _rotateright(v[0], 22);
 			s1 = _rotateright(v[4], 6) ^ _rotateright(v[4], 11) ^ _rotateright(v[4], 25);
 			ma = (v[0] & v[1]) ^ (v[0] & v[2]) ^ (v[1] & v[2]);
 			ch = (v[4] & v[5]) ^ ((~v[4]) & v[6]);
 
-			v[7] = _addu32(v[7], w[0], k, ch, s1);
-			v[3] = _addu32(v[3], v[7]);
-			v[7] = _addu32(v[7], ma, s0);
+			v[7] = (v[7] + w[0] + k + ch + s1) >>> 0;
+			v[3] = (v[3] + v[7]) >>> 0;
+			v[7] = (v[7] + ma + s0) >>> 0;
 
 			v.unshift(v[7]);
 			v.pop();
 
-			s0 = _rotateright(w[1], 7) ^ _rotateright(w[1], 18) ^ (w[1] >>> 3);
-			s1 = _rotateright(w[14], 17) ^ _rotateright(w[14], 19) ^ (w[14] >>> 10);
+			if (i < 48) {
+				s0 = _rotateright(w[1], 7) ^ _rotateright(w[1], 18) ^ (w[1] >>> 3);
+				s1 = _rotateright(w[14], 17) ^ _rotateright(w[14], 19) ^ (w[14] >>> 10);
 
-			w.push(_addu32(w[0], s0, w[9], s1));
+				w.push((w[0] + s0 + w[9] + s1) >>> 0);
+			}
 			w.shift();
 		}
 
-		var arraybuffer = new ArrayBuffer(32);
-		var new_view = new DataView(arraybuffer);
 		for (i = 0; i < 8; i++)
-		new_view.setUint32(i * 4, _addu32(v[i], SHA256_INIT[i]), true);
-		return this.ab2hex(arraybuffer);
+			output[i] = (v[i] + init[i]) >>> 0;
 	};
 
 	var _rotateright = function(i, p) {
 		p &= 0x1f;
-		return i >>> p | ((i << (32 - p)) & 0xffffffff);
+		return (i >>> p | (i << (32 - p))) >>> 0;
 	};
 
-	var _addu32 = function() {
-		var sum = 0;
-		for (var i of arguments) {
-			sum = (sum + i) & 0xffffffff;
-		}
-		return sum & 0xffffffff;
+	var bswap32 = function(value) {
+		return ((value >>> 24) | (value << 24) | ((value >>> 8) & 0xff00) | ((value << 8) & 0xff0000)) >>> 0;
 	};
 
 	this.padLeft = function(str, len) {

@@ -1,4 +1,4 @@
-importScripts('sha256.js', 'utils.js', 'driver.js');
+importScripts('utils.js', 'driver.js');
 
 var enabled = false;
 var loopId, job, jobId, poolId, nonce2;
