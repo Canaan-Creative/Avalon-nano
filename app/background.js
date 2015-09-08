@@ -327,9 +327,9 @@ var nonceHandler = function(info) {
 		case 0:
 			pools[info.poolId].submit(
 				job.jobId,
-				utils.uInt2LeHex(info.nonce2, job.nonce2Size),
+				utils.uint2lehex(info.nonce2, job.nonce2Size),
 				ntime.toString(16),
-				utils.uInt2LeHex(info.nonce, 4)
+				utils.uint2lehex(info.nonce, 4)
 			);
 			/* falls through */
 		case 1:

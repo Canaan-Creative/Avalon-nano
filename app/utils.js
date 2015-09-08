@@ -72,13 +72,13 @@ var Utils = function() {
 		0x0000000000000000000000000000000000000000000000000000000000000001,
 	];
 
-	this.check_version = function(version) {
-		return version.slice(0, 6) === '3U1504' ||
-			version.slice(0, 6) === '4M1505';
+	var check_version = function(version) {
+		return version.substr(0, 6) === '3U1504' ||
+			version.substr(0, 6) === '4M1505';
 	};
 
-	this.crc16 = function(arraybuffer) {
-		var data = new Uint8Array(arraybuffer);
+	var crc16 = function(buffer) {
+		var data = new Uint8Array(buffer);
 		var crc = 0;
 		var i = 0;
 		var len = data.byteLength;
@@ -89,83 +89,86 @@ var Utils = function() {
 		return crc & 0xffff;
 	};
 
-	this.ab2hex = function(arraybuffer) {
-		var view = new Uint8Array(arraybuffer);
+	var ab2hex = function(buffer) {
+		var view = new Uint8Array(buffer);
 		var str = '';
 		for (var v of view)
 			str += ('0' + v.toString(16)).slice(-2);
 		return str;
 	};
 
-	this.hex2ab = function(hex) {
+	var hex2ab = function(hex) {
 		var len = hex.length / 2;
-		var arraybuffer = new ArrayBuffer(len);
-		var view = new Uint8Array(arraybuffer);
+		var buffer = new ArrayBuffer(len);
+		var view = new Uint8Array(buffer);
 		for (var i = 0; i < len; i++)
-		view[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
-		return arraybuffer;
+			view[i] = parseInt(hex.substr(i * 2, 2), 16);
+		return buffer;
 	};
 
-	this.ab2asc = function(arraybuffer) {
-		return String.fromCharCode.apply(null, new Uint8Array(arraybuffer));
+	var ab2asc = function(buffer) {
+		return String.fromCharCode.apply(null, new Uint8Array(buffer));
 	};
 
-	this.str2ab = function(str) {
+	var str2ab = function(str) {
 		var len = str.length;
-		var arraybuffer = new ArrayBuffer(len);
-		var view = new Uint8Array(arraybuffer);
+		var buffer = new ArrayBuffer(len);
+		var view = new Uint8Array(buffer);
 		for (var i = 0; i < len; i++)
-		view[i] = str.charCodeAt(i);
-		return arraybuffer;
+			view[i] = str.charCodeAt(i);
+		return buffer;
 	};
 
-	this.gwPool2raw = function(midstat, data, poolId, jobId, nonce2) {
-		var raw = new ArrayBuffer(64);
-		var view = new DataView(raw);
+	var genWork = function(job, nonce2, poolId, jqId) {
+		var buffer = new ArrayBuffer(64);
+		var view = new DataView(buffer);
 		var i;
 
-		data = data.slice(128, 128 + 24);
+		var header = _calc_header(job, nonce2);
+		var midstat = _calc_midstat(header);
+
+		var data = header.substr(128, 24);
 		for (i = 0; i < 32; i++)
-		view.setUint8(31 - i, parseInt(midstat.slice(i * 2, i * 2 + 2), 16));
+			view.setUint8(31 - i, parseInt(midstat.substr(i * 2, 2), 16));
 		view.setUint8(32, poolId);
-		view.setUint8(33, jobId);
+		view.setUint8(33, jqId);
 		view.setUint32(34, nonce2, false);
 		for (i = 0; i < 12; i++)
-		view.setUint8(63 - i, parseInt(data.slice(i * 2, i * 2 + 2), 16));
-		return raw;
+			view.setUint8(63 - i, parseInt(data.substr(i * 2, 2), 16));
+		return buffer;
 	};
 
-	this.getBlockheader = function(job, nonce2) {
-		nonce2 = this.uInt2LeHex(nonce2, job.nonce2Size);
+	var _calc_header = function(job, nonce2) {
+		nonce2 = uint2lehex(nonce2, job.nonce2Size);
 		var coinbase = job.coinbase1 + job.nonce1 + nonce2 + job.coinbase2;
 		var merkleRoot = _calc_merkle_root(coinbase, job.merkleBranch);
-		var arraybuffer = new ArrayBuffer(76);
-		var view = new DataView(arraybuffer);
+		var buffer = new ArrayBuffer(76);
+		var view = new DataView(buffer);
 		view.setUint32(0, parseInt(job.version, 16));
 		for (var i = 0; i < 8; i++) {
 			view.setUint32(
 				(i + 1) * 4,
-				parseInt(job.prevhash.slice(i * 8, i * 8 + 8), 16)
+				parseInt(job.prevhash.substr(i * 8, 8), 16)
 			);
 			view.setUint32((i + 9) * 4, merkleRoot[i], true);
 		}
 		view.setUint32(17 * 4, parseInt(job.ntime, 16));
 		view.setUint32(18 * 4, parseInt(job.nbits, 16));
 
-		return this.ab2hex(arraybuffer);
+		return ab2hex(buffer);
 	};
 
-	this.varifyWork = function(job, nonce2, ntime, nonce) {
-		nonce2 = this.uInt2LeHex(nonce2, job.nonce2Size);
+	var varifyWork = function(job, nonce2, ntime, nonce) {
+		nonce2 = uint2lehex(nonce2, job.nonce2Size);
 		var coinbase = job.coinbase1 + job.nonce1 + nonce2 + job.coinbase2;
 		var merkleRoot = _calc_merkle_root(coinbase, job.merkleBranch);
-		var arraybuffer = new ArrayBuffer(80);
-		var view = new DataView(arraybuffer);
+		var buffer = new ArrayBuffer(80);
+		var view = new DataView(buffer);
 		view.setUint32(0, parseInt(job.version, 16), true);
 		for (var i = 0; i < 8; i++) {
 			view.setUint32(
 				(i + 1) * 4,
-				parseInt(job.prevhash.slice(i * 8, i * 8 + 8), 16),
+				parseInt(job.prevhash.substr(i * 8, 8), 16),
 				true
 			);
 			view.setUint32((i + 9) * 4, merkleRoot[i]);
@@ -174,13 +177,13 @@ var Utils = function() {
 		view.setUint32(18 * 4, parseInt(job.nbits, 16), true);
 		view.setUint32(19 * 4, nonce);
 
-		var hash = _double_sha256(this.ab2hex(arraybuffer));
+		var hash = _double_sha256(ab2hex(buffer));
 		if (hash[7] !== 0)
 			// hardware error
 			return 2;
 		var targetView = new DataView(job.target);
 		for (var j = 1; j < 8; j++) {
-			var h = bswap32(hash[7 - j]);
+			var h = _bswap32(hash[7 - j]);
 			var t = targetView.getUint32(j * 4);
 			if (h > t)
 				// above target
@@ -191,18 +194,18 @@ var Utils = function() {
 		return 0;
 	};
 
-	this.getMidstate = function(data) {
-		var view = new DataView(this.hex2ab(data.slice(0, 128)));
+	var _calc_midstat = function(data) {
+		var view = new DataView(hex2ab(data.substr(0, 128)));
 		var input = [], output = [];
 		for (i = 0; i < 16; i++)
 			input[i] = view.getUint32(i * 4, true);
 		_sha256_core(input, output, false);
 
-		var arraybuffer = new ArrayBuffer(32);
-		view = new DataView(arraybuffer);
+		var buffer = new ArrayBuffer(32);
+		view = new DataView(buffer);
 		for (i = 0; i < 8; i++)
 			view.setUint32(i * 4, output[i], true);
-		return this.ab2hex(arraybuffer);
+		return ab2hex(buffer);
 	};
 
 	var _calc_merkle_root = function(coinbase, merkles) {
@@ -277,8 +280,8 @@ var Utils = function() {
 
 		for (i = 0; i < 64; i++) {
 			var k = SHA256_TABLE[i];
-			s0 = _rotateright(v[0], 2) ^ _rotateright(v[0], 13) ^ _rotateright(v[0], 22);
-			s1 = _rotateright(v[4], 6) ^ _rotateright(v[4], 11) ^ _rotateright(v[4], 25);
+			s0 = _rotate_right(v[0], 2) ^ _rotate_right(v[0], 13) ^ _rotate_right(v[0], 22);
+			s1 = _rotate_right(v[4], 6) ^ _rotate_right(v[4], 11) ^ _rotate_right(v[4], 25);
 			ma = (v[0] & v[1]) ^ (v[0] & v[2]) ^ (v[1] & v[2]);
 			ch = (v[4] & v[5]) ^ ((~v[4]) & v[6]);
 
@@ -290,8 +293,8 @@ var Utils = function() {
 			v.pop();
 
 			if (i < 48) {
-				s0 = _rotateright(w[1], 7) ^ _rotateright(w[1], 18) ^ (w[1] >>> 3);
-				s1 = _rotateright(w[14], 17) ^ _rotateright(w[14], 19) ^ (w[14] >>> 10);
+				s0 = _rotate_right(w[1], 7) ^ _rotate_right(w[1], 18) ^ (w[1] >>> 3);
+				s1 = _rotate_right(w[14], 17) ^ _rotate_right(w[14], 19) ^ (w[14] >>> 10);
 
 				w.push((w[0] + s0 + w[9] + s1) >>> 0);
 			}
@@ -302,16 +305,16 @@ var Utils = function() {
 			output[i] = (v[i] + init[i]) >>> 0;
 	};
 
-	var _rotateright = function(i, p) {
+	var _rotate_right = function(i, p) {
 		p &= 0x1f;
 		return (i >>> p | (i << (32 - p))) >>> 0;
 	};
 
-	var bswap32 = function(value) {
+	var _bswap32 = function(value) {
 		return ((value >>> 24) | (value << 24) | ((value >>> 8) & 0xff00) | ((value << 8) & 0xff0000)) >>> 0;
 	};
 
-	this.padLeft = function(str, len) {
+	var padLeft = function(str, len) {
 		len = len || 4;
 		len *= 2;
 		while (str.length < len)
@@ -319,21 +322,21 @@ var Utils = function() {
 		return str;
 	};
 
-	this.uInt2LeHex = function(integar, size) {
-		var arraybuffer = new ArrayBuffer(4);
-		var view = new DataView(arraybuffer);
+	var uint2lehex = function(integar, size) {
+		var buffer = new ArrayBuffer(4);
+		var view = new DataView(buffer);
 		view.setUint32(0, integar, true);
-		return this.ab2hex(arraybuffer).slice(0, size * 2);
+		return ab2hex(buffer).substr(0, size * 2);
 	};
 
-	this.arraySum = function(array) {
+	var arraySum = function(array) {
 		return array.reduce(function(a, b) {return a + b;});
 	};
 
-	this.getTarget = function(diff) {
-		var arraybuffer = new ArrayBuffer(32);
+	var getTarget = function(diff) {
+		var buffer = new ArrayBuffer(32);
 		var base, i, d;
-		var view = new DataView(arraybuffer);
+		var view = new DataView(buffer);
 		if (diff < 0xffff) {
 			base = 0xffff;
 			for (i = 2; i < 16; i++) {
@@ -341,7 +344,7 @@ var Utils = function() {
 				base = (base % diff) << 16;
 			}
 		} else {
-			view = new Uint32Array(arraybuffer);
+			view = new Uint32Array(buffer);
 			base = DIFFONE;
 			base /= diff;
 			for (i = 0; i < 8; i++) {
@@ -350,10 +353,10 @@ var Utils = function() {
 				view.setUint32(i * 4, d);
 			}
 		}
-		return arraybuffer;
+		return buffer;
 	};
 
-	this.log = function(level, args, header, style) {
+	var log = function(level, args, header, style) {
 		if (!logFlag)
 			return;
 		style = style || "";
@@ -379,12 +382,29 @@ var Utils = function() {
 		}
 	};
 
-	this.enableLog = function() {
+	var enableLog = function() {
 		logFlag = true;
 	};
-	this.disableLog = function() {
+	var disableLog = function() {
 		logFlag = false;
 	};
+
+	// public functions
+	this.check_version = check_version;
+	this.crc16 = crc16;
+	this.ab2hex = ab2hex;
+	this.hex2ab = hex2ab;
+	this.ab2asc = ab2asc;
+	this.str2ab = str2ab;
+	this.genWork = genWork;
+	this.varifyWork = varifyWork;
+	this.padLeft = padLeft;
+	this.uint2lehex = uint2lehex;
+	this.arraySum = arraySum;
+	this.getTarget = getTarget;
+	this.log = log;
+	this.enableLog = enableLog;
+	this.disableLog = disableLog;
 };
 
 var utils = new Utils();

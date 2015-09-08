@@ -35,17 +35,9 @@ onmessage = function(e) {
 var loop = function() {
 	if (job === undefined)
 		return;
-	var blockheader = utils.getBlockheader(job, nonce2);
-	var midstate = utils.getMidstate(blockheader);
 	// Pay attention to the difference of jqId and jobId,
 	// the latter is provided by the pool and used only when submitting.
-	var raw = utils.gwPool2raw(
-		midstate,
-		blockheader,
-		poolId,
-		jqId,
-		nonce2
-	);
+	var raw = utils.genWork(job, nonce2, poolId, jqId);
 
 	var work = [];
 	var cnt = Math.ceil(raw.byteLength / 33);
