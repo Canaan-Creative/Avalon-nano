@@ -59,6 +59,19 @@ var Utils = function() {
 		0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
 	];
 
+	var DIFFONE =
+		0x00000000ffff0000000000000000000000000000000000000000000000000000;
+	var BASE = [
+		0x0000000100000000000000000000000000000000000000000000000000000000,
+		0x0000000000000001000000000000000000000000000000000000000000000000,
+		0x0000000000000000000000010000000000000000000000000000000000000000,
+		0x0000000000000000000000000000000100000000000000000000000000000000,
+		0x0000000000000000000000000000000000000001000000000000000000000000,
+		0x0000000000000000000000000000000000000000000000010000000000000000,
+		0x0000000000000000000000000000000000000000000000000000000100000000,
+		0x0000000000000000000000000000000000000000000000000000000000000001,
+	];
+
 	this.check_version = function(version) {
 		return version.slice(0, 6) === '3U1504' ||
 			version.slice(0, 6) === '4M1505';
@@ -163,15 +176,16 @@ var Utils = function() {
 
 		var hash = _double_sha256(this.ab2hex(arraybuffer));
 		if (hash[7] !== 0)
-			// hard ware error
+			// hardware error
 			return 2;
-		var targetView = new Uint32Array(job.target);
+		var targetView = new DataView(job.target);
 		for (var j = 1; j < 8; j++) {
 			var h = bswap32(hash[7 - j]);
-			if (h > targetView[j])
+			var t = targetView.getUint32(j * 4);
+			if (h > t)
 				// above target
 				return 1;
-			else if (h < targetView[j])
+			else if (h < t)
 				return 0;
 		}
 		return 0;
@@ -317,13 +331,24 @@ var Utils = function() {
 	};
 
 	this.getTarget = function(diff) {
-		// only work with diff lower than 0xffff
 		var arraybuffer = new ArrayBuffer(32);
+		var base, i, d;
 		var view = new DataView(arraybuffer);
-		var base = 0xffff;
-		for (var i = 2; i < 16; i++) {
-			view.setUint16(i * 2, Math.floor(base / diff));
-			base = (base % diff) << 16;
+		if (diff < 0xffff) {
+			base = 0xffff;
+			for (i = 2; i < 16; i++) {
+				view.setUint16(i * 2, Math.floor(base / diff));
+				base = (base % diff) << 16;
+			}
+		} else {
+			view = new Uint32Array(arraybuffer);
+			base = DIFFONE;
+			base /= diff;
+			for (i = 0; i < 8; i++) {
+				d = Math.floor(base / BASE[i]);
+				base -= d * BASE[i];
+				view.setUint32(i * 4, d);
+			}
 		}
 		return arraybuffer;
 	};
