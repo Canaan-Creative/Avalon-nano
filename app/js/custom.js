@@ -83,10 +83,10 @@ var getGlobalData = function() {
 			type: "GET",
 			success: function(htmlData) {
 				htmlObj = $(htmlData);
-				$("#_huobi").html($("#market_huobibtccny", htmlObj).html());
-				$("#_difficulty").html($("#slot_difficulty", htmlObj).html());
-				$("#_next").html($("#slot_estimated", htmlObj).html());
-				$("#_hash_rate").html($("#slot_hash_rate", htmlObj).html());
+				$("#price").html($("#market_huobibtccny", htmlObj).html());
+				$("#difficulty").html($("#slot_difficulty", htmlObj).html());
+				$("#nextdiff").html($("#slot_estimated", htmlObj).html());
+				$("#global-hashrate").html($("#slot_hash_rate", htmlObj).html());
 			}
 		});
 		remoteFlag = true;
@@ -94,14 +94,14 @@ var getGlobalData = function() {
 
 var getPoolHashrate = function() {
 	setInterval(function() {
-		var poolId = $("#pool_info tr:eq(1)").data('id');
+		var poolId = $("#pool-info tr:eq(1)").data('id');
 		if (poolId !== undefined) {
 			var address = $("#pool-address-" + poolId).html();
 			var worker = $("#pool-worker-" + poolId).html();
-			var apiKey = $("#pool-api-key-" + poolId).val();
+			var api_key = $("#pool-api-key-" + poolId).val();
 
 			if (address.indexOf('btcchina') > 0) {
-				var url = "https://pool.btcchina.com/api?api_key=" + apiKey;
+				var url = "https://pool.btcchina.com/api?api_key=" + api_key;
 				$.ajax({
 					url: url,
 					contentType: "application/json; charset=UTF-8",
@@ -141,9 +141,8 @@ var updateHashrate = function(hashrates) {
 	hashrate[0] = h.hs5s;
 	hashrate[1] = h.hs1m;
 	hashrate[2] = h.hs1h;
-	var _len = hashrates.length -1;
-	for(var i = 0; i < _len ; i++){
-		updateDeviceGHs5s(hashrates[i].deviceId, (hashrates[i].hs5s/1000000000).toFixed(1));
+	for(var i = 0; i < hashrates.length - 1; i++){
+		updateDeviceGHs5s(hashrates[i].deviceId, (hashrates[i].hs5s / 1000000000).toFixed(1));
 	}
 
 	var x = (new Date()).getTime();
@@ -183,7 +182,6 @@ var detectDevice = function() {
 
 				$("p").on("click", "button", function() {
 					enterFlag = true;
-					var _type = $(this).data('type');
 					switch ($(this).data('type')) {
 					case 'enter':
 						mainPage();
@@ -218,12 +216,12 @@ var initParam = function(data) {
 var loadingImg = "<img id='loadImg' src='images/loading.gif'/>";
 
 var guidePage = function() {
-	var _mainObj = $("#main");
-	_mainObj.addClass('center-img').append(loadingImg);
+	var main = $("#main");
+	main.addClass('center-img').append(loadingImg);
 	setTimeout(function() {
 		$("#loadImg").remove();
-		_mainObj.removeClass('center-img');
-		_mainObj.append(`
+		main.removeClass('center-img');
+		main.append(`
 			<div class="guide">
 				<div class="logo">
 					<img src="images/logo.png"/>
@@ -272,8 +270,8 @@ var mainPage = function() {
 
 var bottomPart = function() {
 	return `
-		<div class="login_panel">
-			<div class="panel_center">
+		<div class="login-panel">
+			<div class="panel-center">
 				<p class="tips">Canaan Creative</p>
 				<p>
 					<a title="EHash" href="https://ehash.com" target="_blank" rel="nofollow"><img alt="EHash" src="images/ehash.png"></a>
@@ -302,7 +300,7 @@ var bindSaveDeviceSetting = function() {
 		freq1 = (isNaN(freq1) || freq1 > 400) ? 100 : freq1;
 		freq2 = (isNaN(freq2) || freq2 > freq1) ? freq1 : freq2;
 		freq3 = (isNaN(freq3) || freq3 > freq2) ? freq2 : freq3;
-		param = {freqSet: [freq1, freq2, freq3], voltSet: _volt};
+		param = {freqSet: [freq1, freq2, freq3], voltSet: volt};
 		chrome.runtime.sendMessage({type: "setting", param: param});
 		$('#dialogModel').modal('hide');
 	});
@@ -317,33 +315,27 @@ var bindPoolSetting = function() {
 
 var bindSavePoolSetting = function(callback) {
 	$("#save-pool-setting").on("click", function() {
-		var maxLen = 3;
-		var _pool = [];
-		for( var i = 0; i < maxLen ; i++){
-			var _address = '';
-			var _worker = '';
-			var _apikey = '';
-			_address = $("#pool_address_" + i).val();
-			_worker = $("#pool_worker_" + i).val();
-			_apikey = $("#pool_apikey_" + i).val();
-			if (!_address && !_worker && !_apikey)
+		pools = [];
+		for (var i = 0; i < 3 ; i++) {
+			var address = '';
+			var worker = '';
+			var apikey = '';
+			address = $("#pool-setting-address-" + i).val();
+			worker = $("#pool-setting-worker-" + i).val();
+			api_key = $("#pool-setting-api-key-" + i).val();
+			if (!address && !worker && !apikey)
 				continue;
-			if (_address.indexOf("://") >=0) {
-				var Pool_f = _address.split("://");
-				_address = Pool_f[1];
-			}
-			var Pool_before = _address.split(":");
-			_address = Pool_before[0];
-			var _port = parseInt(Pool_before[1] || 3333);
-			_pool.push({
-				address: _address,
-				port: _port,
-				username: _worker,
-				apiKey: _apikey,
+			if (address.indexOf("://") >= 0)
+				address = address.split("://")[1];
+			var temp = address.split(":");
+			pools.push({
+				address: temp[0],
+				port: parseInt(temp[1] || 3333),
+				username: worker,
+				api_key: api_key,
 			});
 		}
-		pools = _pool;
-		chrome.runtime.sendMessage({type: "setting", pool: _pool});
+		chrome.runtime.sendMessage({type: "setting", pool: pools});
 		updatePoolList();
 		$('#dialogModel').modal('hide');
 		if (callback !== undefined) {
@@ -354,13 +346,13 @@ var bindSavePoolSetting = function(callback) {
 
 var removeDevice = function(deviceId) {
 	$("#device-tr-id-" + deviceId).remove();
-	var _temp = [];
+	var temp = [];
 	for(var i of devices){
 		if (i.deviceId === deviceId)
 			continue;
-		_temp.push(i);
+		temp.push(i);
 	}
-	devices = _temp;
+	devices = temp;
 	if (!enterFlag)
 		detectDevice();
 	if ($('#device tr').size() === 1)
@@ -371,10 +363,10 @@ var topPart = function() {
 	return `
 		<div class="row top-div">
 			<ul>
-				<li><p>${chrome.i18n.getMessage("price")} (USD/CNY): <span id="_huobi">0</span></p></li>
-				<li><p>${chrome.i18n.getMessage("diff")}: <span id="_difficulty">0</span></p></li>
-				<li><p>${chrome.i18n.getMessage("nextDiff")}: <span id="_next">0</span></p></li>
-				<li><p>${chrome.i18n.getMessage("globalHashrate")}: <span id="_hash_rate">0</span></p></li>
+				<li><p>${chrome.i18n.getMessage("price")} (USD/CNY): <span id="price">0</span></p></li>
+				<li><p>${chrome.i18n.getMessage("diff")}: <span id="difficulty">0</span></p></li>
+				<li><p>${chrome.i18n.getMessage("nextDiff")}: <span id="nextdiff">0</span></p></li>
+				<li><p>${chrome.i18n.getMessage("globalHashrate")}: <span id="global-hashrate">0</span></p></li>
 			</ul>
 		</div>`;
 };
@@ -400,7 +392,7 @@ var panelPart = function(type, position, title) {
 						<span class="glyphicon glyphicon-cog pull-right ${type}-cfg" aria-hidden="true"></span>
 					</h3>
 				</div>
-				<div class="panel-body" id="${type}_list">
+				<div class="panel-body" id="${type}-list">
 					${partTpl}
 				</div>
 			</div>
@@ -408,7 +400,7 @@ var panelPart = function(type, position, title) {
 };
 
 var updatePoolList = function() {
-	$("#pool_list").html(poolPart());
+	$("#pool-list").html(poolPart());
 	bindPoolSetting();
 };
 
@@ -418,15 +410,15 @@ var updatePoolStatus = function(poolInfo) {
 	);
 };
 
-var updateDeviceStatus = function(deviceInfo) {
-	if (deviceInfo.temperatureCu !== undefined)
-		updateDeviceTemp(deviceInfo.deviceId, deviceInfo.temperatureCu, 'cu');
-	if (deviceInfo.temperatureFan !== undefined)
-		updateDeviceTemp(deviceInfo.deviceId, deviceInfo.temperatureFan, 'fan');
-	if (deviceInfo.temperature !== undefined)
-		updateDeviceTemp(deviceInfo.deviceId, deviceInfo.temperature, 'all');
-	if (deviceInfo.version !== undefined)
-		updateDeviceVersion(deviceInfo.deviceId, deviceInfo.version);
+var updateDeviceStatus = function(device) {
+	if (device.temperatureCu !== undefined)
+		updateDeviceTemp(device.deviceId, device.temperatureCu, 'cu');
+	if (device.temperatureFan !== undefined)
+		updateDeviceTemp(device.deviceId, device.temperatureFan, 'fan');
+	if (device.temperature !== undefined)
+		updateDeviceTemp(device.deviceId, device.temperature, 'all');
+	if (device.version !== undefined)
+		updateDeviceVersion(device.deviceId, device.version);
 };
 
 var updateDeviceVersion = function(deviceId, version) {
@@ -456,7 +448,7 @@ var devicePart = function() {
 
 var poolPart = function() {
 	var content = `
-	<table class="table table-hover" id="pool_info">
+	<table class="table table-hover" id="pool-info">
 		<tr>
 			<th>${chrome.i18n.getMessage("address")}</th>
 			<th>${chrome.i18n.getMessage("worker")}</th>
@@ -466,19 +458,19 @@ var poolPart = function() {
 	if (pools.length)
 		for (var id in pools)
 			if (pools[id] !== undefined && pools[id] !== null)
-				content += getPoolRow(id, pools[id]);
+				content += getPoolRow(id);
 
 	content += '</table>';
 	return content;
 };
 
-var getPoolRow = function(id, data) {
+var getPoolRow = function(id) {
 	return `
 		<tr data-id="${id}" id="pool-tr-id-${id}" class="pool-tr-line">
-			<td id="pool-address-${id}">${data.address}:${data.port}</td>
-			<td id="pool-worker-${id}">${data.username}</td>
-			<td id="pool-status-${id}">---</td>
-			<input type="hidden" id="pool-api-key-${id}" value="${data.apiKey}"/>
+			<td id="pool-address-${id}">${pools[id].address}:${pools[id].port}</td>
+			<td id="pool-worker-${id}">${pools[id].username}</td>
+			<td id="pool-status-${id}">--</td>
+			<input type="hidden" id="pool-api-key-${id}" value="${pools[id].api_key}"/>
 		</tr>`;
 };
 
@@ -528,27 +520,27 @@ var dialog = function(type) {
 							<th>API ${chrome.i18n.getMessage("key")}</th>
 						</tr>`;
 		for(var i= 0 ; i < 3 ; i++){
-			var _address = '';
-			var _worker = '';
-			var _apiKey = '';
-			var _port = '';
+			var address = '';
+			var worker = '';
+			var api_key = '';
+			var port = '';
 			if (pools[i] !== undefined) {
-				_address = pools[i].address || '';
-				_worker = pools[i].username || '';
-				_apiKey = pools[i].apiKey || '';
-				_port = pools[i].port || '';
-				_address = _address + ':' + _port;
+				address = pools[i].address || '';
+				worker = pools[i].username || '';
+				api_key = pools[i].api_key || '';
+				port = pools[i].port || '';
+				address = address + ':' + port;
 			}
 			content += `
 				<tr>
 					<td><label for="">#${i + 1}</label></td>
-					<td><input type="text" class="form-control" value="${_address}" id="pool_address_${i}" placeholder=" "></td>
-					<td><input type="text" class="form-control" value="${_worker}" id="pool_worker_${i}" placeholder=" "></td>
-					<td><input type="text" class="form-control" value="${_apiKey}" id="pool_apikey_${i}" placeholder=" "></td>
+					<td><input type="text" class="form-control" value="${address}" id="pool-setting-address-${i}" placeholder=" "></td>
+					<td><input type="text" class="form-control" value="${worker}" id="pool-setting-worker-${i}" placeholder=" "></td>
+					<td><input type="text" class="form-control" value="${api_key}" id="pool-setting-api-key-${i}" placeholder=" "></td>
 				</tr>`;
 		}
 		content += `
-						<tr><td colspan="4"><div class="form-group" id="setting-pool">
+						<tr><td colspan="4"><div class="form-group">
 							<button typ="button" class="btn btn-default pull-right" id="save-pool-setting">${chrome.i18n.getMessage("save")}</button>
 							<span id="message"></span>
 						</div></td></tr>

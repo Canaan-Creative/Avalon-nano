@@ -63,7 +63,7 @@
 		"message": "当前难度"
 	},
 	"nextDiff": {
-		"message": "下一次难度"
+		"message": "下次难度"
 	},
 	"globalHashRate": {
 		"message": "全网算力"
