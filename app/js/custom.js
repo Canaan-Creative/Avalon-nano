@@ -636,9 +636,9 @@ var dialog = function(obj, data) {
 		_tpl += `
 			<tr>
 				<td><label for="">#${i + 1}</label></td>
-				<td><input type="text" class="form-control" value="${_address}" id="pool_address_${i}" placeholder=""></td>
-				<td><input type="text" class="form-control" value="${_worker}" id="pool_worker_${i}" placeholder=""></td>
-				<td><input type="text" class="form-control" value="${_apiKey}" id="pool_apikey_${i}" placeholder=""></td>
+				<td><input type="text" class="form-control" value="${_address}" id="pool_address_${i}" placeholder=" "></td>
+				<td><input type="text" class="form-control" value="${_worker}" id="pool_worker_${i}" placeholder=" "></td>
+				<td><input type="text" class="form-control" value="${_apiKey}" id="pool_apikey_${i}" placeholder=" "></td>
 			</tr>`;
 	}
 	_tpl += `
@@ -692,19 +692,19 @@ var settingDialog = function(obj, data) {
 		<div style="margin-bottom:50px;">
 			<div class="form-group">
 				<label for="Voltage">${chrome.i18n.getMessage("voltage")}</label>
-				<input type="text" class="form-control" id="voltage-input" value="${data.voltSet}" placeholder="">
+				<input type="text" class="form-control" id="voltage-input" value="${data.voltSet}" placeholder=" ">
 			</div>
 			<div class="form-group">
 				<label for="Frequency1">${chrome.i18n.getMessage("frequency")}#1</label>
-				<input type="text" class="form-control" id="frequency1-input" value="${data.freqSet[0]}" placeholder="">
+				<input type="text" class="form-control" id="frequency1-input" value="${data.freqSet[0]}" placeholder=" ">
 			</div>
 			<div class="form-group">
 				<label for="Frequency2">${chrome.i18n.getMessage("frequency")}#2</label>
-				<input type="text" class="form-control" id="frequency2-input" value="${data.freqSet[1]}" placeholder="">
+				<input type="text" class="form-control" id="frequency2-input" value="${data.freqSet[1]}" placeholder=" ">
 			</div>
 			<div class="form-group">
 				<label for="Frequency3">${chrome.i18n.getMessage("frequency")}#3</label>
-				<input type="text" class="form-control" id="frequency3-input" value="${data.freqSet[2]}" placeholder="">
+				<input type="text" class="form-control" id="frequency3-input" value="${data.freqSet[2]}" placeholder=" ">
 			</div>
 			<div class="form-group" id="setting-save-div">
 				<button type="button" class="btn btn-default pull-right">${chrome.i18n.getMessage("save")}</button>
