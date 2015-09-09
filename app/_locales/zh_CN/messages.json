@@ -44,8 +44,8 @@
 	"warningMessage2": {
 		"message": "小心灼伤"
 	},
-	"miniCfg": {
-		"message": "Avalon4 mini 参数"
+	"configuration": {
+		"message": "设备配置"
 	},
 	"setting": {
 		"message": "设置"
@@ -97,12 +97,6 @@
 	},
 	"status": {
 		"message": "状态"
-	},
-	"connFail": {
-		"message": "连接失败"
-	},
-	"connSuccess": {
-		"message": "连接成功"
 	},
 	"deviceList": {
 		"message": "设备列表"

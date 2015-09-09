@@ -44,8 +44,8 @@
 	"warningMessage2": {
 		"message": "SURFACES MAY GET HOT"
 	},
-	"miniCfg": {
-		"message": "Configuration for Avalon4 mini"
+	"configuration": {
+		"message": "Device Configurations"
 	},
 	"setting": {
 		"message": "Setting"
@@ -97,12 +97,6 @@
 	},
 	"status": {
 		"message": "Status"
-	},
-	"connFail": {
-		"message": "Connection Failed"
-	},
-	"connSuccess": {
-		"message": "Connection Successed"
 	},
 	"deviceList": {
 		"message": "Device List"

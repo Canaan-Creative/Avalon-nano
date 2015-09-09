@@ -46,15 +46,15 @@ chrome.app.runtime.onLaunched.addListener(function() {
 		}];
 	});
 	chrome.storage.local.get("param", function(result) {
-		paramSetting = result.param || [];
+		paramSetting = result.param || {};
 	});
 
 	chrome.app.window.create("index.html", {
 		innerBounds: {
 			width: 1000,
-			height: 700,
+			height: 750,
 			minWidth: 1000,
-			minHeight: 700
+			minHeight: 750
 		},
 		id: "Avalon miner",
 	}, function() {
