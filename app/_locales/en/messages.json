@@ -1,0 +1,122 @@
+{
+	"chartTitle": {
+	  "message": "Live Hashrate"
+	},
+	"chartSecond": {
+		"message": "5-Secondly"
+	},
+	"chartMinute": {
+		"message": "Minutely"
+	},
+	"chartHour": {
+		"message": "Hourly"
+	},
+	"chartPool": {
+		"message": "Pool"
+	},
+	"enter": {
+		"message": "Enter"
+	},
+	"poolSetting": {
+		"message": "Pool Setting"
+	},
+	"welcomeGuide": {
+		"message": "To begin, plug your Avalon devices into the USB ports."
+	},
+	"supportList": {
+		"message": "Current support: Avalon nano 2, Avalon4 mini."
+	},
+	"nonRecognized": {
+		"message": "If your Avalon devices are not recognized"
+	},
+	"contactUs": {
+		"message": "Please contact us by <a href=\"mailto:service@canaan-creative.com\" target=\"_blank\">service@canaan-creative.com</a>"
+	},
+	"poweredBy": {
+		"message": "Powered by <a href=\"http://www.canaan-creative.com\" target=\"_blank\">Canaan-Creative</a>"
+	},
+	"warningTitle": {
+		"message": "Warning"
+	},
+	"warningMessage1": {
+		"message": "DO NOT TOUCH THE USB DEVICES IN OPERATION"
+	},
+	"warningMessage2": {
+		"message": "SURFACES MAY GET HOT"
+	},
+	"miniCfg": {
+		"message": "Configuration for Avalon4 mini"
+	},
+	"setting": {
+		"message": "setting"
+	},
+	"save": {
+		"message": "Save"
+	},
+	"insetUSB": {
+		"message": "Insert USB device"
+	},
+	"price": {
+		"message": "BTC Price"
+	},
+	"diff": {
+		"message": "Difficulty"
+	},
+	"nextDiff": {
+		"message": "Next Diff"
+	},
+	"globalHashRate": {
+		"message": "Global Hashrate"
+	},
+	"voltage": {
+		"message": "Voltage"
+	},
+	"frequency": {
+		"message": "Frequency"
+	},
+	"device": {
+		"message": "Device"
+	},
+	"version": {
+		"message": "Version"
+	},
+	"temp": {
+		"message": "Temp"
+	},
+	"address": {
+		"message": "Address"
+	},
+	"pool": {
+		"message": "Pool"
+	},
+	"worker": {
+		"message": "Worker"
+	},
+	"key": {
+		"message": "Key"
+	},
+	"status": {
+		"message": "Status"
+	},
+	"connFail": {
+		"message": "Connection Failed"
+	},
+	"connSuccess": {
+		"message": "Connection Successed"
+	},
+	"deviceList": {
+		"message": "Device List"
+	},
+	"poolList": {
+		"message": "Pool List"
+	},
+	"active": {
+		"message": "Active"
+	},
+	"inactive": {
+		"message": "Inactive"
+	},
+	"failed": {
+		"message": "Failed"
+	}
+}

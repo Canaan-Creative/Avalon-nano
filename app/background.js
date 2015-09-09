@@ -237,27 +237,27 @@ var jobHandler = function(job) {
 	if (poolId < activePool) {
 		if (activePool < 3)
 			chrome.runtime.sendMessage({
-				info: "Inactive",
+				info: "inactive",
 				type: "pool",
 				poolId: activePool,
 			});
 		activePool = poolId;
 		workQueue.init();
 		chrome.runtime.sendMessage({
-			info: "Active",
+			info: "active",
 			type: "pool",
 			poolId: poolId,
 		});
 	} else if (poolId > activePool) {
 		chrome.runtime.sendMessage({
-			info: "Inactive",
+			info: "inactive",
 			type: "pool",
 			poolId: poolId,
 		});
 		return;
 	} else {
 		chrome.runtime.sendMessage({
-			info: "Active",
+			info: "active",
 			type: "pool",
 			poolId: poolId,
 		});
@@ -292,7 +292,7 @@ var errorHandler = function(poolId) {
 	}
 
 	chrome.runtime.sendMessage({
-		info: "Failed",
+		info: "failed",
 		type: "pool",
 		poolId: poolId,
 	});
@@ -321,7 +321,7 @@ var nonceHandler = function(info) {
 	errors[info.deviceId].all++;
 	switch (utils.varifyWork(job, info.nonce2, ntime, info.nonce)) {
 		case 2:
-			// hard ware error
+			// hardware error
 			errors[info.deviceId].error++;
 			return;
 		case 0:

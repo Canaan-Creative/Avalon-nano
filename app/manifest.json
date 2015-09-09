@@ -4,6 +4,7 @@
 	"description": "Chrome BTC Miner for Avalon Devices",
 	"manifest_version": 2,
 	"minimum_chrome_version": "42.0.2311.90",
+	"default_locale": "en",
 	"app": {
 		"background": {
 			"scripts": [

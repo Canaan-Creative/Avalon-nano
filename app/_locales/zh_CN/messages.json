@@ -1,0 +1,122 @@
+{
+	"chartTitle": {
+	  "message": "实时算力"
+	},
+	"chartSecond": {
+		"message": "5秒平均"
+	},
+	"chartMinute": {
+		"message": "分钟平均"
+	},
+	"chartHour": {
+		"message": "小时平均"
+	},
+	"chartPool": {
+		"message": "矿池"
+	},
+	"enter": {
+		"message": "进入"
+	},
+	"poolSetting": {
+		"message": "矿池配置"
+	},
+	"welcomeGuide": {
+		"message": "请插入Avalon设备到USB端口."
+	},
+	"supportList": {
+		"message": "目前支持设备: Avalon nano 2, Avalon4 mini."
+	},
+	"nonRecognized": {
+		"message": "如果你的Avalon设备不被识别"
+	},
+	"contactUs": {
+		"message": "请联系我们 <a href=\"mailto:service@canaan-creative.com\" target=\"_blank\">service@canaan-creative.com</a>"
+	},
+	"poweredBy": {
+		"message": "由 <a href=\"http://www.canaan-creative.com\" target=\"_blank\">Canaan-Creative</a> 提供"
+	},
+	"warningTitle": {
+		"message": "警告"
+	},
+	"warningMessage1": {
+		"message": "请勿触摸正在运行的设备"
+	},
+	"warningMessage2": {
+		"message": "小心灼伤"
+	},
+	"miniCfg": {
+		"message": "Avalon4 mini 参数"
+	},
+	"setting": {
+		"message": "设置"
+	},
+	"save": {
+		"message": "保存"
+	},
+	"insetUSB": {
+		"message": "插入USB设备"
+	},
+	"price": {
+		"message": "BTC价格"
+	},
+	"diff": {
+		"message": "当前难度"
+	},
+	"nextDiff": {
+		"message": "下一次难度"
+	},
+	"globalHashRate": {
+		"message": "全网算力"
+	},
+	"voltage": {
+		"message": "电压"
+	},
+	"frequency": {
+		"message": "频率"
+	},
+	"device": {
+		"message": "设备"
+	},
+	"version": {
+		"message": "版本"
+	},
+	"temp": {
+		"message": "温度"
+	},
+	"address": {
+		"message": "地址"
+	},
+	"pool": {
+		"message": "矿池"
+	},
+	"worker": {
+		"message": "矿工"
+	},
+	"key": {
+		"message": "密钥"
+	},
+	"status": {
+		"message": "状态"
+	},
+	"connFail": {
+		"message": "连接失败"
+	},
+	"connSuccess": {
+		"message": "连接成功"
+	},
+	"deviceList": {
+		"message": "设备列表"
+	},
+	"poolList": {
+		"message": "矿池列表"
+	},
+	"active": {
+		"message": "活动"
+	},
+	"inactive": {
+		"message": "待命"
+	},
+	"failed": {
+		"message": "错误"
+	}
+}

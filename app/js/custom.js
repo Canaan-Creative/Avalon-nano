@@ -14,7 +14,7 @@ var renderChart = function() {
 			animation: Highcharts.svg, // don't animate in old IE
 			marginRight: 10,
 		},
-		title: {text: 'Avalon miner Live Hashrate'},
+		title: {text: chrome.i18n.getMessage("chartTitle")},
 		xAxis: {
 			type: 'datetime',
 			tickPixelInterval: 150,
@@ -48,7 +48,12 @@ var renderChart = function() {
 		exporting: {enabled: false},
 		series: (function() {
 			var series = [];
-			var names = ['5-Secondly', 'Minutely', 'Hourly', 'Pool'];
+			var names = [
+				chrome.i18n.getMessage("chartSecond"),
+				chrome.i18n.getMessage("chartMinute"),
+				chrome.i18n.getMessage("chartHour"),
+				chrome.i18n.getMessage("chartPool"),
+			];
 			var colors = ['#808080', '#feae1b', '#00cc99', '#0066FF'];
 			var data = [];
 			var time = (new Date()).getTime();
@@ -94,15 +99,15 @@ var getPoolHashRate = function() {
 	setInterval(function() {
 		var poolId = $("#pool_info tr:eq(1)").data('id');
 		if (poolId !== undefined) {
-			var address = $("#pool-address-"+poolId).html();
-			var worker = $("#pool-worker-"+poolId).html();
-			var apiKey = $("#pool-api-key-"+poolId).val();
+			var address = $("#pool-address-" + poolId).html();
+			var worker = $("#pool-worker-" + poolId).html();
+			var apiKey = $("#pool-api-key-" + poolId).val();
 
 			if (address.indexOf('btcchina') > 0) {
-				var url = "https://pool.btcchina.com/api?api_key="+apiKey;
+				var url = "https://pool.btcchina.com/api?api_key=" + apiKey;
 				$.ajax({
 					url: url,
- 					contentType: "application/json; charset=UTF-8",
+					contentType: "application/json; charset=UTF-8",
 					dataType: "json",
 					success: function(msg) {
 						var workers = msg.user.workers;
@@ -173,10 +178,11 @@ var detectDevice = function() {
 			if(nanoObj.length >= 1 ){
 				detectFlag = true;
 				$(".detect p img").remove();
-				var btnTpl = '<div style="text-align:center;"><button type="button" data-type="enter" class="btn btn-default"> Enter </button>  ';
-				btnTpl +='  <button type="button" data-type="setting-pool" class="btn btn-default">Pool Setting</button>';
-				btnTpl +='</div>';
-				$(".detect p").append(btnTpl);
+				$(".detect p").append(`
+					<div style="text-align:center;">
+						<button type="button" data-type="enter" class="btn btn-default">${chrome.i18n.getMessage("enter")}</button>
+						<button type="button" data-type="setting-pool" class="btn btn-default">${chrome.i18n.getMessage("poolSetting")}</button>
+					</div>`);
 
 				$("p").delegate("button", "click", function() {
 					enterFlag = true;
@@ -218,29 +224,26 @@ var guidePage = function(callback) {
 	setTimeout(function() {
 		$("#loadImg").remove();
 		_mainObj.removeClass('center-img');
-		var guidTpl = `<div class="guide">
-			<div class="logo">
-				<img src="images/logo.png"/>
-			</div>
-			<div class="detect">
-				<p>
-					<img src="images/loading-m.gif"/>
-				</p>
-				<h4>To begin, plug your Avalon devices into the USB ports</h4>
-				<br />
-				<h5>Current support: Avalon nano 2, Avalon4 mini.</h5>
-				<br />
-				<h5>If your Avalon devices are not recognized</h5>
-				<h5>Please contact us by <a href="mailto:service@canaan-creative.com" target="_blank">service@canaan-creative.com</a></h5>
-				<br />
-				<h4 style="color:red;font-weight:bold">&#9888; WARNING</h4>
-				<h5 style="color:red;font-weight:bold">DO NOT TOUCH THE USB DEVICES IN OPERATION</h5>
-				<h5 style="color:red;font-weight:bold">SURFACES MAY GET HOT</h5>
-			</div>
-			<p>${chrome.runtime.getManifest().name} v${chrome.runtime.getManifest().version}<br />
-			Powered by <a href="http://www.canaan-creative.com" target="_blank">Canaan-Creative</a></p>
-		</div>`;
-		_mainObj.append(guidTpl);
+		_mainObj.append(`
+			<div class="guide">
+				<div class="logo">
+					<img src="images/logo.png"/>
+				</div>
+				<div class="detect">
+					<p><img src="images/loading-m.gif"/></p>
+					<h4>${chrome.i18n.getMessage("welcomeGuide")}</h4>
+					<br />
+					<h5>${chrome.i18n.getMessage("supportList")}</h5>
+					<br />
+					<h5>${chrome.i18n.getMessage("nonRecognized")}</h5>
+					<h5>${chrome.i18n.getMessage("contactUs")}</h5>
+					<br />
+					<h4 style="color:red;font-weight:bold">&#9888; ${chrome.i18n.getMessage("warningTitle")}</h4>
+					<h5 style="color:red;font-weight:bold">${chrome.i18n.getMessage("warningMessage1")}</h5>
+					<h5 style="color:red;font-weight:bold">${chrome.i18n.getMessage("warningMessage2")}</h5>
+				</div>
+				<p>${chrome.runtime.getManifest().name} v${chrome.runtime.getManifest().version}<br />${chrome.i18n.getMessage("poweredBy")}</p>
+			</div>`);
 		setTimeout(function() {
 			$(".detect p img").attr("src", "images/device.png");
 			callback();
@@ -279,19 +282,18 @@ var mainPage = function() {
 };
 
 var bottom = function() {
-	var _tpl=`<div class="login_panel" isLogin="">
-		  <div class="panel_center">
-		    <p class="tips">Canaan Creative</p>
-		    <p class="connectBox1">
-			<a title="EHash" href="https://ehash.com" target="_blank" rel="nofollow"><img alt="EHash" src="images/ehash.png"></a>
-			<a title="Canaan Creative" href="http://www.canaan-creative.com" target="_blank" rel="nofollow"><img alt="Canaan Creative" src="images/home.png"></a>
-			<a title="#Avalon" href="http://webchat.freenode.net/?randomnick=1&channels=avalon" target="_blank" rel="nofollow"><img alt="#avalon" src="images/irc.png"></a>
-			<a title="service@canaan-creative.com" href="mailto:service@canaan-creative.com" target="_blank" rel="nofollow"><img alt="service@canaan-creative.com" src="images/email.png"></a>
-
-			 </p>
-		  </div>
+	return `
+		<div class="login_panel" isLogin="">
+			<div class="panel_center">
+				<p class="tips">Canaan Creative</p>
+				<p class="connectBox1">
+					<a title="EHash" href="https://ehash.com" target="_blank" rel="nofollow"><img alt="EHash" src="images/ehash.png"></a>
+					<a title="Canaan Creative" href="http://www.canaan-creative.com" target="_blank" rel="nofollow"><img alt="Canaan Creative" src="images/home.png"></a>
+					<a title="#Avalon" href="http://webchat.freenode.net/?randomnick=1&channels=avalon" target="_blank" rel="nofollow"><img alt="#avalon" src="images/irc.png"></a>
+					<a title="service@canaan-creative.com" href="mailto:service@canaan-creative.com" target="_blank" rel="nofollow"><img alt="service@canaan-creative.com" src="images/email.png"></a>
+				</p>
+			</div>
 		</div>`;
-	return _tpl;
 };
 
 var loopNano = function() {
@@ -301,7 +303,7 @@ var loopNano = function() {
 
 var bindSettingBtn = function() {
 	$("#setting-table").delegate("button", "click", function() {
-		settingDialog({title: "Configuration for Avalon4 mini"}, paramObj);
+		settingDialog({title: chrome.i18n.getMessage("miniCfg")}, paramObj);
 		bindSettingSave();
 	});
 };
@@ -326,7 +328,7 @@ var bindSettingSave = function() {
 
 var bindPoolAdd = function() {
 	$(".row-pool").delegate("button", "click", function() {
-		dialog({title: 'Pool Setting'}, poolObj);
+		dialog({title: chrome.i18n.getMessage("poolSetting")}, poolObj);
 		bindSaveButton();
 	});
 };
@@ -339,9 +341,9 @@ var bindSaveButton = function(callback) {
 			var _address = '';
 			var _worker = '';
 			var _apikey = '';
-			_address = $("#pool_address_"+i).val();
-			_worker = $("#pool_worker_"+i).val();
-			_apikey = $("#pool_apikey_"+i).val();
+			_address = $("#pool_address_" + i).val();
+			_worker = $("#pool_worker_" + i).val();
+			_apikey = $("#pool_apikey_" + i).val();
 			if (!_address && !_worker && !_apikey)
 				continue;
 			if (_address.indexOf("://") >=0) {
@@ -383,14 +385,14 @@ var bindPoolButton = function() {
 
 var removePool = function(poolId) {
 	chrome.runtime.sendMessage({info: "DeletePool", data: {poolId: poolId}});
-	$("#pool-tr-id-"+poolId).remove();
+	$("#pool-tr-id-" + poolId).remove();
 	if ($('#pool_info tr').size() === 1)
-		$("#pool_info").append('<tr id="pool-null"><td colspan="4" align="center" style="color:#cfcfcf;">Setting</td></tr>');
+		$("#pool_info").append('<tr id="pool-null"><td colspan="4" align="center" style="color:#cfcfcf;">' + chrome.i18n.getMessage("setting") + '</td></tr>');
 
 };
 
 var removeNano = function(nanoId) {
-	$("#nano-tr-id-"+nanoId).remove();
+	$("#nano-tr-id-" + nanoId).remove();
 	var _temp = [];
 	for(var i of nanoObj){
 		if (i.nanoId === nanoId)
@@ -401,7 +403,7 @@ var removeNano = function(nanoId) {
 	if (!enterFlag)
 		detectDevice();
 	if ($('#device tr').size() === 1)
-		$("#device").append('<tr id="device-null"><td colspan="5" align="center" style="color:#cfcfcf;">Insert usb device</td></tr>');
+		$("#device").append('<tr id="device-null"><td colspan="5" align="center" style="color:#cfcfcf;">' + chrome.i18n.getMessage("inserUSB") + '</td></tr>');
 };
 
 var maxPoolId = function() {
@@ -409,54 +411,51 @@ var maxPoolId = function() {
 };
 
 var topPart = function() {
-	var tpl = `<div class="row top-div">
-		<ul>
-			<li><p>BTC Price (USD/CNY): <span id="_huobi">0</span></p></li>
-			<li><p>Difficulty: <span id="_difficulty">0</span></p></li>
-			<li><p>Next Diff: <span id="_next">0</span></p></li>
-			<li><p>Hash Rate: <span id="_hash_rate">0</span></p></li>
-		</ul>
-		<!--<p><button class="button button-small">BTC Price: <span id="Price">------<span></button></p>-->
-		</div>
-	`;
-	return tpl;
+	return `
+		<div class="row top-div">
+			<ul>
+				<li><p>${chrome.i18n.getMessage("price")} (USD/CNY): <span id="_huobi">0</span></p></li>
+				<li><p>${chrome.i18n.getMessage("diff")}: <span id="_difficulty">0</span></p></li>
+				<li><p>${chrome.i18n.getMessage("nextDiff")}: <span id="_next">0</span></p></li>
+				<li><p>${chrome.i18n.getMessage("globalHashrate")}: <span id="_hash_rate">0</span></p></li>
+			</ul>
+		</div>`;
 };
 
 var chartPart = function() {
-	var tpl = `<div id="container" style="min-width:300px;height:300px"></div>`;
-	return tpl;
+	return '<div id="container" style="min-width:300px;height:300px"></div>';
 };
 
 var panelPart = function(type, position, title) {
 	var partTpl = type === 'device' ? devicePart() : (type === 'pool' ? poolPart() : '');
 	var col = type === 'device' ? 7 : 5;
-	tpl = `<div class="col-xs-${col} col-md-${col} pull-${position}">
-		<div class="panel panel-default">
-		  <div class="panel-heading">
-		    <h3 class="panel-title">${title}</h3>
-		  </div>
-		  <div class="panel-body" id="${type}_list">
-		  ${partTpl}
-		  </div>
-		</div>
-	</div>`;
-	return tpl;
+	return `
+		<div class="col-xs-${col} col-md-${col} pull-${position}">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h3 class="panel-title">${title}</h3>
+				</div>
+				<div class="panel-body" id="${type}_list">
+					${partTpl}
+				</div>
+			</div>
+		</div>`;
 };
 
 var settingPart = function() {
-		var _tpl = `
+	return `
 		<div class="row col-xs-12">
 			<div class="panel panel-default">
 				<div class="panel-heading">
-					<h3 class="panel-title">Configuration for Avalon4 mini</h3>
+					<h3 class="panel-title">${chrome.i18n.getMessage("miniCfg")}</h3>
 				</div>
 				<div class="panel-body" id="setting-table">
 					<table class="table" style="margin-bottom:0px;">
 						<tr>
-							<th>Voltage</th>
-							<th>Frequency1</th>
-							<th>Frequency2</th>
-							<th>Frequency3</th>
+							<th>${chrome.i18n.getMessage("voltage")}</th>
+							<th>${chrome.i18n.getMessage("frequency")}1</th>
+							<th>${chrome.i18n.getMessage("frequency")}2</th>
+							<th>${chrome.i18n.getMessage("frequency")}3</th>
 							<th></th>
 						</tr>
 						<tr>
@@ -465,15 +464,13 @@ var settingPart = function() {
 							<td id="frequency2">22</td>
 							<td id="frequency3">22</td>
 							<td>
-								<button type="button" class="btn btn-default">Setting</button>
+								<button type="button" class="btn btn-default">${chrome.i18n.getMessage("setting")}</button>
 							</td>
 						</tr>
 					</table>
 				</div>
 			</div>
-		</div>
-			`;
-	return _tpl;
+		</div>`;
 };
 
 var updatePoolList = function() {
@@ -483,8 +480,8 @@ var updatePoolList = function() {
 };
 
 var updatePoolStatus = function(poolInfo) {
-	_tpl = "<p class='pool-status-" + poolInfo.info + "'>" + poolInfo.info + "</p>";
-	$("#pool-status-"+poolInfo.poolId).html(_tpl);
+	_tpl = "<p class='pool-status-" + poolInfo.info + "'>" + chrome.i18n.getMessage(poolInfo.info) + "</p>";
+	$("#pool-status-" + poolInfo.poolId).html(_tpl);
 };
 
 var updateDeviceStatus = function(deviceInfo) {
@@ -511,25 +508,26 @@ var updateDeviceTemp = function(deviceId, temp, type) {
 };
 
 var devicePart = function(data) {
-	var _tpl = '<table class="table table-hover" id="device">';
-	_tpl += '<tr>';
-	_tpl += '<th>Device</th>';
-	_tpl += '<th>ID</th>';
-	_tpl += '<th>Version</th>';
-	_tpl += '<th>Temp(&deg;C)</th>';
-	_tpl += '<th>GHs5s</th>';
-	_tpl += '</tr>';
-	_tpl += '</table>';
-	return _tpl;
+	return `
+	<table class="table table-hover" id="device">
+		<tr>
+			<th>${chrome.i18n.getMessage("device")}</th>
+			<th>ID</th>
+			<th>${chrome.i18n.getMessage("version")}</th>
+			<th>${chrome.i18n.getMessage("temp")}(&deg;C)</th>
+			<th>GHs5s</th>
+		</tr>
+	</table>`;
 };
 
 var poolPart = function() {
-	var _tpl = '<table class="table table-hover" id="pool_info">';
-	_tpl += '<tr>';
-	_tpl += '<th>Address</th>';
-	_tpl += '<th>Worker</th>';
-	_tpl += '<th>Status</th>';
-	_tpl += '</tr>';
+	var _tpl = `
+	<table class="table table-hover" id="pool_info">
+		<tr>
+			<th>${chrome.i18n.getMessage("address")}</th>
+			<th>${chrome.i18n.getMessage("worker")}</th>
+			<th>${chrome.i18n.getMessage("status")}</th>
+		</tr>`;
 
 	if (poolObj.length) {
 		for (var id in poolObj){
@@ -537,54 +535,51 @@ var poolPart = function() {
 				_tpl +=poolTr(id, poolObj[id]);
 
 		}
-	}else{
-		_tpl +='<tr id="pool-null"><td colspan="3" align="center" style="color:#cfcfcf;">Setting</td></tr>';
+	} else {
+		_tpl += '<tr id="pool-null"><td colspan="3" align="center" style="color:#cfcfcf;">' + chrome.i18n.getMessage("setting") + '</td></tr>';
 	}
 	_tpl += '</table>';
-	_tpl += '<div class="row row-pool"><button type="button" class="btn btn-default pull-right pool-add">Setting</button></div>';
+	_tpl += '<div class="row row-pool"><button type="button" class="btn btn-default pull-right pool-add">' + chrome.i18n.getMessage("setting") + '</button></div>';
 	return _tpl;
 };
 
 var poolTr = function(id, data) {
-	var _tpl = '';
-	_tpl += '<tr data-id="'+ id +'" id="pool-tr-id-' + id + '" class="pool-tr-line">';
-	_tpl += '<td id="pool-address-'+ id +'">' + data.address + ':' + data.port + '</td>';
-	_tpl += '<td id="pool-worker-'+ id +'">' + data.username + '</td>';
-	_tpl += '<td id="pool-status-' + id + '">---</td>';
-	_tpl += '<input type="hidden" id="pool-api-key-'+id+'" value="'+data.apiKey+'"/>';
-	_tpl += '</tr>';
-	return _tpl;
+	return `
+		<tr data-id="${id}" id="pool-tr-id-${id}" class="pool-tr-line">
+			<td id="pool-address-${id}">${data.address}:${data.port}</td>
+			<td id="pool-worker-${id}">${data.username}</td>
+			<td id="pool-status-${id}">---</td>
+			<input type="hidden" id="pool-api-key-${id}" value="${data.apiKey}"/>
+		</tr>`;
 };
 
-var deviceTr = function(deviceObj) {
+var deviceTr = function(device) {
 	if ($("#device-null").html() !== undefined)
 		$("#device-null").remove();
-	var _tpl = '';
-	var nanoId = deviceObj.nanoId;
-	var deviceType = deviceObj.deviceType;
-	_tpl += '<tr class="active" id="nano-tr-id-' + nanoId + '">';
-	_tpl += '<td>'+ deviceType +'</td>';
-	_tpl += '<td id="nano-device-id-' + nanoId + '">' + nanoId + '</td>';
-	_tpl += '<td id="nano-version-' + nanoId + '">---</td>';
-	if (deviceType === 'Avalon nano')
-		_tpl += '<td id="nano-temp-' + nanoId + '"><span id="all-temp-' + nanoId + '">0</span></td>';
-	else
-		_tpl += '<td id="nano-temp-' + nanoId + '"><span id="cu-temp-' + nanoId + '">0</span> / <span id="fan-temp-' + nanoId + '">0</span></td>';
-	_tpl += '<td id="nano-ghs5s-'+ nanoId +'">0</td>';
-	_tpl += '</tr>';
-	$("#device").append(_tpl);
+
+	var temp = (device.deviceType === 'Avalon nano') ?
+		`<td id="nano-temp-${device.nanoId}"><span id="all-temp-${device.nanoId}">0</span></td>` :
+		`<td id="nano-temp-${device.nanoId}"><span id="cu-temp-${device.nanoId}">0</span> / <span id="fan-temp-${nanoId}">0</span></td>`;
+
+	$("#device tr:last").after(`
+		<tr class="active" id="nano-tr-id-${device.nanoId}">
+			<td>${device.deviceType}</td>
+			<td id="nano-device-id-${device.nanoId}">${device.nanoId}</td>
+			<td id="nano-version-${device.nanoId}">---</td>
+			${temp}
+			<td id="nano-ghs5s-${device.nanoId}">0</td>
+		</tr>`);
 };
 
 var tablePart = function() {
-	var tpl = '<div class="row" style="margin-bottom:50px;">';
-	tpl += panelPart('device', 'left', 'Device List');
-	tpl += panelPart('pool', 'right', 'Pool List');
-	tpl += '</div>';
-	return tpl;
+	return `
+		<div class="row" style="margin-bottom:50px;">
+			${panelPart('device', 'left', chrome.i18n.getMessage("deviceList"))}${panelPart('pool', 'right', chrome.i18n.getMessage("poolList"))}
+		</div>`;
 };
 
 var settingPool = function() {
-	dialog({title:'Pool Setting'}, poolObj);
+	dialog({title: chrome.i18n.getMessage("poolSetting")}, poolObj);
 	bindSaveButton(mainPage);
 };
 
@@ -592,14 +587,13 @@ var updateNanoData = function(nanoId, type, message) {
 	switch (type) {
 	case 'status':
 		if (message !== true ) {
-			$("#nano-tr-id-"+nanoId).removeClass("active").addClass("warning");
-			$("#nano-status-"+nanoId).html('Connect failt');
-		} else {
-			 $("#nano-status-"+nanoId).html('Connect success');
-		}
+			$("#nano-tr-id-" + nanoId).removeClass("active").addClass("warning");
+			$("#nano-status-" + nanoId).html(chrome.i18n.getMessage("connFail"));
+		} else
+			 $("#nano-status-" + nanoId).html(chrome.i18n.getMessage("connSuccess"));
 		break;
 	case 'frequency':
-		$("#nano-frequency-"+nanoId).html(message);
+		$("#nano-frequency-" + nanoId).html(message);
 		break;
 	}
 };
@@ -610,15 +604,21 @@ var dialog = function(obj, data) {
 		$(".modal-backdrop").remove();
 	}
 	var neo = {};
-	neo.title = !!obj&&!!obj.title ? obj.title : 'Message';
-	neo.close = !!obj&&!!obj.close ? obj.close : 'Close';
-	neo.fade = !!obj&&!!obj.fade ? 'fade' : ''; /*Show speed*/
+	neo.title = !!obj && !!obj.title ? obj.title : 'Message';
+	neo.close = !!obj && !!obj.close ? obj.close : 'Close';
+	neo.fade = !!obj && !!obj.fade ? 'fade' : ''; /*Show speed*/
 
-	var _tpl  = '<div>';
-	_tpl += '<div class="form-group">';
-	_tpl += '<table class="table">';
-	_tpl += '<tr><th>Pool</th><th>Url</th><th>Worker</th><th>apiKey</th></tr>';
-	for(var i= 0 ; i < 3 ; i ++){
+	var _tpl  = `
+		<div>
+			<div class="form-group">
+				<table class="table">
+					<tr>
+						<th>${chrome.i18n.getMessage("pool")}</th>
+						<th>${chrome.i18n.getMessage("address")}</th>
+						<th>${chrome.i18n.getMessage("worker")}</th>
+						<th>API ${chrome.i18n.getMessage("key")}</th>
+					</tr>`;
+	for(var i= 0 ; i < 3 ; i++){
 		var _address = '';
 		var _worker = '';
 		var _apiKey = '';
@@ -633,26 +633,37 @@ var dialog = function(obj, data) {
 				_address = _address + ':' + _port;
 			}
 		}
-		_tpl +=	'<tr>';
-		_tpl += '<td><label for="">#' + (i+1) + '</label></td>';
-		_tpl += '<td><input type="text" class="form-control" value="' + _address + '" id="pool_address_' + i + '" placeholder="Pool url"></td>';
-		_tpl += '<td><input type="text" class="form-control" value="' + _worker + '" id="pool_worker_' + i + '" placeholder="Pool worker"></td>	';
-		_tpl += '<td><input type="text" class="form-control" value="' + _apiKey + '" id="pool_apikey_' + i + '" placeholder="apiKey"></td>';
-		_tpl += '</tr>';
+		_tpl += `
+			<tr>
+				<td><label for="">#${i + 1}</label></td>
+				<td><input type="text" class="form-control" value="${_address}" id="pool_address_${i}" placeholder=""></td>
+				<td><input type="text" class="form-control" value="${_worker}" id="pool_worker_${i}" placeholder=""></td>
+				<td><input type="text" class="form-control" value="${_apiKey}" id="pool_apikey_${i}" placeholder=""></td>
+			</tr>`;
 	}
-	_tpl += '<tr><td colspan="4">';
-	_tpl += '<div class="form-group" id="setting-pool">';
-	_tpl += '<button typ="button" class="btn btn-default pull-right" id="add-pool-save">Save</button>';
-	_tpl += '<span id="message"></span>';
-	_tpl += '</div></td></tr></table></div></div>';
+	_tpl += `
+				<tr><td colspan="4"><div class="form-group" id="setting-pool">
+						<button typ="button" class="btn btn-default pull-right" id="add-pool-save">${chrome.i18n.getMessage("save")}</button>
+						<span id="message"></span>
+					</div></td></tr>
+				</table>
+			</div>
+		</div>`;
 	neo.content = _tpl;
 
-	neo.html = '<div class="modal '+neo.fade+'" id="dialogModel"><div class="modal-dialog modal-lg"><div class="modal-content">';
-	neo.html += '<div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>';
-	neo.html += '<h4 class="modal-title"><strong>' + neo.title + '</strong></h4></div>';
-	neo.html += '<div class="modal-body">' + neo.content + '</div>';
-	neo.html += '<div class="modal-footer"></div>';
-	neo.html += '</div></div></div>';
+	neo.html = `
+		<div class="modal ${neo.fade}" id="dialogModel">
+			<div class="modal-dialog modal-lg">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+						<h4 class="modal-title"><strong>${neo.title}</strong></h4>
+					</div>
+					<div class="modal-body">${neo.content}</div>
+					<div class="modal-footer"></div>
+				</div>
+			</div>
+		</div>`;
 	$("body").append(neo.html);
 	$('#dialogModel').modal({
 	      backdrop: 'static',
@@ -661,15 +672,10 @@ var dialog = function(obj, data) {
 };
 
 var updateSetting = function() {
-	var data = paramObj;
-	var _volt= data.voltSet;
-	var _freq1 = data.freqSet[0];
-	var _freq2 = data.freqSet[1];
-	var _freq3 = data.freqSet[2];
-	$("#voltage").html(_volt);
-	$("#frequency1").html(_freq1);
-	$("#frequency2").html(_freq2);
-	$("#frequency3").html(_freq3);
+	$("#voltage").html(paramObj.voltSet);
+	$("#frequency1").html(paramObj.freqSet[0]);
+	$("#frequency2").html(paramObj.freqSet[1]);
+	$("#frequency3").html(paramObj.freqSet[2]);
 };
 
 var settingDialog = function(obj, data) {
@@ -678,45 +684,47 @@ var settingDialog = function(obj, data) {
 		$(".modal-backdrop").remove();
 	}
 	var neo = {};
-	neo.title = !!obj&&!!obj.title ? obj.title : 'Message';
-	neo.close = !!obj&&!!obj.close ? obj.close : 'Close';
-	neo.fade = !!obj&&!!obj.fade ? 'fade' : ''; /*Show speed*/
+	neo.title = !!obj && !!obj.title ? obj.title : 'Message';
+	neo.close = !!obj && !!obj.close ? obj.close : 'Close';
+	neo.fade = !!obj && !!obj.fade ? 'fade' : ''; /*Show speed*/
 
-	var _volt= data.voltSet;
-	var _freq1 = data.freqSet[0];
-	var _freq2 = data.freqSet[1];
-	var _freq3 = data.freqSet[2];
-
-	var _tpl = `
+	neo.content = `
 		<div style="margin-bottom:50px;">
 			<div class="form-group">
-			<label for="Voltage">Voltage</label>
-				<input type="text" class="form-control" id="voltage-input" value="${_volt}"placeholder="Voltage">
+				<label for="Voltage">${chrome.i18n.getMessage("voltage")}</label>
+				<input type="text" class="form-control" id="voltage-input" value="${data.voltSet}" placeholder="">
 			</div>
 			<div class="form-group">
-			<label for="Frequency1">Frequency#1</label>
-				<input type="text" class="form-control" id="frequency1-input" value="${_freq1}" placeholder="Frequency1">
+				<label for="Frequency1">${chrome.i18n.getMessage("frequency")}#1</label>
+				<input type="text" class="form-control" id="frequency1-input" value="${data.freqSet[0]}" placeholder="">
 			</div>
 			<div class="form-group">
-			<label for="Frequency2">Frequency#2</label>
-				<input type="text" class="form-control" id="frequency2-input" value="${_freq2}" placeholder="Frequency2">
+				<label for="Frequency2">${chrome.i18n.getMessage("frequency")}#2</label>
+				<input type="text" class="form-control" id="frequency2-input" value="${data.freqSet[1]}" placeholder="">
 			</div>
 			<div class="form-group">
-			<label for="Frequency3">Frequency#3</label>
-				<input type="text" class="form-control" id="frequency3-input" value="${_freq3}" placeholder="Frequency3">
+				<label for="Frequency3">${chrome.i18n.getMessage("frequency")}#3</label>
+				<input type="text" class="form-control" id="frequency3-input" value="${data.freqSet[2]}" placeholder="">
 			</div>
 			<div class="form-group" id="setting-save-div">
-			<button type="button" class="btn btn-default pull-right">Save</button>
+				<button type="button" class="btn btn-default pull-right">${chrome.i18n.getMessage("save")}</button>
 			</div>
-		</div>
-	`;
-	neo.content = _tpl;
-	neo.html = '<div class="modal '+neo.fade+'" id="dialogModel"><div class="modal-dialog modal-lg"><div class="modal-content">';
-	neo.html += '<div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>';
-	neo.html += '<h4 class="modal-title"><strong>' + neo.title + '</strong></h4></div>';
-	neo.html += '<div class="modal-body">' + neo.content + '</div>';
-	neo.html += '<div class="modal-footer"></div>';
-	neo.html += '</div></div></div>';
+		</div>`;
+
+	neo.html = `
+		<div class="modal ${neo.fade}" id="dialogModel">
+			<div class="modal-dialog modal-lg">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+						<h4 class="modal-title"><strong>${neo.title}</strong></h4>
+					</div>
+					<div class="modal-body">${neo.content}</div>
+					<div class="modal-footer"></div>
+				</div>
+			</div>
+		</div>`;
+
 	$("body").append(neo.html);
 	$('#dialogModel').modal({
 	      backdrop: 'static',

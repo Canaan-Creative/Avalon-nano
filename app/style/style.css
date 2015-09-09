@@ -153,10 +153,10 @@ body{
 .table>tbody>tr>td{
 	vertical-align:baseline;
 }
-.pool-status-Active{
+.pool-status-active{
 	color:green;
 }
-.pool-status-Failed{
+.pool-status-failed{
 	color:red;
 }
 
