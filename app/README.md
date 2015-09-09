@@ -9,13 +9,13 @@
 	./compile
 	```
 
-* Bring up the apps and extensions management page by clicking the settings icon and choosing Tools > Extensions, or following this [link](chrome://extensions).
+* Bring up the apps and extensions management page by clicking the settings icon and choosing Tools > Extensions, or following this link: [chrome://extensions/](chrome://extensions/).
 
 * Drag and drop the crx file onto the Extensions page.
 
 * Click **Add app** to install.
 
-* Lauch **Avalon miner** from [chrome://apps](chrome://apps).
+* Lauch **Avalon miner** from [chrome://apps/](chrome://apps/).
 
 
 ## Launch from Folder
