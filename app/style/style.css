@@ -42,16 +42,6 @@ body, input, blockquote, textarea {
 	text-indent:110px;
 	line-height:40px;
 }
-.login_panel .panel_center .close{
-	font-size:14px;
-	background:url(../images/icon_close.png) 0 center no-repeat;
-	margin-left:30px;
-	height:32px;
-	line-height:32px;
-	text-indent:30px;
-	display:block;
-	color:#e54e4b;
-}
 html, body {
     overflow-y: visible;
 }
