@@ -51,21 +51,6 @@ html, body {
 .activity{
 	height:200px;
 }
-.nano-nav{
-	height:200px;
-}
-.nano-nav h3{
-	color:#fff;
-	height:30px;
-	line-height:30px;
-}
-.btn-custom{
-	min-width:250px;
-}
-.btn-row{
-	height:70px;
-	line-height:70px;
-}
 .panel-body{
 	padding:0px;
 }
@@ -124,22 +109,6 @@ body{
 	color:#888888;
 	text-align:center;
 }
-.pool-add{
-	margin:0px 10px 10px 0px;
-}
-.otherInfo{	
-	width:200px;
-	height:80px;
-	background:#efefef;
-	position:fixed;	
-	float:right;
-	z-index:9999;
-	border:1px solid #555;
-}
-
-.otherInfo ul{
-	list-style-type:none;
-}
 .table>tbody>tr>td{
 	vertical-align:baseline;
 }
@@ -150,3 +119,6 @@ body{
 	color:red;
 }
 
+body .modal-dialog{
+	width: 80%;
+}
