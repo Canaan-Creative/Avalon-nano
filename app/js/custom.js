@@ -98,9 +98,9 @@ var getPoolHashrate = function() {
 		if (poolId !== undefined) {
 			var address = $("#pool-address-" + poolId).html();
 			var worker = $("#pool-worker-" + poolId).html();
-			var api_key = $("#pool-api-key-" + poolId).val();
+			var api_key = $("#pool-api-key-" + poolId).val().trim();
 
-			if (address.indexOf('btcchina') > 0) {
+			if (address.indexOf('btcchina') > 0 && api_key.length !== 0) {
 				var url = "https://pool.btcchina.com/api?api_key=" + api_key;
 				$.ajax({
 					url: url,
@@ -514,7 +514,7 @@ var dialog = function(type) {
 				<div class="form-group">
 					<table class="table">
 						<tr>
-							<th>${chrome.i18n.getMessage("pool")}</th>
+							<th></th>
 							<th>${chrome.i18n.getMessage("address")}</th>
 							<th>${chrome.i18n.getMessage("worker")}</th>
 							<th>API ${chrome.i18n.getMessage("key")}</th>
