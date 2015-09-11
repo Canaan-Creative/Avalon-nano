@@ -1,16 +1,30 @@
+v1.3.0
+	Adjust front-end structure.
+	Add i18n support.
+	Add zh_CN locale.
+	Optimize class strucures.
+	Fix getTarget limitation of 0xffff.
+	Replace sha256 related functions.
+	Remove jsSHA.
+
 v1.2.6
 	Add hot warning.
 	Add supported device list.
+
 v1.2.5
 	Hide DH info.
+
 v1.2.4
 	Add default pool.
 	Always show pool setting button on welcome page.
+
 v1.2.3
 	Reduce memory usage.
 	Avalon nano: Correct status of frequency, temperature, etc.
+
 v1.2.2
 	Avalon nano: Fix waiting time to 900ms between pushing works.
+
 v1.2.1
 	Fix work queue growing.
 
