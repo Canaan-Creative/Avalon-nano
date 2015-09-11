@@ -1,7 +1,7 @@
 importScripts('utils.js', 'driver.js');
 
 var enabled = false;
-var loopId, job, jobId, poolId, nonce2;
+var loopId, job, jqId, poolId, nonce2;
 
 onmessage = function(e) {
 	switch (e.data.info) {

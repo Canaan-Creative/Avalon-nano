@@ -89,7 +89,6 @@ var getGlobalData = function() {
 				$("#global-hashrate").html($("#slot_hash_rate", htmlObj).html());
 			}
 		});
-		remoteFlag = true;
 };
 
 var getPoolHashrate = function() {
@@ -176,7 +175,7 @@ var detectDevice = function() {
 				$(".detect p img").remove();
 				$(".detect p").append(`
 					<div style="text-align:center;">
-						<button type="button" data-type="enter" class="btn btn-default">${chrome.i18n.getMessage("enter")}</button>
+						<button type="button" data-type="enter" class="btn btn-default">${chrome.i18n.getMessage("enter")}</button>&nbsp;
 						<button type="button" data-type="pool-setting" class="btn btn-default">${chrome.i18n.getMessage("poolSetting")}</button>
 					</div>`);
 
@@ -319,11 +318,11 @@ var bindSavePoolSetting = function(callback) {
 		for (var i = 0; i < 3 ; i++) {
 			var address = '';
 			var worker = '';
-			var apikey = '';
+			var api_key = '';
 			address = $("#pool-setting-address-" + i).val();
 			worker = $("#pool-setting-worker-" + i).val();
 			api_key = $("#pool-setting-api-key-" + i).val();
-			if (!address && !worker && !apikey)
+			if (!address && !worker && !api_key)
 				continue;
 			if (address.indexOf("://") >= 0)
 				address = address.split("://")[1];
@@ -484,7 +483,7 @@ var addDeviceRow = function(device) {
 		temp = `<td id="device-temp-${device.deviceId}"><span id="all-temp-${device.deviceId}">0</span></td>`;
 		break;
 	case 'Avalon4 mini':
-		temp = `<td id="device-temp-${device.deviceId}"><span id="cu-temp-${device.deviceId}">0</span> / <span id="fan-temp-${deviceId}">0</span></td>`;
+		temp = `<td id="device-temp-${device.deviceId}"><span id="cu-temp-${device.deviceId}">0</span> / <span id="fan-temp-${device.deviceId}">0</span></td>`;
 		break;
 	}
 

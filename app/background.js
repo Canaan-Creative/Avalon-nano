@@ -60,7 +60,7 @@ chrome.app.runtime.onLaunched.addListener(function() {
 	}, function() {
 		chrome.app.window.get("Avalon miner").onClosed.addListener(function() {
 			var i;
-			enable = false;
+			enabled = false;
 			for (i = 0; i < avalons.length; i++)
 				if (avalons[i] !== undefined) {
 					avalons[i].halt();

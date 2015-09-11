@@ -197,7 +197,7 @@ var Utils = function() {
 	var _calc_midstat = function(data) {
 		var view = new DataView(hex2ab(data.substr(0, 128)));
 		var input = [], output = [];
-		for (i = 0; i < 16; i++)
+		for (var i = 0; i < 16; i++)
 			input[i] = view.getUint32(i * 4, true);
 		_sha256_core(input, output, false);
 
@@ -335,9 +335,9 @@ var Utils = function() {
 
 	var getTarget = function(diff) {
 		var buffer = new ArrayBuffer(32);
-		var base, i, d;
-		var view = new DataView(buffer);
+		var base, i, d, view;
 		if (diff < 0xffff) {
+			view = new DataView(buffer);
 			base = 0xffff;
 			for (i = 2; i < 16; i++) {
 				view.setUint16(i * 2, Math.floor(base / diff));
@@ -350,7 +350,7 @@ var Utils = function() {
 			for (i = 0; i < 8; i++) {
 				d = Math.floor(base / BASE[i]);
 				base -= d * BASE[i];
-				view.setUint32(i * 4, d);
+				view[i] = d;
 			}
 		}
 		return buffer;

@@ -155,7 +155,7 @@ var Avalon = function(device, workQueue, voltSet, freqSet) {
 				if (info[key] === stat[key])
 					delete(info[key]);
 			if (Object.keys(info).length > 0) {
-				args =["Status:   "];
+				var args =["Status:   "];
 				for (key in info) {
 					stat[key] = info[key];
 					args[0] += key + " %s, ";
