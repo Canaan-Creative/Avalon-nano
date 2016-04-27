@@ -113,8 +113,8 @@ void a3233_init(void)
 	Chip_GPIO_SetPinState(LPC_GPIO, 0, 20, true);
 
 	/* init power */
-	a3233_enable_power(false);
 	a3233_powerinit();
+	a3233_enable_power(false);
 	a3233_setvoltage(A3233_VOLT_0P675);
 	a3233_enable_power(true);
 
