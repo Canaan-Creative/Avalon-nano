@@ -28,12 +28,10 @@
  * copyright, permission, and disclaimer notice must appear in all copies of
  * this code.
  */
-
 #ifndef __AVALON_API_H_
 #define __AVALON_API_H_
 
 #include <stdio.h>
-#include "lpc_types.h"
 #include "board.h"
 
 #ifdef __cplusplus
@@ -41,28 +39,57 @@ extern "C"
 {
 #endif
 
-/* led rgb index */
-#define AVALON_LED_GREEN 	0
-#define AVALON_LED_RED		1
-#define AVALON_LED_BLUE		2
-#define AVALON_LED_ALL		3
+#define A3233_TASK_LEN      88
+#define A3233_NONCE_LEN     4
+#define ICA_TASK_LEN        64
 
-#define AVALON_LED_ON		(FALSE)
-#define AVALON_LED_OFF		(TRUE)
+typedef enum {
+	AVALON_PWM_GREEN,
+	AVALON_PWM_BLUE,
+	AVALON_PWM_RED,
+	AVALON_PWM_MAX
+} AVALON_PWM_e;
 
-typedef void (*TMRPROC)(void);
+/** @ingroup EXAMPLES_USBDLIB_11XX_CDC_UART
+ * @{
+ */
 
-typedef enum{
-	AVALON_TMR_ID1,
-	AVALON_TMR_ID2,
-	AVALON_TMR_ID3,
-	AVALON_TMR_ID4,
-	AVALON_TMR_MAX
-}AVALON_TMR_e;
+/**
+ * @brief	USB to UART bridge port init routine
+ * @param	pDesc		: Pointer to configuration descriptor
+ * @param	pUsbParam	: Pointer USB param structure returned by previous init call
+ * @return	Always returns LPC_OK.
+ */
+ErrorCode_t AVALON_A3233_Init (void);
+void AVALON_A3233_PowerEn(Bool On);
+Bool AVALON_A3233_IsPowerEn(void);
+void AVALON_A3233_Reset(void);
+unsigned int AVALON_A3233_PllCfg(unsigned int freq, unsigned int *actfreq);
+unsigned int AVALON_A3233_FreqNeeded(void);
+unsigned int AVALON_A3233_FreqMin(void);
+unsigned int AVALON_A3233_FreqMax(void);
+Bool AVALON_A3233_IsTooHot(void);
+
+/* timer */
+void AVALON_TMR_Init(void);
+void AVALON_TMR_Set(AVALON_TMR_e id, unsigned int interval, TMRPROC tmrcb);
+void AVALON_TMR_Kill(AVALON_TMR_e id);
+AVALON_TMR_e AVALON_TMR_GetReady(void);
+Bool AVALON_TMR_IsTimeout(AVALON_TMR_e id);
+unsigned int AVALON_TMR_Elapsed(AVALON_TMR_e id);
+void AVALON_TMR_Test(void);
+
+/* pwm */
+void AVALON_PWM_Init(void);
+void AVALON_PWM_SetDuty(AVALON_PWM_e pwm, unsigned char duty);
+void AVALON_PWM_Enable(void);
+void AVALON_PWM_Disable(void);
+void AVALON_PWM_Test(void);
 
 /* led */
 void AVALON_LED_Init(void);
-void AVALON_LED_Rgb(unsigned int rgb, Bool on);
+void AVALON_LED_Rgb(unsigned int rgb);
+void AVALON_LED_Blink(unsigned int rgb);
 void AVALON_LED_Test(void);
 
 /* debug printf */
@@ -71,41 +98,18 @@ void AVALON_USB_PutChar(char ch);
 void AVALON_USB_PutSTR(char *str);
 void AVALON_USB_Test(void);
 
+/* iic */
+void AVALON_I2C_Init(void);
+unsigned int AVALON_I2C_TemperRd(void);
+
 /* adc */
 void AVALON_ADC_Init(void);
 void AVALON_ADC_Rd(uint8_t channel, uint16_t *data);
 
-/* iic */
-void AVALON_I2C_Init(void);
-unsigned int AVALON_I2C_TemperRd();
+/* printf */
+char *m_sprintf(char *dest, const char *format, ...);
 
-/* a3233 */
-void AVALON_A3233_Init(void);
-void AVALON_A3233_Test(void);
-
-/* pwm */
-void AVALON_PWM_Init(void);
-void AVALON_PWM_Test(void);
-
-/* timer */
-void AVALON_TMR_Init(void);
-void AVALON_TMR_Set(AVALON_TMR_e id, unsigned int interval, TMRPROC tmrcb);
-void AVALON_TMR_Kill(AVALON_TMR_e id);
-AVALON_TMR_e AVALON_TMR_GetReady(void);
-void AVALON_TMR_Test(void);
-
-/* watchdog */
-void AVALON_WDT_Init(void);
-void AVALON_WDT_Enable(void);
-void AVALON_WDT_Feed(void);
-void AVALON_WDT_Test(void);
-
-static void AVALON_Delay(unsigned int max)
-{
-	volatile unsigned int i;
-	for(i = 0; i < max; i++);
-}
-
+void AVALON_Delay(unsigned int ms);
 /**
  * @}
  */

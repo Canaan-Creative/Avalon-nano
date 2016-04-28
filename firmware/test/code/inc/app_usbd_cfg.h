@@ -58,11 +58,8 @@ extern "C"
 /* Manifest constants defining interface numbers and endpoints used by a
    particular interface in this application.
  */
-#define USB_CDC_CIF_NUM         0
-#define USB_CDC_DIF_NUM         1
-#define USB_CDC_IN_EP           0x81
-#define USB_CDC_OUT_EP          0x01
-#define USB_CDC_INT_EP          0x82
+#define HID_EP_IN       0x81
+#define HID_EP_OUT      0x01
 
 /* The following manifest constants are used to define this memory area to be used
    by USBD_LIB stack.
