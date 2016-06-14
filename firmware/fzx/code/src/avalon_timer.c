@@ -11,7 +11,6 @@
  */
 #include "board.h"
 #include "avalon_timer.h"
-#include "avalon_fan.h"
 
 /* 1ms */
 #define TICKRATE (1000)
@@ -28,7 +27,6 @@ void TIMER32_0_IRQHandler(void)
 			if (timerval[id])
 				timerval[id]--;
 		}
-		fan_measure_speed();
 	}
 }
 
