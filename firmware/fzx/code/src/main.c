@@ -65,7 +65,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		return;
 	}
 
-	timer_set(TIMER_ID1, IDLE_TIME);
+	timer_set(TIMER_ID1, IDLE_TIME, NULL);
 	switch (pkg->type) {
 	case AVAM_P_DETECT:
 		break;
