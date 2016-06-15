@@ -18,7 +18,8 @@
 #define ADC_CHANNEL_VCORE1  (ADC_CH2)
 #define ADC_CHANNEL_VCORE2  (ADC_CH1)
 
-#define ADC_CAPCPUNT    7
+#define ADC_CAPCOUNT        6
+#define ADC_VBASE_STD_VALUE 731 /* (2^10)/3.3 * 2.5 */
 
 void adc_init(void);
 void adc_read(uint8_t channel, uint16_t *data);

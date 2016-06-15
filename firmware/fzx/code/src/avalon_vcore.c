@@ -13,6 +13,7 @@
 #include "defines.h"
 #include "libfunctions.h"
 #include "avalon_vcore.h"
+#include "avalon_led.h"
 
 #define VCORE_PORT      0
 #define VCORE_PIN_DS    21
@@ -20,10 +21,12 @@
 #define VCORE_PIN_STCP  6
 #define VCORE_PIN_EN1   9
 #define VCORE_PIN_EN2   8
+#define VCORE_PIN_IN1   2
+#define VCORE_PIN_IN2   3
 
 #define VOLTAGE_DELAY   40
 
-static uint16_t voltage = ASIC_0V;
+static uint16_t g_voltage = 0;
 
 static void init_mux(void)
 {
@@ -32,12 +35,16 @@ static void init_mux(void)
 	Chip_IOCON_PinMuxSet(LPC_IOCON, VCORE_PORT, VCORE_PIN_STCP, (IOCON_FUNC0 | IOCON_MODE_PULLUP));
 	Chip_IOCON_PinMuxSet(LPC_IOCON, VCORE_PORT, VCORE_PIN_EN1, (IOCON_FUNC0 | IOCON_MODE_PULLUP));
 	Chip_IOCON_PinMuxSet(LPC_IOCON, VCORE_PORT, VCORE_PIN_EN2, (IOCON_FUNC0 | IOCON_MODE_PULLUP));
+	Chip_IOCON_PinMuxSet(LPC_IOCON, VCORE_PORT, VCORE_PIN_IN1, (IOCON_FUNC0 | IOCON_MODE_PULLUP));
+	Chip_IOCON_PinMuxSet(LPC_IOCON, VCORE_PORT, VCORE_PIN_IN2, (IOCON_FUNC0 | IOCON_MODE_PULLUP));
 
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, VCORE_PORT, VCORE_PIN_DS);
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, VCORE_PORT, VCORE_PIN_SHCP);
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, VCORE_PORT, VCORE_PIN_STCP);
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN1);
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN2);
+	Chip_GPIO_SetPinDIRInput(LPC_GPIO, VCORE_PORT, VCORE_PIN_IN1);
+	Chip_GPIO_SetPinDIRInput(LPC_GPIO, VCORE_PORT, VCORE_PIN_IN2);
 }
 
 void vcore_init(void)
@@ -56,8 +63,11 @@ uint8_t set_voltage(uint16_t vol)
 {
 	uint8_t i;
 
-	if (voltage == vol)
+	if (g_voltage == vol)
 		return 0;
+
+	vcore_enable(VCORE1);
+	vcore_enable(VCORE2);
 
 	Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_STCP, 0);
 
@@ -71,7 +81,7 @@ uint8_t set_voltage(uint16_t vol)
 	Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_STCP, 1);
 	Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_STCP, 0);
 
-	voltage = vol;
+	g_voltage = vol;
 
 	delay(VOLTAGE_DELAY);
 
@@ -80,7 +90,7 @@ uint8_t set_voltage(uint16_t vol)
 
 uint16_t get_voltage(void)
 {
-	return voltage;
+	return g_voltage;
 }
 
 void vcore_disable(uint8_t num)
@@ -108,5 +118,30 @@ void vcore_enable(uint8_t num)
 		break;
 	default:
 		break;
+	}
+}
+
+void vcore_detect(void)
+{
+	if (Chip_GPIO_GetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_IN1)) {
+		led_set(LED_12V_1T, LED_ON);
+		led_set(LED_12V_1F, LED_OFF);
+	} else {
+		if (g_voltage != 0)
+			vcore_disable(VCORE1);
+
+		led_set(LED_12V_1T, LED_OFF);
+		led_set(LED_12V_1F, LED_ON);
+	}
+
+	if (Chip_GPIO_GetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_IN2)) {
+		led_set(LED_12V_2T, LED_ON);
+		led_set(LED_12V_2F, LED_OFF);
+	} else {
+		if (g_voltage != 0)
+			vcore_disable(VCORE2);
+
+		led_set(LED_12V_2T, LED_OFF);
+		led_set(LED_12V_2F, LED_ON);
 	}
 }
