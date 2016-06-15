@@ -14,80 +14,99 @@
 #include "libfunctions.h"
 #include "avalon_vcore.h"
 
-#define VCORE_PORT       0
-#define VCORE_BIT1       7
-#define VCORE_BIT2       8
-#define VCORE_BIT3       17
-#define VCORE_BIT4       20
-#define VCORE_BIT5       23
+#define VCORE_PORT      0
+#define VCORE_PIN_DS    21
+#define VCORE_PIN_SHCP  7
+#define VCORE_PIN_STCP  6
+#define VCORE_PIN_EN1   9
+#define VCORE_PIN_EN2   8
 
-#define VCORE_SHIFT_BIT1 7
-#define VCORE_SHIFT_BIT2 7
-#define VCORE_SHIFT_BIT3 15
-#define VCORE_SHIFT_BIT4 17
-#define VCORE_SHIFT_BIT5 19
+#define VOLTAGE_DELAY   40
 
-#define VOLTAGE_DELAY    40
+static uint16_t voltage = ASIC_0V;
 
-static uint16_t g_voltage = ASIC_0V;
+static void init_mux(void)
+{
+	Chip_IOCON_PinMuxSet(LPC_IOCON, VCORE_PORT, VCORE_PIN_DS, (IOCON_FUNC0 | IOCON_MODE_PULLUP));
+	Chip_IOCON_PinMuxSet(LPC_IOCON, VCORE_PORT, VCORE_PIN_SHCP, (IOCON_FUNC0 | IOCON_MODE_PULLUP));
+	Chip_IOCON_PinMuxSet(LPC_IOCON, VCORE_PORT, VCORE_PIN_STCP, (IOCON_FUNC0 | IOCON_MODE_PULLUP));
+	Chip_IOCON_PinMuxSet(LPC_IOCON, VCORE_PORT, VCORE_PIN_EN1, (IOCON_FUNC0 | IOCON_MODE_PULLUP));
+	Chip_IOCON_PinMuxSet(LPC_IOCON, VCORE_PORT, VCORE_PIN_EN2, (IOCON_FUNC0 | IOCON_MODE_PULLUP));
+
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO, VCORE_PORT, VCORE_PIN_DS);
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO, VCORE_PORT, VCORE_PIN_SHCP);
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO, VCORE_PORT, VCORE_PIN_STCP);
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN1);
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN2);
+}
 
 void vcore_init(void)
 {
-	uint32_t vcore_value;
-	uint32_t vcore_vmask;
+	init_mux();
 
-	Chip_IOCON_PinMuxSet(LPC_IOCON, VCORE_PORT, VCORE_BIT1, IOCON_FUNC0 | IOCON_MODE_INACT);
-	Chip_IOCON_PinMuxSet(LPC_IOCON, VCORE_PORT, VCORE_BIT2, IOCON_FUNC0 | IOCON_MODE_INACT);
-	Chip_IOCON_PinMuxSet(LPC_IOCON, VCORE_PORT, VCORE_BIT3, IOCON_FUNC0 | IOCON_MODE_INACT);
-	Chip_IOCON_PinMuxSet(LPC_IOCON, VCORE_PORT, VCORE_BIT4, IOCON_FUNC0 | IOCON_MODE_INACT);
-	Chip_IOCON_PinMuxSet(LPC_IOCON, VCORE_PORT, VCORE_BIT5, IOCON_FUNC0 | IOCON_MODE_INACT);
+	Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_DS, 0);
+	Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_SHCP, 0);
+	Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_STCP, 0);
 
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, VCORE_PORT, VCORE_BIT1);
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, VCORE_PORT, VCORE_BIT2);
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, VCORE_PORT, VCORE_BIT3);
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, VCORE_PORT, VCORE_BIT4);
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, VCORE_PORT, VCORE_BIT5);
-	
-	vcore_vmask = ~((1 << VCORE_BIT1) | (1 << VCORE_BIT2) | (1 << VCORE_BIT3)\
-		       |(1 << VCORE_BIT4) | (1 << VCORE_BIT5));
-	Chip_GPIO_SetPortMask(LPC_GPIO, VCORE_PORT, vcore_vmask);
-	
-	vcore_value = ((g_voltage & 0x01) << VCORE_SHIFT_BIT1) | ((g_voltage & 0x02) << VCORE_SHIFT_BIT2) \
-		     |((g_voltage & 0x04) << VCORE_SHIFT_BIT3) | ((g_voltage & 0x08) << VCORE_SHIFT_BIT4) \
-		     |((g_voltage & 0x10) << VCORE_SHIFT_BIT5);
-	Chip_GPIO_SetMaskedPortValue(LPC_GPIO, VCORE_PORT, vcore_value);
+	vcore_disable(VCORE1);
+	vcore_disable(VCORE2);
 }
 
 uint8_t set_voltage(uint16_t vol)
 {
-	uint8_t  poweron = 0;
-	uint32_t vcore_value;
+	uint8_t i;
 
-	if (g_voltage == vol)
+	if (voltage == vol)
 		return 0;
 
-	if (g_voltage == ASIC_0V) {
-		Chip_GPIO_SetMaskedPortValue(LPC_GPIO, VCORE_PORT, 0);
-		poweron = 1;
+	Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_STCP, 0);
+
+	/* MSB first */
+	for (i = 0; i < 8; i++) {
+		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_SHCP, 0);
+		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_DS, (vol >> (7 - i)) & 1);
+		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_SHCP, 1);
 	}
+	Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_SHCP, 0);
+	Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_STCP, 1);
+	Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_STCP, 0);
 
-	vcore_value = ((vol & 0x01) << VCORE_SHIFT_BIT1) | ((vol & 0x02) << VCORE_SHIFT_BIT2) \
-		     |((vol & 0x04) << VCORE_SHIFT_BIT3) | ((vol & 0x08) << VCORE_SHIFT_BIT4) \
-		     |((vol & 0x10) << VCORE_SHIFT_BIT5);
-	
-	Chip_GPIO_SetMaskedPortValue(LPC_GPIO, VCORE_PORT, vcore_value);
+	voltage = vol;
 
-	g_voltage = vol;
-	if (poweron && vol != ASIC_0V)
-		delay(VOLTAGE_DELAY);
+	delay(VOLTAGE_DELAY);
 
-	if (vol == ASIC_0V)
-		return 0;
-
-	return poweron;
+	return 0;
 }
 
 uint16_t get_voltage(void)
 {
-	return g_voltage;
+	return voltage;
+}
+
+void vcore_disable(uint8_t num)
+{
+	switch (num) {
+	case 1:
+		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN1, 1);
+		break;
+	case 2:
+		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN2, 1);
+		break;
+	default:
+		break;
+	}
+}
+
+void vcore_enable(uint8_t num)
+{
+	switch (num) {
+	case 1:
+		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN1, 0);
+		break;
+	case 2:
+		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN2, 0);
+		break;
+	default:
+		break;
+	}
 }
