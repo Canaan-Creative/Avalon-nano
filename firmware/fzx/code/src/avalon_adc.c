@@ -42,6 +42,20 @@ void adc_init(void)
 
 void adc_read(uint8_t channel, uint16_t *data)
 {
+	float adc_ratio;
+	uint16_t adc_vbase;
+	uint16_t adc_val;
+
+	Chip_ADC_EnableChannel(LPC_ADC, (ADC_CHANNEL_T)ADC_CHANNEL_VBASE, ENABLE);
+	/* Start A/D conversion */
+	Chip_ADC_SetStartMode(LPC_ADC, ADC_START_NOW, ADC_TRIGGERMODE_RISING);
+	/* Waiting for A/D conversion complete */
+	while (Chip_ADC_ReadStatus(LPC_ADC, (ADC_CHANNEL_T)ADC_CHANNEL_VBASE, ADC_DR_DONE_STAT) != SET)
+		;
+	/* Read ADC_VBASE value */
+	Chip_ADC_ReadValue(LPC_ADC, ADC_CHANNEL_VBASE, &adc_vbase);
+	Chip_ADC_EnableChannel(LPC_ADC, (ADC_CHANNEL_T)ADC_CHANNEL_VBASE, DISABLE);
+
 	Chip_ADC_EnableChannel(LPC_ADC, (ADC_CHANNEL_T)channel, ENABLE);
 	/* Start A/D conversion */
 	Chip_ADC_SetStartMode(LPC_ADC, ADC_START_NOW, ADC_TRIGGERMODE_RISING);
@@ -49,6 +63,10 @@ void adc_read(uint8_t channel, uint16_t *data)
 	while (Chip_ADC_ReadStatus(LPC_ADC, (ADC_CHANNEL_T)channel, ADC_DR_DONE_STAT) != SET)
 		;
 	/* Read ADC value */
-	Chip_ADC_ReadValue(LPC_ADC, channel, data);
+	Chip_ADC_ReadValue(LPC_ADC, channel, &adc_val);
 	Chip_ADC_EnableChannel(LPC_ADC, (ADC_CHANNEL_T)channel, DISABLE);
+
+	adc_ratio = (float)ADC_VBASE_STD_VALUE / adc_vbase;
+
+	*data = adc_val * adc_ratio;
 }

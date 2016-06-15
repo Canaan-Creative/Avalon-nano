@@ -30,11 +30,12 @@
 __CRP unsigned int CRP_WORD = CRP_NO_CRP;
 #endif
 
-#define STATE_NORMAL	0
-#define STATE_IDLE	1
+#define STATE_WORK      0
+#define STATE_IDLE      1
 
 static uint8_t g_reqpkg[AVAM_P_COUNT];
 static uint8_t g_ackpkg[AVAM_P_COUNT];
+static uint8_t g_adc_val[ADC_CAPCOUNT];
 
 static int init_mm_pkg(struct avalon_pkg *pkg, uint8_t type)
 {
@@ -57,6 +58,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 {
 	unsigned int expected_crc;
 	unsigned int actual_crc;
+	unsigned int i;
 
 	expected_crc = (pkg->crc[1] & 0xff) | ((pkg->crc[0] & 0xff) << 8);
 	actual_crc = crc16(pkg->data, AVAM_P_DATA_LEN);
@@ -68,10 +70,24 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	timer_set(TIMER_ID1, IDLE_TIME, NULL);
 	switch (pkg->type) {
 	case AVAM_P_DETECT:
+		memset(g_ackpkg, 0, AVAM_P_COUNT);
+		memcpy(g_ackpkg + AVAM_P_DATAOFFSET + AVAM_MM_DNA_LEN, AVAM_VERSION, AVAM_MM_VER_LEN);
+		init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_ACKDETECT);
+		uart_write(g_ackpkg, AVAM_P_COUNT);
 		break;
 	case AVAM_P_POLLING:
+		memset(g_ackpkg, 0, AVAM_P_COUNT);
+
+		for (i = 0; i < ADC_CAPCOUNT; i++) {
+			g_ackpkg[AVAM_P_DATAOFFSET + i * 2] = g_adc_val[i] >> 8;
+			g_ackpkg[AVAM_P_DATAOFFSET + i * 2 + 1] = g_adc_val[i] & 0xff;
+		}
+		init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_STATUS_M);
+		uart_write(g_ackpkg, AVAM_P_COUNT);
 		break;
 	case AVAM_P_SET_VOLT:
+		set_voltage(pkg->data[0]);
+		vcore_detect();
 		break;
 	default:
 		break;
@@ -137,14 +153,59 @@ static void test_function(void)
 
 }
 
+static void update_adc(void)
+{
+	adc_read(ADC_CHANNEL_NTC1, &g_adc_val[0]);
+	adc_read(ADC_CHANNEL_NTC2, &g_adc_val[1]);
+	adc_read(ADC_CHANNEL_V12V_1, &g_adc_val[2]);
+	adc_read(ADC_CHANNEL_V12V_2, &g_adc_val[3]);
+	adc_read(ADC_CHANNEL_VCORE1, &g_adc_val[4]);
+	adc_read(ADC_CHANNEL_VCORE2, &g_adc_val[5]);
+}
+
 int main(void)
 {
+	uint8_t stat = STATE_WORK;
+	uint32_t len = 0;
+
 	Board_Init();
 	SystemCoreClockUpdate();
 
-	test_function();
+	clkout_enable();
+	timer_init();
+	led_init();
+	adc_init();
+	uart_init();
+	vcore_init();
 
 	while (1) {
-		;
+		switch (stat) {
+		case STATE_WORK:
+			len = uart_rxrb_cnt();
+			if (len >= AVAM_P_COUNT) {
+				memset(g_reqpkg, 0, AVAM_P_COUNT);
+				uart_read(g_reqpkg, AVAM_P_COUNT);
+				process_mm_pkg((struct avalon_pkg*)g_reqpkg);
+			}
+
+			if (timer_istimeout(TIMER_ID1))
+				stat = STATE_IDLE;
+			break;
+		case STATE_IDLE:
+			len = uart_rxrb_cnt();
+			if (len >= AVAM_P_COUNT)
+				stat = STATE_WORK;
+
+			__WFI();
+			break;
+		default:
+			stat = STATE_IDLE;
+			break;
+		}
+
+		if (timer_istimeout(TIMER_ID2)) {
+			update_adc();
+			timer_set(TIMER_ID2, ADC_CAPTIME, NULL);
+		}
 	}
 }
