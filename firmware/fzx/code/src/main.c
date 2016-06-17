@@ -178,6 +178,8 @@ int main(void)
 	uart_init();
 	vcore_init();
 
+	timer_set(TIMER_ID1, IDLE_TIME, NULL);
+	timer_set(TIMER_ID2, ADC_CAPTIME, NULL);
 	while (1) {
 		switch (stat) {
 		case STATE_WORK:
