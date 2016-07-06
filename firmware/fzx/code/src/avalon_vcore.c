@@ -27,6 +27,7 @@
 #define VOLTAGE_DELAY   40
 
 static uint16_t g_voltage = 0;
+static uint8_t  g_pg_flag = 0;
 
 static void init_mux(void)
 {
@@ -129,22 +130,31 @@ void vcore_detect(void)
 	if (Chip_GPIO_GetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_IN1)) {
 		led_rgb(LED_12V_1T, LED_ON);
 		led_rgb(LED_12V_1F, LED_OFF);
+		g_pg_flag &= ~PG1;
 	} else {
 		if (g_voltage != 0)
 			vcore_disable(VCORE1);
 
 		led_rgb(LED_12V_1T, LED_OFF);
 		led_rgb(LED_12V_1F, LED_ON);
+		g_pg_flag |= PG1;
 	}
 
 	if (Chip_GPIO_GetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_IN2)) {
 		led_rgb(LED_12V_2T, LED_ON);
 		led_rgb(LED_12V_2F, LED_OFF);
+		g_pg_flag &= ~PG2;
 	} else {
 		if (g_voltage != 0)
 			vcore_disable(VCORE2);
 
 		led_rgb(LED_12V_2T, LED_OFF);
 		led_rgb(LED_12V_2F, LED_ON);
+		g_pg_flag |= PG2;
 	}
+}
+
+uint8_t get_pg_flag(void)
+{
+	return g_pg_flag;
 }
