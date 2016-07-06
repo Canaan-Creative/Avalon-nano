@@ -147,13 +147,6 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	}
 }
 
-static void clkout_enable(void)
-{
-	/* enable clk out ,use P0.1 */
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 1, (IOCON_FUNC1 | IOCON_MODE_INACT));
-	Chip_Clock_SetCLKOUTSource(SYSCTL_CLKOUTSRC_MAINSYSCLK, 2);
-}
-
 static void test_function(void)
 {
 	uint8_t tmp_buf[5];
@@ -224,7 +217,6 @@ int main(void)
 	Board_Init();
 	SystemCoreClockUpdate();
 
-	clkout_enable();
 	timer_init();
 	led_init();
 	adc_init();
