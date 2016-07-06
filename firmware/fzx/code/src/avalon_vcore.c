@@ -64,7 +64,7 @@ uint8_t set_voltage(uint16_t vol)
 {
 	uint8_t i;
 
-	if (g_voltage == vol)
+	if ((g_voltage == vol) && (vol != 0))
 		return 0;
 
 	Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_STCP, 0);
@@ -79,11 +79,19 @@ uint8_t set_voltage(uint16_t vol)
 	Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_STCP, 1);
 	Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_STCP, 0);
 
-	if ((g_voltage & 0xf0) != (vol & 0xf0))
-		vcore_enable(VCORE2);
+	if (vol & 0xf0) {
+		if ((g_voltage & 0xf0) != (vol & 0xf0))
+			vcore_enable(VCORE2);
+	} else {
+		vcore_disable(VCORE2);
+	}
 
-	if ((g_voltage & 0x0f) != (vol & 0x0f))
-		vcore_enable(VCORE1);
+	if (vol & 0x0f) {
+		if ((g_voltage & 0x0f) != (vol & 0x0f))
+			vcore_enable(VCORE1);
+	} else {
+		vcore_disable(VCORE1);
+	}
 
 	g_voltage = vol;
 
@@ -128,28 +136,28 @@ void vcore_enable(uint8_t num)
 void vcore_detect(void)
 {
 	if (Chip_GPIO_GetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_IN1)) {
+		led_blink_off(LED_12V_1F);
 		led_rgb(LED_12V_1T, LED_ON);
 		led_rgb(LED_12V_1F, LED_OFF);
 		g_pg_flag &= ~PG1;
 	} else {
-		if (g_voltage != 0)
-			vcore_disable(VCORE1);
+		vcore_disable(VCORE1);
 
 		led_rgb(LED_12V_1T, LED_OFF);
-		led_rgb(LED_12V_1F, LED_ON);
+		led_blink_on(LED_12V_1F);
 		g_pg_flag |= PG1;
 	}
 
 	if (Chip_GPIO_GetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_IN2)) {
+		led_blink_off(LED_12V_2F);
 		led_rgb(LED_12V_2T, LED_ON);
 		led_rgb(LED_12V_2F, LED_OFF);
 		g_pg_flag &= ~PG2;
 	} else {
-		if (g_voltage != 0)
-			vcore_disable(VCORE2);
+		vcore_disable(VCORE2);
 
 		led_rgb(LED_12V_2T, LED_OFF);
-		led_rgb(LED_12V_2F, LED_ON);
+		led_blink_on(LED_12V_2F);
 		g_pg_flag |= PG2;
 	}
 }

@@ -63,12 +63,15 @@ static void power_detect(struct avalon_pkg *pkg)
 		if (pkg->data[1] & 0x03)
 			set_voltage(pkg->data[2]);
 
-		if (pkg->data[1] & 0x01)
+		if (pkg->data[1] & 0x01) {
 			vcore_enable(VCORE1);
+			led_blink_on(LED_12V_1TF);
+		}
 
-		if (pkg->data[1] & 0x02)
+		if (pkg->data[1] & 0x02) {
 			vcore_enable(VCORE2);
-		led_blink_on(LED_12V);
+			led_blink_on(LED_12V_2TF);
+		}
 		break;
 	case POWER_OFF:
 		if (pkg->data[1] & 0x01)
@@ -77,19 +80,23 @@ static void power_detect(struct avalon_pkg *pkg)
 		if (pkg->data[1] & 0x02)
 			vcore_disable(VCORE2);
 		break;
-	case POWER_ERR:
-		if (pkg->data[1] & 0x01)
-			led_blink_on(LED_12V_1T);
+	case POWER_RESULT:
+		led_blink_off(LED_12V_1TF);
+		led_blink_off(LED_12V_2TF);
 
-		if (pkg->data[1] & 0x02)
-			led_blink_on(LED_12V_2T);
-		break;
-	case POWER_OK:
-		if (pkg->data[1] & 0x01)
-			led_blink_off(LED_12V_1T);
+		if (pkg->data[1] & 0x01) {
+			if (pkg->data[2] & 0x0f)
+				led_blink_on(LED_12V_1T);
+			else
+				led_blink_off(LED_12V_1T);
+		}
 
-		if (pkg->data[1] & 0x02)
-			led_blink_off(LED_12V_2T);
+		if (pkg->data[1] & 0x02) {
+			if (pkg->data[2] & 0xf0)
+				led_blink_on(LED_12V_2T);
+			else
+				led_blink_off(LED_12V_2T);
+		}
 		break;
 	default:
 		break;

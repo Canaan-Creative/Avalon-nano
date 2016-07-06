@@ -14,8 +14,7 @@
 
 #define POWER_ON        0x01
 #define POWER_OFF       0x02
-#define POWER_ERR       0x04
-#define POWER_OK        0x08
+#define POWER_RESULT    0x04
 
 #endif /* __DEFINES_H_ */
 

@@ -56,22 +56,32 @@ void led_set(unsigned int led, unsigned int state)
 	}
 }
 
-static void led_blink_12v(void)
+static void led_blink_12v_1tf(void)
 {
-	static uint8_t open_12v = 0;
+	static uint8_t open_12v_1tf = 0;
 
-	if (open_12v) {
+	if (open_12v_1tf) {
 		led_set(LED_12V_1T, LED_ON);
 		led_set(LED_12V_1F, LED_OFF);
-		led_set(LED_12V_2T, LED_ON);
-		led_set(LED_12V_2F, LED_OFF);
 	} else {
 		led_set(LED_12V_1T, LED_OFF);
 		led_set(LED_12V_1F, LED_ON);
-		led_set(LED_12V_1T, LED_OFF);
-		led_set(LED_12V_1F, LED_ON);
 	}
-	open_12v = ~open_12v;
+	open_12v_1tf = ~open_12v_1tf;
+}
+
+static void led_blink_12v_2tf(void)
+{
+	static uint8_t open_12v_2tf = 0;
+
+	if (open_12v_2tf) {
+			led_set(LED_12V_2T, LED_ON);
+			led_set(LED_12V_2F, LED_OFF);
+		} else {
+			led_set(LED_12V_2T, LED_OFF);
+			led_set(LED_12V_2F, LED_ON);
+		}
+	open_12v_2tf = ~open_12v_2tf;
 }
 
 static void led_blink_12v_1t(void)
@@ -146,9 +156,6 @@ void led_init(void)
 void led_blink_on(unsigned int led)
 {
 	switch (led) {
-	case LED_12V:
-		timer_set(TIMER_LED_12V, 500, led_blink_12v);
-		break;
 	case LED_12V_1T:
 		led_blink_flag |= LED_12V_1T;
 		timer_set(TIMER_LED_12V_1T, 500, led_blink_12v_1t);
@@ -165,6 +172,14 @@ void led_blink_on(unsigned int led)
 		led_blink_flag |= LED_12V_2F;
 		timer_set(TIMER_LED_12V_2F, 500, led_blink_12v_2f);
 		break;
+	case LED_12V_1TF:
+		led_blink_flag |= LED_12V_1TF;
+		timer_set(TIMER_LED_12V_1TF, 500, led_blink_12v_1tf);
+		break;
+	case LED_12V_2TF:
+		led_blink_flag |= LED_12V_2TF;
+		timer_set(TIMER_LED_12V_2TF, 500, led_blink_12v_2tf);
+		break;
 	default:
 		break;
 	}
@@ -173,24 +188,37 @@ void led_blink_on(unsigned int led)
 void led_blink_off(unsigned int led)
 {
 	switch (led) {
-	case LED_12V:
-		timer_kill(TIMER_LED_12V);
-		break;
 	case LED_12V_1T:
 		led_blink_flag &= ~LED_12V_1T;
 		timer_kill(TIMER_LED_12V_1T);
+		led_set(LED_12V_1T, LED_OFF);
 		break;
 	case LED_12V_1F:
 		led_blink_flag &= ~LED_12V_1F;
 		timer_kill(TIMER_LED_12V_1F);
+		led_set(LED_12V_1F, LED_OFF);
 		break;
 	case LED_12V_2T:
 		led_blink_flag &= ~LED_12V_2T;
 		timer_kill(TIMER_LED_12V_2T);
+		led_set(LED_12V_2T, LED_OFF);
 		break;
 	case LED_12V_2F:
 		led_blink_flag &= ~LED_12V_2F;
 		timer_kill(TIMER_LED_12V_2F);
+		led_set(LED_12V_2F, LED_OFF);
+		break;
+	case LED_12V_1TF:
+		led_blink_flag &= ~LED_12V_1TF;
+		timer_kill(TIMER_LED_12V_1TF);
+		led_set(LED_12V_1T, LED_OFF);
+		led_set(LED_12V_1F, LED_OFF);
+		break;
+	case LED_12V_2TF:
+		led_blink_flag &= ~LED_12V_2TF;
+		timer_kill(TIMER_LED_12V_2TF);
+		led_set(LED_12V_2T, LED_OFF);
+		led_set(LED_12V_2F, LED_OFF);
 		break;
 	default:
 		break;
