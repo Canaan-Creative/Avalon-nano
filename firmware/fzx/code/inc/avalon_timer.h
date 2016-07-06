@@ -13,6 +13,11 @@ typedef void (*TMRPROC)(void);
 enum timer_id {
     TIMER_ID1,
     TIMER_ID2,
+    TIMER_ID3,
+    TIMER_ID4,
+    TIMER_ID5,
+    TIMER_ID6,
+    TIMER_ID7,
     TIMER_MAX
 };
 

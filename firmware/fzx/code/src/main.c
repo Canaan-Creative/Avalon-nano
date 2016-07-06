@@ -25,6 +25,8 @@
 #include "avalon_timer.h"
 #include "avalon_adc.h"
 #include "avalon_uart.h"
+#include "avalon_vcore.h"
+#include "avalon_led.h"
 
 #ifdef __CODE_RED
 __CRP unsigned int CRP_WORD = CRP_NO_CRP;
@@ -52,6 +54,46 @@ static int init_mm_pkg(struct avalon_pkg *pkg, uint8_t type)
 	pkg->crc[0] = (crc & 0xff00) >> 8;
 	pkg->crc[1] = crc & 0x00ff;
 	return 0;
+}
+
+static void power_detect(struct avalon_pkg *pkg)
+{
+	switch (pkg->data[0]) {
+	case POWER_ON:
+		if (pkg->data[1] & 0x03)
+			set_voltage(pkg->data[2]);
+
+		if (pkg->data[1] & 0x01)
+			vcore_enable(VCORE1);
+
+		if (pkg->data[1] & 0x02)
+			vcore_enable(VCORE2);
+		led_blink_on(LED_12V);
+		break;
+	case POWER_OFF:
+		if (pkg->data[1] & 0x01)
+			vcore_disable(VCORE1);
+
+		if (pkg->data[1] & 0x02)
+			vcore_disable(VCORE2);
+		break;
+	case POWER_ERR:
+		if (pkg->data[1] & 0x01)
+			led_blink_on(LED_12V_1T);
+
+		if (pkg->data[1] & 0x02)
+			led_blink_on(LED_12V_2T);
+		break;
+	case POWER_OK:
+		if (pkg->data[1] & 0x01)
+			led_blink_off(LED_12V_1T);
+
+		if (pkg->data[1] & 0x02)
+			led_blink_off(LED_12V_2T);
+		break;
+	default:
+		break;
+	}
 }
 
 static void process_mm_pkg(struct avalon_pkg *pkg)
@@ -88,6 +130,9 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	case AVAM_P_SET_VOLT:
 		set_voltage(pkg->data[0]);
 		vcore_detect();
+		break;
+	case AVAM_P_TEST:
+		power_detect(pkg);
 		break;
 	default:
 		break;
