@@ -26,7 +26,7 @@
 
 #define VOLTAGE_DELAY   40
 
-static uint16_t g_voltage = 0;
+static uint16_t g_voltage = 0x100;
 static uint8_t  g_pg_flag = 0;
 
 static void init_mux(void)
@@ -64,7 +64,13 @@ uint8_t set_voltage(uint16_t vol)
 {
 	uint8_t i;
 
-	if ((g_voltage == vol) && (vol != 0))
+	if (vol == VCORE_OFF) {
+		vcore_disable(VCORE1);
+		vcore_disable(VCORE2);
+		return 0;
+	}
+
+	if (g_voltage == vol)
 		return 0;
 
 	Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_STCP, 0);
@@ -79,19 +85,8 @@ uint8_t set_voltage(uint16_t vol)
 	Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_STCP, 1);
 	Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_STCP, 0);
 
-	if (vol & 0xf0) {
-		if ((g_voltage & 0xf0) != (vol & 0xf0))
-			vcore_enable(VCORE2);
-	} else {
-		vcore_disable(VCORE2);
-	}
-
-	if (vol & 0x0f) {
-		if ((g_voltage & 0x0f) != (vol & 0x0f))
-			vcore_enable(VCORE1);
-	} else {
-		vcore_disable(VCORE1);
-	}
+	vcore_enable(VCORE1);
+	vcore_enable(VCORE2);
 
 	g_voltage = vol;
 
