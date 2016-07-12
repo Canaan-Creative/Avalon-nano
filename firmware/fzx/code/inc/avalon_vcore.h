@@ -14,6 +14,8 @@
 #define PG1       0x01
 #define PG2       0x02
 
+#define VCORE_OFF 0x100
+
 void vcore_init(void);
 uint8_t  set_voltage(uint16_t vol);
 uint16_t get_voltage(void);

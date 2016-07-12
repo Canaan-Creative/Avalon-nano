@@ -136,7 +136,7 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		uart_write(g_ackpkg, AVAM_P_COUNT);
 		break;
 	case AVAM_P_SET_VOLT:
-		set_voltage(pkg->data[0]);
+		set_voltage((pkg->data[0] << 8) | pkg->data[1]);
 		vcore_detect();
 		break;
 	case AVAM_P_TEST:
