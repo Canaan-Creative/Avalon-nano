@@ -82,7 +82,7 @@ STATIC void SystemSetupClocking(void)
 	for (i = 0; i < 0x100; i++) {}
 
 	/* Set system PLL input to main oscillator */
-	Chip_Clock_SetSystemPLLSource(SYSCTL_PLLCLKSRC_MAINOSC);
+	Chip_Clock_SetSystemPLLSource(SYSCTL_PLLCLKSRC_IRC);
 
 	/* Power down PLL to change the PLL divider ratio */
 	Chip_SYSCTL_PowerDown(SYSCTL_POWERDOWN_SYSPLL_PD);
@@ -110,7 +110,7 @@ STATIC void SystemSetupClocking(void)
 	Chip_Clock_SetMainClockSource(SYSCTL_MAINCLKSRC_PLLOUT);
 
 	/* Set USB PLL input to main oscillator */
-	Chip_Clock_SetUSBPLLSource(SYSCTL_PLLCLKSRC_MAINOSC);
+	Chip_Clock_SetUSBPLLSource(SYSCTL_PLLCLKSRC_IRC);
 	/* Setup USB PLL  (FCLKIN = 12MHz) * 4 = 48MHz
 	   MSEL = 3 (this is pre-decremented), PSEL = 1 (for P = 2)
 	   FCLKOUT = FCLKIN * (MSEL + 1) = 12MHz * 4 = 48MHz
