@@ -28,5 +28,6 @@ void timer_kill(enum timer_id id);
 enum timer_id timer_getready(void);
 bool timer_istimeout(enum timer_id id);
 unsigned int timer_elapsed(enum timer_id id);
+void TIMER32_0_IRQHandler(void);
 
 #endif /* __AVALON_TIMER_H_ */

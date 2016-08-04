@@ -5,7 +5,7 @@
 # For details see the UNLICENSE file at the root of the source tree.
 #
 
-FIRMWARE = avalon6_fzx
+FIRMWARE = avalon6_pmu
 FW_RELEASE = RELEASE
 
 DATE:=$(shell date +%Y-%m-%d)
