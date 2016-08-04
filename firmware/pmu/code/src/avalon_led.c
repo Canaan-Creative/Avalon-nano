@@ -24,7 +24,7 @@
 
 static unsigned int led_blink_flag = 0;
 
-void led_set(unsigned int led, unsigned int state)
+static void led_set(unsigned int led, unsigned int state)
 {
 	switch (led) {
 	case LED_12V_1T:

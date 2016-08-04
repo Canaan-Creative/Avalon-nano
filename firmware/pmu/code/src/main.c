@@ -147,58 +147,6 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	}
 }
 
-static void test_function(void)
-{
-	uint8_t tmp_buf[5];
-
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 2, (IOCON_FUNC0 | IOCON_MODE_PULLUP));
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 3, (IOCON_FUNC0 | IOCON_MODE_PULLUP));
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 4, (IOCON_FUNC0 | IOCON_MODE_PULLUP));
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 5, (IOCON_FUNC0 | IOCON_MODE_PULLUP));
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 7, (IOCON_FUNC0 | IOCON_MODE_PULLUP));
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 2);
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 3);
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 4);
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 5);
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 0, 7);
-
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 2, 1);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 3, 1);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, 1);
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, 1);
-
-	Chip_GPIO_SetPinState(LPC_GPIO, 0, 7, 0);
-
-	clkout_enable();
-
-	while (1) {
-		tmp_buf[0] = 0x0a;
-
-		if (tmp_buf[0] & 0x01)
-			Chip_GPIO_SetPinState(LPC_GPIO, 0, 3, 1);
-		else
-			Chip_GPIO_SetPinState(LPC_GPIO, 0, 3, 0);
-
-		if (tmp_buf[0] & 0x02)
-			Chip_GPIO_SetPinState(LPC_GPIO, 0, 2, 1);
-		else
-			Chip_GPIO_SetPinState(LPC_GPIO, 0, 2, 0);
-
-		if (tmp_buf[0] & 0x04)
-			Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, 1);
-		else
-			Chip_GPIO_SetPinState(LPC_GPIO, 0, 4, 0);
-
-		if (tmp_buf[0] & 0x08)
-			Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, 1);
-		else
-			Chip_GPIO_SetPinState(LPC_GPIO, 0, 5, 0);
-
-		delay(50);
-	}
-
-}
-
 static void update_adc(void)
 {
 	adc_read(ADC_CHANNEL_NTC1, &g_adc_val[0]);
