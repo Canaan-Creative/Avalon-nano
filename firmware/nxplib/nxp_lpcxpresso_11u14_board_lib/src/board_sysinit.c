@@ -66,6 +66,12 @@ STATIC const PINMUX_GRP_T pinmuxing[] = {
 };
 
 /*****************************************************************************
+ * Static variable
+ ****************************************************************************/
+/* System Oscillator select */
+static uint32_t system_osc_select = SYSCTL_PLLCLKSRC_MAINOSC;
+
+/*****************************************************************************
  * Private functions
  ****************************************************************************/
 
@@ -82,7 +88,7 @@ STATIC void SystemSetupClocking(void)
 	for (i = 0; i < 0x100; i++) {}
 
 	/* Set system PLL input to main oscillator */
-	Chip_Clock_SetSystemPLLSource(SYSCTL_PLLCLKSRC_IRC);
+	Chip_Clock_SetSystemPLLSource(system_osc_select);
 
 	/* Power down PLL to change the PLL divider ratio */
 	Chip_SYSCTL_PowerDown(SYSCTL_POWERDOWN_SYSPLL_PD);
@@ -110,7 +116,7 @@ STATIC void SystemSetupClocking(void)
 	Chip_Clock_SetMainClockSource(SYSCTL_MAINCLKSRC_PLLOUT);
 
 	/* Set USB PLL input to main oscillator */
-	Chip_Clock_SetUSBPLLSource(SYSCTL_PLLCLKSRC_IRC);
+	Chip_Clock_SetUSBPLLSource(system_osc_select);
 	/* Setup USB PLL  (FCLKIN = 12MHz) * 4 = 48MHz
 	   MSEL = 3 (this is pre-decremented), PSEL = 1 (for P = 2)
 	   FCLKOUT = FCLKIN * (MSEL + 1) = 12MHz * 4 = 48MHz
@@ -141,6 +147,12 @@ STATIC void SystemSetupMuxing(void)
 /*****************************************************************************
  * Public functions
  ****************************************************************************/
+
+/* Select system oscillator */
+void System_OscSelect(uint32_t osc_sel)
+{
+	system_osc_select = osc_sel;
+}
 
 /* Set up and initialize hardware prior to call to main */
 void Board_SystemInit(void)

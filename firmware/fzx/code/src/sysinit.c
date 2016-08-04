@@ -54,6 +54,9 @@ void SystemInit(void)
 	/* Chip specific SystemInit */
 	Chip_SystemInit();
 #else
+	/* System oscillator select */
+	System_OscSelect(SYSCTL_PLLCLKSRC_IRC);
+
 	/* Board specific SystemInit */
 	Board_SystemInit();
 #endif

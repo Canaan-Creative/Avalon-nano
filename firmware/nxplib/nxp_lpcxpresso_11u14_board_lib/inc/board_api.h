@@ -49,6 +49,13 @@ extern "C" {
  */
 
 /**
+ * @brief	Select the system oscillator
+ * @param	osc_sel	: the system oscillator
+ * @return	None
+ */
+void System_OscSelect(uint32_t osc_sel);
+
+/**
  * @brief	Set up and initialize hardware prior to call to main()
  * @return	None
  * @note	Board_SystemInit() is called prior to the application and sets up system
