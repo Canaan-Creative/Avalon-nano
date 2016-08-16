@@ -231,24 +231,24 @@ void set_led_state(uint16_t state)
 
 	ret = (state >> 8) & 0xff;
 
-	if (ret & LED_RED_STATE)
+	if (ret & LED_RED)
 		led_set(LED_12V_1T, LED_ON);
 	else
 		led_set(LED_12V_1T, LED_OFF);
 
-	if (ret & LED_GREEN_STATE)
+	if (ret & LED_GREEN)
 		led_set(LED_12V_1F, LED_ON);
 	else
 		led_set(LED_12V_1F, LED_OFF);
 
 	ret = state & 0xff;
 
-	if (ret & LED_RED_STATE)
+	if (ret & LED_RED)
 		led_set(LED_12V_2T, LED_ON);
 	else
 		led_set(LED_12V_2T, LED_OFF);
 
-	if (ret & LED_GREEN_STATE)
+	if (ret & LED_GREEN)
 		led_set(LED_12V_2F, LED_ON);
 	else
 		led_set(LED_12V_2F, LED_OFF);
