@@ -147,7 +147,7 @@ void vcore_detect(void)
 
 uint8_t get_pg_state(uint8_t pg_id)
 {
-	if (pd_id < PG_COUNT)
+	if (pg_id < PG_COUNT)
 		return g_pg_state[pg_id];
 
 	return 1;

@@ -23,6 +23,7 @@
 #define LED_12V_2F_PIN   5
 
 static unsigned int led_blink_flag = 0;
+static uint8_t led_state[LED_COUNT];
 
 static void led_set(unsigned int led, unsigned int state)
 {
@@ -227,29 +228,35 @@ void led_blink_off(unsigned int led)
 
 void set_led_state(uint16_t state)
 {
-	uint8_t ret = 0;
+	led_state[0] = state & 0xff;
 
-	ret = (state >> 8) & 0xff;
-
-	if (ret & LED_RED)
+	if (led_state[0] & LED_RED)
 		led_set(LED_12V_1T, LED_ON);
 	else
 		led_set(LED_12V_1T, LED_OFF);
 
-	if (ret & LED_GREEN)
+	if (led_state[0] & LED_GREEN)
 		led_set(LED_12V_1F, LED_ON);
 	else
 		led_set(LED_12V_1F, LED_OFF);
 
-	ret = state & 0xff;
+	led_state[1] = (state >> 8) & 0xff;
 
-	if (ret & LED_RED)
+	if (led_state[1] & LED_RED)
 		led_set(LED_12V_2T, LED_ON);
 	else
 		led_set(LED_12V_2T, LED_OFF);
 
-	if (ret & LED_GREEN)
+	if (led_state[1] & LED_GREEN)
 		led_set(LED_12V_2F, LED_ON);
 	else
 		led_set(LED_12V_2F, LED_OFF);
+}
+
+uint8_t get_led_state(uint8_t led_id)
+{
+	if (led_id < LED_COUNT)
+		return led_state[led_id];
+
+	return 1;
 }
