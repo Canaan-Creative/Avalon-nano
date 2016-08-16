@@ -28,13 +28,13 @@ static void led_set(unsigned int led, unsigned int state)
 {
 	switch (led) {
 	case LED_12V_1T:
-		if (state == LED_ON)
+		if (state == LED_OFF)
 			Chip_GPIO_SetPinState(LPC_GPIO, LED_12V_1T_PORT, LED_12V_1T_PIN, LED_ON);
 		else
 			Chip_GPIO_SetPinState(LPC_GPIO, LED_12V_1T_PORT, LED_12V_1T_PIN, LED_OFF);
 		break;
 	case LED_12V_1F:
-		if (state == LED_ON)
+		if (state == LED_OFF)
 			Chip_GPIO_SetPinState(LPC_GPIO, LED_12V_1F_PORT, LED_12V_1F_PIN, LED_ON);
 		else
 			Chip_GPIO_SetPinState(LPC_GPIO, LED_12V_1F_PORT, LED_12V_1F_PIN, LED_OFF);
@@ -223,4 +223,33 @@ void led_blink_off(unsigned int led)
 	default:
 		break;
 	}
+}
+
+void set_led_state(uint16_t state)
+{
+	uint8_t ret = 0;
+
+	ret = (state >> 8) & 0xff;
+
+	if (ret & LED_RED_STATE)
+		led_set(LED_12V_1T, LED_ON);
+	else
+		led_set(LED_12V_1T, LED_OFF);
+
+	if (ret & LED_GREEN_STATE)
+		led_set(LED_12V_1F, LED_ON);
+	else
+		led_set(LED_12V_1F, LED_OFF);
+
+	ret = state & 0xff;
+
+	if (ret & LED_RED_STATE)
+		led_set(LED_12V_2T, LED_ON);
+	else
+		led_set(LED_12V_2T, LED_OFF);
+
+	if (ret & LED_GREEN_STATE)
+		led_set(LED_12V_2F, LED_ON);
+	else
+		led_set(LED_12V_2F, LED_OFF);
 }

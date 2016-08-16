@@ -139,6 +139,9 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		set_voltage((pkg->data[0] << 8) | pkg->data[1]);
 		vcore_detect();
 		break;
+	case AVAM_P_SETM:
+		set_led_state((pkg->data[0] << 8) | pkg->data[1]);
+		break;
 	case AVAM_P_TEST:
 		power_detect(pkg);
 		break;

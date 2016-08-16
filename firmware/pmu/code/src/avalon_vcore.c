@@ -130,29 +130,17 @@ void vcore_enable(uint8_t num)
 
 void vcore_detect(void)
 {
-	if (Chip_GPIO_GetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_IN1)) {
-		led_blink_off(LED_12V_1F);
-		led_rgb(LED_12V_1T, LED_ON);
-		led_rgb(LED_12V_1F, LED_OFF);
+	if (Chip_GPIO_GetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_IN1))
 		g_pg_state[0] &= ~PG_BAD;
-	} else {
+	else {
 		vcore_disable(VCORE1);
-
-		led_rgb(LED_12V_1T, LED_OFF);
-		led_blink_on(LED_12V_1F);
 		g_pg_state[0] |= PG_BAD;
 	}
 
-	if (Chip_GPIO_GetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_IN2)) {
-		led_blink_off(LED_12V_2F);
-		led_rgb(LED_12V_2T, LED_ON);
-		led_rgb(LED_12V_2F, LED_OFF);
+	if (Chip_GPIO_GetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_IN2))
 		g_pg_state[1] &= ~PG_BAD;
-	} else {
+	else {
 		vcore_disable(VCORE2);
-
-		led_rgb(LED_12V_2T, LED_OFF);
-		led_blink_on(LED_12V_2F);
 		g_pg_state[1] |= PG_BAD;
 	}
 }
