@@ -27,7 +27,7 @@
 #define VOLTAGE_DELAY   40
 
 static uint16_t g_voltage = 0x100;
-static uint8_t  g_pg_flag = 0;
+static uint8_t  g_pg_state[PG_COUNT];
 
 static void init_mux(void)
 {
@@ -134,30 +134,33 @@ void vcore_detect(void)
 		led_blink_off(LED_12V_1F);
 		led_rgb(LED_12V_1T, LED_ON);
 		led_rgb(LED_12V_1F, LED_OFF);
-		g_pg_flag &= ~PG1;
+		g_pg_state[0] &= ~PG_BAD;
 	} else {
 		vcore_disable(VCORE1);
 
 		led_rgb(LED_12V_1T, LED_OFF);
 		led_blink_on(LED_12V_1F);
-		g_pg_flag |= PG1;
+		g_pg_state[0] |= PG_BAD;
 	}
 
 	if (Chip_GPIO_GetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_IN2)) {
 		led_blink_off(LED_12V_2F);
 		led_rgb(LED_12V_2T, LED_ON);
 		led_rgb(LED_12V_2F, LED_OFF);
-		g_pg_flag &= ~PG2;
+		g_pg_state[1] &= ~PG_BAD;
 	} else {
 		vcore_disable(VCORE2);
 
 		led_rgb(LED_12V_2T, LED_OFF);
 		led_blink_on(LED_12V_2F);
-		g_pg_flag |= PG2;
+		g_pg_state[1] |= PG_BAD;
 	}
 }
 
-uint8_t get_pg_flag(void)
+uint8_t get_pg_state(uint8_t pg_id)
 {
-	return g_pg_flag;
+	if (pd_id < PG_COUNT)
+		return g_pg_state[pg_id];
+
+	return 1;
 }

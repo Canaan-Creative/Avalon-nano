@@ -11,8 +11,8 @@
 #define VCORE1    1
 #define VCORE2    2
 
-#define PG1       0x01
-#define PG2       0x02
+#define PG_COUNT  2
+#define PG_BAD    0x01
 
 #define VCORE_OFF 0x100
 
@@ -22,6 +22,6 @@ uint16_t get_voltage(void);
 void vcore_disable(uint8_t num);
 void vcore_enable(uint8_t num);
 void vcore_detect(void);
-uint8_t get_pg_flag(void);
+uint8_t get_pg_state(uint8_t pg_id);
 
 #endif /* __AVALON_VCORE_H_ */
