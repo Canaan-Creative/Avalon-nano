@@ -28,8 +28,8 @@
 
 #define AVAM_P_SET_VOLT 0x22
 #define AVAM_P_SET_FREQ 0x23
-#define AVAM_P_WORK     0x24
-#define AVAM_P_SETM     0x25
+#define AVAM_P_WORK     0x25
+#define AVAM_P_SETM     0x24
 
 #define AVAM_P_POLLING	0x30
 #define AVAM_P_REQUIRE	0x31
