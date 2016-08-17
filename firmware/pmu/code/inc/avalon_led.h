@@ -13,8 +13,8 @@
 #define LED_ON      1
 #define LED_OFF     0
 
-#define LED_RED     0x01
-#define LED_GREEN   0x02
+#define LED_RED     0x02
+#define LED_GREEN   0x01
 
 #define LED_12V_1T  0x01
 #define LED_12V_1F  0x02

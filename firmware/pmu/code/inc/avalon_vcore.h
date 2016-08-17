@@ -11,8 +11,11 @@
 #define VCORE1    1
 #define VCORE2    2
 
+#define VOL_COUNT 2
+
 #define PG_COUNT  2
-#define PG_BAD    0x01
+#define PG_BAD    0x02
+#define PG_GOOD   0x01
 
 #define VCORE_OFF 0x100
 

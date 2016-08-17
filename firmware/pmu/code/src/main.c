@@ -208,6 +208,7 @@ int main(void)
 		}
 
 		if (timer_istimeout(TIMER_ID2)) {
+			vcore_detect();
 			update_adc();
 			timer_set(TIMER_ID2, ADC_CAPTIME, NULL);
 		}

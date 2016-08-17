@@ -148,6 +148,11 @@ void led_init(void)
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, LED_12V_2T_PORT, LED_12V_2T_PIN);
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, LED_12V_2F_PORT, LED_12V_2F_PIN);
 
+	led_set(LED_12V_1T, LED_ON);
+	led_set(LED_12V_1F, LED_ON);
+	led_set(LED_12V_2T, LED_ON);
+	led_set(LED_12V_2F, LED_ON);
+	delay(1000);
 	led_set(LED_12V_1T, LED_OFF);
 	led_set(LED_12V_1F, LED_OFF);
 	led_set(LED_12V_2T, LED_OFF);
@@ -231,26 +236,26 @@ void set_led_state(uint16_t state)
 	led_state[0] = state & 0xff;
 
 	if (led_state[0] & LED_RED)
-		led_set(LED_12V_1T, LED_ON);
-	else
-		led_set(LED_12V_1T, LED_OFF);
-
-	if (led_state[0] & LED_GREEN)
 		led_set(LED_12V_1F, LED_ON);
 	else
 		led_set(LED_12V_1F, LED_OFF);
 
+	if (led_state[0] & LED_GREEN)
+		led_set(LED_12V_1T, LED_ON);
+	else
+		led_set(LED_12V_1T, LED_OFF);
+
 	led_state[1] = (state >> 8) & 0xff;
 
 	if (led_state[1] & LED_RED)
-		led_set(LED_12V_2T, LED_ON);
-	else
-		led_set(LED_12V_2T, LED_OFF);
-
-	if (led_state[1] & LED_GREEN)
 		led_set(LED_12V_2F, LED_ON);
 	else
 		led_set(LED_12V_2F, LED_OFF);
+
+	if (led_state[1] & LED_GREEN)
+		led_set(LED_12V_2T, LED_ON);
+	else
+		led_set(LED_12V_2T, LED_OFF);
 }
 
 uint8_t get_led_state(uint8_t led_id)
