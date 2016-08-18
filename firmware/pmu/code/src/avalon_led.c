@@ -23,7 +23,7 @@
 #define LED_12V_2F_PIN   5
 
 static unsigned int led_blink_flag = 0;
-static uint8_t led_state[LED_COUNT];
+static uint16_t led_state[LED_COUNT];
 
 static void led_set(unsigned int led, unsigned int state)
 {

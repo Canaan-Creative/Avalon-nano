@@ -27,7 +27,7 @@
 #define VOLTAGE_DELAY   40
 
 static uint16_t g_voltage = 0;
-static uint8_t  g_pg_state[PG_COUNT];
+static uint16_t g_pg_state[PG_COUNT];
 
 static void init_mux(void)
 {

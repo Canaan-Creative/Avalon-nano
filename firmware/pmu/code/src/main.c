@@ -132,11 +132,15 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 			g_ackpkg[AVAM_P_DATAOFFSET + i * 2 + 1] = g_adc_val[i] & 0xff;
 		}
 
-		for (i = 0; i < PG_COUNT; i++)
-			g_ackpkg[AVAM_P_DATAOFFSET + ADC_CAPCOUNT * 2 + i] = get_pg_state(i);
+		for (i = 0; i < PG_COUNT; i++) {
+			g_ackpkg[AVAM_P_DATAOFFSET + ADC_CAPCOUNT * 2 + i * 2] = get_pg_state(i) >> 8;
+			g_ackpkg[AVAM_P_DATAOFFSET + ADC_CAPCOUNT * 2 + i * 2 + 1] = get_pg_state(i) & 0xff;
+		}
 
-		for (i = 0; i < LED_COUNT; i++)
-			g_ackpkg[AVAM_P_DATAOFFSET + ADC_CAPCOUNT * 2 + PG_COUNT + i] = get_led_state(i);
+		for (i = 0; i < LED_COUNT; i++) {
+			g_ackpkg[AVAM_P_DATAOFFSET + ADC_CAPCOUNT * 2 + PG_COUNT * 2 + i * 2] = get_led_state(i) >> 8;
+			g_ackpkg[AVAM_P_DATAOFFSET + ADC_CAPCOUNT * 2 + PG_COUNT * 2 + i * 2 + 1] = get_led_state(i) & 0xff;
+		}
 
 		init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_STATUS_M);
 		uart_write(g_ackpkg, AVAM_P_COUNT);

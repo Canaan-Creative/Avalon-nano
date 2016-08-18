@@ -37,7 +37,7 @@
 #define AVAM_P_GET_FREQ	0x33
 
 #define AVAM_P_ACKDETECT	0x40
-#define AVAM_P_STATUS_M		0x41
+#define AVAM_P_STATUS_M		0x48
 #define AVAM_P_NONCE_M		0x42
 #define AVAM_P_TEST_RET		0x43
 #define AVAM_P_STATUS_FREQ	0x44
