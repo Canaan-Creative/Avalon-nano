@@ -23,7 +23,7 @@ LPCLINK_FIRM = $(LPCXPRESSO_PATH)/LPCXpressoWIN.enc
 GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-7)
 GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
 
-CFLAGS	+= -DAVAM_VERSION='"6C1601-$(GIT_VERSION)$(GIT_STATUS)"' \
+CFLAGS	+= -DAVAM_VERSION='"7C1608-$(GIT_VERSION)$(GIT_STATUS)"' \
 	-I./code/inc -I$(NXPLIBS_PATH)/lpc_chip_11uxx_lib/inc \
 	-I$(NXPLIBS_PATH)/nxp_lpcxpresso_11u14_board_lib/inc \
 	-I$(NXPLIBS_PATH)/lpc_chip_11uxx_lib/inc/usbd
