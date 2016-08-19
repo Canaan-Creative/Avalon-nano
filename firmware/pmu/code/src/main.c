@@ -113,9 +113,8 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	expected_crc = (pkg->crc[1] & 0xff) | ((pkg->crc[0] & 0xff) << 8);
 	actual_crc = crc16(pkg->data, AVAM_P_DATA_LEN);
 
-	if (expected_crc != actual_crc) {
+	if (expected_crc != actual_crc)
 		return;
-	}
 
 	timer_set(TIMER_ID1, IDLE_TIME, NULL);
 	switch (pkg->type) {
@@ -212,7 +211,10 @@ int main(void)
 			len = uart_rxrb_cnt();
 			if (len >= AVAM_P_COUNT) {
 				memset(g_reqpkg, 0, AVAM_P_COUNT);
-				uart_read(g_reqpkg, AVAM_P_COUNT);
+				len = uart_read(g_reqpkg, AVAM_P_COUNT);
+				if (len != AVAM_P_COUNT)
+					break;
+
 				process_mm_pkg((struct avalon_pkg*)g_reqpkg);
 			}
 
