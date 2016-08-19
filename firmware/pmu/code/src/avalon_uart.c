@@ -70,11 +70,25 @@ uint32_t uart_rxrb_cnt(void)
 uint32_t uart_read(uint8_t *pbuf, uint32_t buf_len)
 {
 	uint16_t cnt = 0;
+	uint8_t h1 = 0;
+	uint8_t h2 = 0;
 
-	if (pbuf)
-		cnt = Chip_UART_ReadRB(LPC_USART, &uart_rxrb, pbuf, buf_len);
+	Chip_UART_ReadRB(LPC_USART, &uart_rxrb, &h1, 1);
+	if (h1 != AVAM_H1)
+	      return 0;
 
-	return cnt;
+	Chip_UART_ReadRB(LPC_USART, &uart_rxrb, &h2, 1);
+	if (h2 != AVAM_H2)
+	      return 0;
+
+	if (pbuf) {
+		pbuf[0] = h1;
+		pbuf[1] = h2;
+		pbuf += 2;
+		cnt = Chip_UART_ReadRB(LPC_USART, &uart_rxrb, pbuf, (buf_len - 2));
+	}
+
+	return cnt + 2;
 }
 
 /* Send data to uart */
@@ -100,4 +114,10 @@ void uart_flush_rxrb(void)
 {
 	Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 | UART_FCR_RX_RS));
 	RingBuffer_Flush(&uart_rxrb);
+}
+
+void uart_reset(void)
+{
+	RingBuffer_Init(&uart_rxrb, uart_rxdata, 1, UART_RX_BUF_SZ);
+	RingBuffer_Init(&uart_txrb, uart_txdata, 1, UART_TX_BUF_SZ);
 }
