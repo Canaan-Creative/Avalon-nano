@@ -186,6 +186,7 @@ int main(void)
 
 	timer_set(TIMER_ID1, IDLE_TIME, NULL);
 	timer_set(TIMER_ID2, ADC_CAPTIME, NULL);
+	timer_set(TIMER_ID9, VCORE_DETECT_TIME, NULL);
 	while (1) {
 		switch (stat) {
 		case STATE_WORK:
@@ -212,9 +213,13 @@ int main(void)
 		}
 
 		if (timer_istimeout(TIMER_ID2)) {
-			vcore_detect();
 			update_adc();
 			timer_set(TIMER_ID2, ADC_CAPTIME, NULL);
+		}
+
+		if (timer_istimeout(TIMER_ID9)) {
+			vcore_detect();
+			timer_set(TIMER_ID9, VCORE_DETECT_TIME, NULL);
 		}
 	}
 }

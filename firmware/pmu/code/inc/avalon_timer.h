@@ -19,6 +19,7 @@ enum timer_id {
     TIMER_ID6,
     TIMER_ID7,
     TIMER_ID8,
+    TIMER_ID9,
     TIMER_MAX
 };
 
