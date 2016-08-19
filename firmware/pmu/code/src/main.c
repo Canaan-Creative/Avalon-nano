@@ -38,6 +38,7 @@ __CRP unsigned int CRP_WORD = CRP_NO_CRP;
 static uint8_t  g_reqpkg[AVAM_P_COUNT];
 static uint8_t  g_ackpkg[AVAM_P_COUNT];
 static uint16_t g_adc_val[ADC_CAPCOUNT];
+static uint16_t g_adc_buf[ADC_CAPCOUNT][ADC_DATA_LEN];
 
 static int init_mm_pkg(struct avalon_pkg *pkg, uint8_t type)
 {
@@ -162,12 +163,30 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 
 static void update_adc(void)
 {
-	adc_read(ADC_CHANNEL_NTC1, &g_adc_val[0]);
-	adc_read(ADC_CHANNEL_NTC2, &g_adc_val[1]);
-	adc_read(ADC_CHANNEL_V12V_1, &g_adc_val[2]);
-	adc_read(ADC_CHANNEL_V12V_2, &g_adc_val[3]);
-	adc_read(ADC_CHANNEL_VCORE1, &g_adc_val[4]);
-	adc_read(ADC_CHANNEL_VCORE2, &g_adc_val[5]);
+	static uint16_t adc_cnt = 0;
+	uint32_t adc_sum[ADC_CAPCOUNT];
+	uint16_t i = 0, j = 0;
+
+	adc_read(ADC_CHANNEL_NTC1, &g_adc_buf[0][adc_cnt]);
+	adc_read(ADC_CHANNEL_NTC2, &g_adc_buf[1][adc_cnt]);
+	adc_read(ADC_CHANNEL_V12V_1, &g_adc_buf[2][adc_cnt]);
+	adc_read(ADC_CHANNEL_V12V_2, &g_adc_buf[3][adc_cnt]);
+	adc_read(ADC_CHANNEL_VCORE1, &g_adc_buf[4][adc_cnt]);
+	adc_read(ADC_CHANNEL_VCORE2, &g_adc_buf[5][adc_cnt]);
+
+	if (++adc_cnt >= ADC_DATA_LEN)
+		adc_cnt = 0;
+
+	for (i = 0; i < ADC_CAPCOUNT; i++)
+		adc_sum[i] = 0;
+
+	for (i = 0; i < ADC_DATA_LEN; i++) {
+		for (j = 0; j < ADC_CAPCOUNT; j++)
+		      adc_sum[j] += g_adc_buf[j][i];
+	}
+
+	for (i = 0; i < ADC_CAPCOUNT; i++)
+		g_adc_val[i] = adc_sum[i] / ADC_DATA_LEN;
 }
 
 int main(void)
