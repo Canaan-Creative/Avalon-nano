@@ -106,6 +106,7 @@ static void power_detect(struct avalon_pkg *pkg)
 
 static void process_mm_pkg(struct avalon_pkg *pkg)
 {
+	static unsigned int crc_fail_cnt = 0;
 	unsigned int expected_crc;
 	unsigned int actual_crc;
 	unsigned int i;
@@ -114,6 +115,11 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	actual_crc = crc16(pkg->data, AVAM_P_DATA_LEN);
 
 	if (expected_crc != actual_crc) {
+		if (++crc_fail_cnt > CRC_FAIL_MAX) {
+			uart_reset();
+			crc_fail_cnt = 0;
+		}
+
 		return;
 	}
 

@@ -18,6 +18,8 @@
 #ifndef _CRC_H_
 #define _CRC_H_
 
+#define CRC_FAIL_MAX  1
+
 unsigned short crc16(const unsigned char *buffer, int len);
 
 #endif	/* _CRC_H_ */
