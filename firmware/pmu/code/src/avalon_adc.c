@@ -26,6 +26,8 @@
 #define ADC_VCORE2_PORT   0
 #define ADC_VCORE2_PIN    12
 
+static float adc_ratio = 0;
+
 void adc_init(void)
 {
 	ADC_CLOCK_SETUP_T ADCSetup;
@@ -53,4 +55,26 @@ void adc_read(uint8_t channel, uint16_t *data)
 	Chip_ADC_ReadValue(LPC_ADC, channel, data);
 	Chip_ADC_EnableChannel(LPC_ADC, (ADC_CHANNEL_T)channel, DISABLE);
 	Chip_ADC_SetStartMode(LPC_ADC, ADC_NO_START, ADC_TRIGGERMODE_RISING);
+}
+
+void adc_check(void)
+{
+	uint16_t adc_buf[30];
+	uint32_t adc_sum = 0;
+	uint16_t adc_avg = 0;
+	uint16_t i = 0;
+
+	for (i = 0; i < 30; i++) {
+		adc_read(ADC_CHANNEL_VBASE, &adc_buf[i]);
+		adc_sum += adc_buf[i];
+	}
+
+	adc_avg = adc_sum / 30;
+
+	adc_ratio = 2.5 / (float)adc_avg * 1000;
+}
+
+float get_adc_ratio(void)
+{
+	return adc_ratio;
 }
