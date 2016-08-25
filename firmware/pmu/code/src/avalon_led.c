@@ -11,6 +11,7 @@
 #include "board.h"
 #include "avalon_led.h"
 #include "avalon_timer.h"
+#include "libfunctions.h"
 
 #define LED_12V_1T_PORT  0
 #define LED_12V_1F_PORT  0
@@ -76,12 +77,12 @@ static void led_blink_12v_2tf(void)
 	static uint8_t open_12v_2tf = 0;
 
 	if (open_12v_2tf) {
-			led_set(LED_12V_2T, LED_ON);
-			led_set(LED_12V_2F, LED_OFF);
-		} else {
-			led_set(LED_12V_2T, LED_OFF);
-			led_set(LED_12V_2F, LED_ON);
-		}
+		led_set(LED_12V_2T, LED_ON);
+		led_set(LED_12V_2F, LED_OFF);
+	} else {
+		led_set(LED_12V_2T, LED_OFF);
+		led_set(LED_12V_2F, LED_ON);
+	}
 	open_12v_2tf = ~open_12v_2tf;
 }
 
@@ -93,6 +94,7 @@ static void led_blink_12v_1t(void)
 		led_set(LED_12V_1T, LED_ON);
 	else
 		led_set(LED_12V_1T, LED_OFF);
+
 	open_12v_1t = ~open_12v_1t;
 }
 
@@ -104,6 +106,7 @@ static void led_blink_12v_1f(void)
 		led_set(LED_12V_1F, LED_ON);
 	else
 		led_set(LED_12V_1F, LED_OFF);
+
 	open_12v_1f = ~open_12v_1f;
 }
 
@@ -115,6 +118,7 @@ static void led_blink_12v_2t(void)
 		led_set(LED_12V_2T, LED_ON);
 	else
 		led_set(LED_12V_2T, LED_OFF);
+
 	open_12v_2t = ~open_12v_2t;
 }
 
@@ -126,15 +130,8 @@ static void led_blink_12v_2f(void)
 		led_set(LED_12V_2F, LED_ON);
 	else
 		led_set(LED_12V_2F, LED_OFF);
+
 	open_12v_2f = ~open_12v_2f;
-}
-
-void led_rgb(unsigned int rgb, unsigned int state)
-{
-	if (led_blink_flag & rgb)
-		return ;
-
-	led_set(rgb, state);
 }
 
 void led_init(void)
@@ -159,7 +156,7 @@ void led_init(void)
 	led_set(LED_12V_2F, LED_OFF);
 }
 
-void led_blink_on(unsigned int led)
+static void led_blink_on(unsigned int led)
 {
 	switch (led) {
 	case LED_12V_1T:
@@ -191,7 +188,7 @@ void led_blink_on(unsigned int led)
 	}
 }
 
-void led_blink_off(unsigned int led)
+static void led_blink_off(unsigned int led)
 {
 	switch (led) {
 	case LED_12V_1T:
@@ -234,6 +231,15 @@ void led_blink_off(unsigned int led)
 void set_led_state(uint16_t state)
 {
 	led_state[0] = state & 0xff;
+	if (led_state[0] & LED_RED_BLINK)
+		led_blink_on(LED_12V_1F);
+	else
+		led_blink_off(LED_12V_1F);
+
+	if (led_state[0] & LED_GREEN_BLINK)
+		led_blink_on(LED_12V_1T);
+	else
+		led_blink_off(LED_12V_1T);
 
 	if (led_state[0] & LED_RED)
 		led_set(LED_12V_1F, LED_ON);
@@ -246,6 +252,15 @@ void set_led_state(uint16_t state)
 		led_set(LED_12V_1T, LED_OFF);
 
 	led_state[1] = (state >> 8) & 0xff;
+	if (led_state[1] & LED_RED_BLINK)
+		led_blink_on(LED_12V_2F);
+	else
+		led_blink_off(LED_12V_2F);
+
+	if (led_state[1] & LED_GREEN_BLINK)
+		led_blink_on(LED_12V_2T);
+	else
+		led_blink_off(LED_12V_2T);
 
 	if (led_state[1] & LED_RED)
 		led_set(LED_12V_2F, LED_ON);
@@ -258,10 +273,10 @@ void set_led_state(uint16_t state)
 		led_set(LED_12V_2T, LED_OFF);
 }
 
-uint8_t get_led_state(uint8_t led_id)
+uint16_t get_led_state(uint8_t led_id)
 {
 	if (led_id < LED_COUNT)
 		return led_state[led_id];
 
-	return 1;
+	return 0;
 }
