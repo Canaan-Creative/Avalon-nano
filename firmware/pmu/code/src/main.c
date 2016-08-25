@@ -39,6 +39,7 @@ static uint8_t  g_reqpkg[AVAM_P_COUNT];
 static uint8_t  g_ackpkg[AVAM_P_COUNT];
 static uint16_t g_adc_val[ADC_CAPCOUNT];
 static uint16_t g_adc_buf[ADC_CAPCOUNT][ADC_DATA_LEN];
+static float g_adc_ratio = 0;
 
 static int init_mm_pkg(struct avalon_pkg *pkg, uint8_t type)
 {
@@ -186,7 +187,7 @@ static void update_adc(void)
 	}
 
 	for (i = 0; i < ADC_CAPCOUNT; i++)
-		g_adc_val[i] = adc_sum[i] / ADC_DATA_LEN;
+		g_adc_val[i] = (uint16_t)((float)(adc_sum[i] / ADC_DATA_LEN) * g_adc_ratio);
 }
 
 int main(void)
@@ -202,10 +203,14 @@ int main(void)
 	adc_init();
 	uart_init();
 	vcore_init();
+	adc_check();
 
 	timer_set(TIMER_ID1, IDLE_TIME, NULL);
 	timer_set(TIMER_ID2, ADC_CAPTIME, NULL);
 	timer_set(TIMER_ID9, VCORE_DETECT_TIME, NULL);
+
+	g_adc_ratio = get_adc_ratio();
+
 	while (1) {
 		switch (stat) {
 		case STATE_WORK:

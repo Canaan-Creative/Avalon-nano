@@ -19,10 +19,11 @@
 #define ADC_CHANNEL_VCORE2  (ADC_CH1)
 
 #define ADC_CAPCOUNT        6
-#define ADC_DATA_LEN        3
-#define ADC_VBASE_STD_VALUE 731 /* (2^10)/3.3 * 2.5 */
+#define ADC_DATA_LEN        1
+#define ADC_VBASE_STD_VALUE 775.76 /* (2^10)/3.3 * 2.5 */
 
 void adc_init(void);
 void adc_read(uint8_t channel, uint16_t *data);
+float get_adc_ratio(void);
 
 #endif /* __AVALON_ADC_H_ */
