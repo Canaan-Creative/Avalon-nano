@@ -10,6 +10,7 @@
  */
 #include "board.h"
 #include "avalon_adc.h"
+#include "libfunctions.h"
 
 #define ADC_VBASE_PORT    0
 #define ADC_VBASE_PIN     23
@@ -25,8 +26,6 @@
 #define ADC_VCORE1_PIN    13
 #define ADC_VCORE2_PORT   0
 #define ADC_VCORE2_PIN    12
-
-static float adc_ratio = 0;
 
 void adc_init(void)
 {
@@ -57,24 +56,27 @@ void adc_read(uint8_t channel, uint16_t *data)
 	Chip_ADC_SetStartMode(LPC_ADC, ADC_NO_START, ADC_TRIGGERMODE_RISING);
 }
 
-void adc_check(void)
+float adc_check(void)
 {
-	uint16_t adc_buf[30];
+	uint16_t adc_buf[ADC_CHECK_COUNT];
 	uint32_t adc_sum = 0;
 	uint16_t adc_avg = 0;
 	uint16_t i = 0;
 
-	for (i = 0; i < 30; i++) {
+	for (i = 0; i < ADC_CHECK_COUNT; i++) {
+		delay(10);
 		adc_read(ADC_CHANNEL_VBASE, &adc_buf[i]);
 		adc_sum += adc_buf[i];
 	}
 
-	adc_avg = adc_sum / 30;
+	adc_avg = adc_sum / ADC_CHECK_COUNT;
 
-	adc_ratio = 2.5 / (float)adc_avg * 1000;
-}
+	if (adc_avg > ADC_VBASE_STD_VALUE)
+		if ((adc_avg - ADC_VBASE_STD_VALUE) > ADC_WAVE_VALUE)
+			adc_avg = ADC_VBASE_STD_VALUE;
+	else
+		if ((ADC_VBASE_STD_VALUE - adc_avg) > ADC_WAVE_VALUE)
+			adc_avg = ADC_VBASE_STD_VALUE;
 
-float get_adc_ratio(void)
-{
-	return adc_ratio;
+	return (ADC_VBASE_STD_VALUE / (float)adc_avg);
 }

@@ -58,53 +58,6 @@ static int init_mm_pkg(struct avalon_pkg *pkg, uint8_t type)
 	return 0;
 }
 
-static void power_detect(struct avalon_pkg *pkg)
-{
-	switch (pkg->data[0]) {
-	case POWER_ON:
-		if (pkg->data[1] & 0x03)
-			set_voltage(pkg->data[2]);
-
-		if (pkg->data[1] & 0x01) {
-			vcore_enable(VCORE1);
-			led_blink_on(LED_12V_1TF);
-		}
-
-		if (pkg->data[1] & 0x02) {
-			vcore_enable(VCORE2);
-			led_blink_on(LED_12V_2TF);
-		}
-		break;
-	case POWER_OFF:
-		if (pkg->data[1] & 0x01)
-			vcore_disable(VCORE1);
-
-		if (pkg->data[1] & 0x02)
-			vcore_disable(VCORE2);
-		break;
-	case POWER_RESULT:
-		led_blink_off(LED_12V_1TF);
-		led_blink_off(LED_12V_2TF);
-
-		if (pkg->data[1] & 0x01) {
-			if (pkg->data[2] & 0x0f)
-				led_blink_on(LED_12V_1T);
-			else
-				led_blink_off(LED_12V_1T);
-		}
-
-		if (pkg->data[1] & 0x02) {
-			if (pkg->data[2] & 0xf0)
-				led_blink_on(LED_12V_2T);
-			else
-				led_blink_off(LED_12V_2T);
-		}
-		break;
-	default:
-		break;
-	}
-}
-
 static void process_mm_pkg(struct avalon_pkg *pkg)
 {
 	unsigned int expected_crc;
@@ -151,10 +104,10 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 		vcore_detect();
 		break;
 	case AVAM_P_SETM:
-		set_led_state((pkg->data[0] << 8) | pkg->data[1]);
-		break;
-	case AVAM_P_TEST:
-		power_detect(pkg);
+		if (!pkg->opt)
+			set_led_state((pkg->data[0] << 8) | pkg->data[1]);
+		else
+			g_adc_ratio = adc_check();
 		break;
 	default:
 		break;
@@ -202,14 +155,12 @@ int main(void)
 	adc_init();
 	uart_init();
 	vcore_init();
-	adc_check();
+
+	g_adc_ratio = adc_check();
 
 	timer_set(TIMER_ID1, IDLE_TIME, NULL);
 	timer_set(TIMER_ID2, ADC_CAPTIME, NULL);
 	timer_set(TIMER_ID9, VCORE_DETECT_TIME, NULL);
-
-	g_adc_ratio = get_adc_ratio();
-
 	while (1) {
 		switch (stat) {
 		case STATE_WORK:
