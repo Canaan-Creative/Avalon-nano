@@ -39,7 +39,7 @@ static uint8_t  g_reqpkg[AVAM_P_COUNT];
 static uint8_t  g_ackpkg[AVAM_P_COUNT];
 static uint16_t g_adc_val[ADC_CAPCOUNT];
 static uint16_t g_adc_buf[ADC_CAPCOUNT][ADC_DATA_LEN];
-static float g_adc_ratio = 0;
+static float g_adc_ratio = 1.0;
 
 static int init_mm_pkg(struct avalon_pkg *pkg, uint8_t type)
 {
@@ -106,8 +106,8 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	case AVAM_P_SETM:
 		if (!pkg->opt)
 			set_led_state((pkg->data[0] << 8) | pkg->data[1]);
-		else
-			g_adc_ratio = adc_check();
+		else if (pkg->opt == 1)
+			g_adc_ratio = ((pkg->data[0] << 24) | (pkg->data[1] << 16) | (pkg->data[2] << 8) | pkg->data[3]) * 0.001;
 		break;
 	default:
 		break;
@@ -126,6 +126,7 @@ static void update_adc(void)
 	adc_read(ADC_CHANNEL_V12V_2, &g_adc_buf[3][adc_cnt]);
 	adc_read(ADC_CHANNEL_VCORE1, &g_adc_buf[4][adc_cnt]);
 	adc_read(ADC_CHANNEL_VCORE2, &g_adc_buf[5][adc_cnt]);
+	adc_read(ADC_CHANNEL_VBASE, &g_adc_buf[6][adc_cnt]);
 
 	if (++adc_cnt >= ADC_DATA_LEN)
 		adc_cnt = 0;
@@ -138,8 +139,10 @@ static void update_adc(void)
 		      adc_sum[j] += g_adc_buf[j][i];
 	}
 
-	for (i = 0; i < ADC_CAPCOUNT; i++)
+	for (i = 0; i < (ADC_CAPCOUNT - 1); i++)
 		g_adc_val[i] = (uint16_t)((float)(adc_sum[i] / ADC_DATA_LEN) * g_adc_ratio);
+
+	g_adc_val[i] = (uint16_t)((float)(adc_sum[i] / ADC_DATA_LEN));
 }
 
 int main(void)
