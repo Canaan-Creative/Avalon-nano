@@ -27,6 +27,7 @@
 #include "avalon_uart.h"
 #include "avalon_vcore.h"
 #include "avalon_led.h"
+#include "sbl_iap.h"
 
 #ifdef __CODE_RED
 __CRP unsigned int CRP_WORD = CRP_NO_CRP;
@@ -40,6 +41,7 @@ static uint8_t  g_ackpkg[AVAM_P_COUNT];
 static uint16_t g_adc_val[ADC_CAPCOUNT];
 static uint16_t g_adc_buf[ADC_CAPCOUNT][ADC_DATA_LEN];
 static float g_adc_ratio = 1.0;
+static uint8_t g_dna[AVAM_MM_DNA_LEN];
 
 static int init_mm_pkg(struct avalon_pkg *pkg, uint8_t type)
 {
@@ -75,6 +77,8 @@ static void process_mm_pkg(struct avalon_pkg *pkg)
 	switch (pkg->type) {
 	case AVAM_P_DETECT:
 		memset(g_ackpkg, 0, AVAM_P_COUNT);
+		iap_readserialid(g_dna);
+		memcpy(g_ackpkg + AVAM_P_DATAOFFSET, g_dna, AVAM_MM_DNA_LEN);
 		memcpy(g_ackpkg + AVAM_P_DATAOFFSET + AVAM_MM_DNA_LEN, AVAM_VERSION, AVAM_MM_VER_LEN);
 		init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_ACKDETECT);
 		uart_write(g_ackpkg, AVAM_P_COUNT);
