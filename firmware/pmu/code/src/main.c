@@ -164,8 +164,6 @@ int main(void)
 	uart_init();
 	vcore_init();
 
-	g_adc_ratio = adc_check();
-
 	timer_set(TIMER_ID1, IDLE_TIME, NULL);
 	timer_set(TIMER_ID2, ADC_CAPTIME, NULL);
 	timer_set(TIMER_ID9, VCORE_DETECT_TIME, NULL);
