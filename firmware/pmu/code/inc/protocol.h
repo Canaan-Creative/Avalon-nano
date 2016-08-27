@@ -21,29 +21,29 @@
 #define AVAM_H1 'C'
 #define AVAM_H2 'N'
 
-#define AVAM_P_COUNT    40
-#define AVAM_P_DATA_LEN 32
+#define AVAM_P_COUNT       40
+#define AVAM_P_DATA_LEN    32
 
-#define AVAM_P_DETECT   0x10
+#define AVAM_P_DETECT      0x10
 
-#define AVAM_P_SET_VOLT 0x22
-#define AVAM_P_SET_FREQ 0x23
-#define AVAM_P_WORK     0x24
-#define AVAM_P_SETM     0x25
+#define AVAM_P_SET_VOLT    0x22
+#define AVAM_P_SET_FREQ    0x23
+#define AVAM_P_SETM        0x24
 
-#define AVAM_P_POLLING	0x30
-#define AVAM_P_REQUIRE	0x31
-#define AVAM_P_TEST	0x32
-#define AVAM_P_GET_FREQ	0x33
+#define AVAM_P_POLLING     0x30
+#define AVAM_P_REQUIRE     0x31
+#define AVAM_P_TEST        0x32
+#define AVAM_P_GET_FREQ    0x33
 
-#define AVAM_P_ACKDETECT	0x40
-#define AVAM_P_STATUS_M		0x41
-#define AVAM_P_NONCE_M		0x42
-#define AVAM_P_TEST_RET		0x43
-#define AVAM_P_STATUS_FREQ	0x44
+#define AVAM_P_ACKDETECT   0x40
+#define AVA4_P_STATUS      0x41
+#define AVAM_P_NONCE_M     0x42
+#define AVAM_P_TEST_RET    0x43
+#define AVAM_P_STATUS_FREQ 0x44
+#define AVAM_P_STATUS_M    0x48
 
-#define AVAM_P_DATAOFFSET	6
-#define AVAM_P_WORKLEN		64
+#define AVAM_P_DATAOFFSET  6
+#define AVAM_P_WORKLEN     64
 
 struct avalon_pkg {
     uint8_t head[2];

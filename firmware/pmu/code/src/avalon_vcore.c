@@ -26,8 +26,8 @@
 
 #define VOLTAGE_DELAY   40
 
-static uint16_t g_voltage = 0x100;
-static uint8_t  g_pg_flag = 0;
+static uint16_t g_voltage = 0;
+static uint16_t g_pg_state[PG_COUNT];
 
 static void init_mux(void)
 {
@@ -64,12 +64,6 @@ uint8_t set_voltage(uint16_t vol)
 {
 	uint8_t i;
 
-	if (vol == VCORE_OFF) {
-		vcore_disable(VCORE1);
-		vcore_disable(VCORE2);
-		return 0;
-	}
-
 	if (g_voltage == vol)
 		return 0;
 
@@ -85,8 +79,15 @@ uint8_t set_voltage(uint16_t vol)
 	Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_STCP, 1);
 	Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_STCP, 0);
 
-	vcore_enable(VCORE1);
-	vcore_enable(VCORE2);
+	if (vol & 0x0800)
+		vcore_enable(VCORE1);
+	else
+		vcore_disable(VCORE1);
+
+	if (vol & 0x8000)
+		vcore_enable(VCORE2);
+	else
+		vcore_disable(VCORE2);
 
 	g_voltage = vol;
 
@@ -131,33 +132,28 @@ void vcore_enable(uint8_t num)
 void vcore_detect(void)
 {
 	if (Chip_GPIO_GetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_IN1)) {
-		led_blink_off(LED_12V_1F);
-		led_rgb(LED_12V_1T, LED_ON);
-		led_rgb(LED_12V_1F, LED_OFF);
-		g_pg_flag &= ~PG1;
+		g_pg_state[0] &= ~PG_BAD;
+		g_pg_state[0] |= PG_GOOD;
 	} else {
 		vcore_disable(VCORE1);
-
-		led_rgb(LED_12V_1T, LED_OFF);
-		led_blink_on(LED_12V_1F);
-		g_pg_flag |= PG1;
+		g_pg_state[0] |= PG_BAD;
+		g_pg_state[0] &= ~PG_GOOD;
 	}
 
 	if (Chip_GPIO_GetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_IN2)) {
-		led_blink_off(LED_12V_2F);
-		led_rgb(LED_12V_2T, LED_ON);
-		led_rgb(LED_12V_2F, LED_OFF);
-		g_pg_flag &= ~PG2;
+		g_pg_state[1] &= ~PG_BAD;
+		g_pg_state[1] |= PG_GOOD;
 	} else {
 		vcore_disable(VCORE2);
-
-		led_rgb(LED_12V_2T, LED_OFF);
-		led_blink_on(LED_12V_2F);
-		g_pg_flag |= PG2;
+		g_pg_state[1] |= PG_BAD;
+		g_pg_state[1] &= ~PG_GOOD;
 	}
 }
 
-uint8_t get_pg_flag(void)
+uint8_t get_pg_state(uint8_t pg_id)
 {
-	return g_pg_flag;
+	if (pg_id < PG_COUNT)
+		return g_pg_state[pg_id];
+
+	return 1;
 }
