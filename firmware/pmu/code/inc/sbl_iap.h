@@ -15,6 +15,6 @@ enum iap_cmd_code {
 	READ_UID=58
 };
 
-int iap_readserialid(char *dna);
+int iap_readserialid(uint8_t *dna);
 
 #endif /* _SBL_IAP_H */

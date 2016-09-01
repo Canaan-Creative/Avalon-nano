@@ -9,6 +9,7 @@
  * For details see the UNLICENSE file at the root of the source tree.
  */
 #include <string.h>
+#include <stdint.h>
 #include "board.h"
 #include "sbl_iap.h"
 #include "libfunctions.h"
@@ -17,7 +18,7 @@
  * UM10462.pdf 20.14.9
  * serial id is 128-bit, we only get the first two words.
  */
-int iap_readserialid(char *dna)
+int iap_readserialid(uint8_t *dna)
 {
 	unsigned int param_table[5];
 	unsigned int result_table[5];

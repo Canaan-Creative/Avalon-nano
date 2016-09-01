@@ -71,12 +71,13 @@ float adc_check(void)
 
 	adc_avg = adc_sum / ADC_CHECK_COUNT;
 
-	if (adc_avg > ADC_VBASE_STD_VALUE)
+	if (adc_avg > ADC_VBASE_STD_VALUE) {
 		if ((adc_avg - ADC_VBASE_STD_VALUE) > ADC_WAVE_VALUE)
 			adc_avg = ADC_VBASE_STD_VALUE;
-	else
+	} else {
 		if ((ADC_VBASE_STD_VALUE - adc_avg) > ADC_WAVE_VALUE)
 			adc_avg = ADC_VBASE_STD_VALUE;
+	}
 
 	return (ADC_VBASE_STD_VALUE / (float)adc_avg);
 }
