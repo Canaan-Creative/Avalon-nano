@@ -115,9 +115,3 @@ void uart_flush_rxrb(void)
 	Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 | UART_FCR_RX_RS));
 	RingBuffer_Flush(&uart_rxrb);
 }
-
-void uart_reset(void)
-{
-	RingBuffer_Init(&uart_rxrb, uart_rxdata, 1, UART_RX_BUF_SZ);
-	RingBuffer_Init(&uart_txrb, uart_txdata, 1, UART_TX_BUF_SZ);
-}

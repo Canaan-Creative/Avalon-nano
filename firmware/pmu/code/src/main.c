@@ -62,7 +62,6 @@ static int init_mm_pkg(struct avalon_pkg *pkg, uint8_t type)
 
 static void process_mm_pkg(struct avalon_pkg *pkg)
 {
-	static unsigned int crc_fail_cnt = 0;
 	unsigned int expected_crc;
 	unsigned int actual_crc;
 	unsigned int i;
