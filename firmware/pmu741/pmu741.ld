@@ -3,13 +3,11 @@ MEMORY
 	/* Define each memory region */
 	MFlash32 (rx) : ORIGIN = 0x0, LENGTH = 0x8000 /* 32K bytes */
 	RamLoc4 (rwx) : ORIGIN = 0x10000000, LENGTH = 0x1000 /* 4K bytes */
-	RamUsb2 (rwx) : ORIGIN = 0x20004000, LENGTH = 0x800 /* 2K bytes */
 }
 
 /* Define a symbol for the top of each memory region */
 __top_MFlash32 = 0x0 + 0x8000;
 __top_RamLoc4 = 0x10000000 + 0x1000;
-__top_RamUsb2 = 0x20004000 + 0x800;
 
 ENTRY(ResetISR)
 
@@ -29,15 +27,10 @@ SECTIONS
 		LONG(LOADADDR(.data));
 		LONG(ADDR(.data));
 		LONG(SIZEOF(.data));
-		LONG(LOADADDR(.data_RAM2));
-		LONG(ADDR(.data_RAM2));
-		LONG(SIZEOF(.data_RAM2));
 		__data_section_table_end = .;
 		__bss_section_table = .;
 		LONG(ADDR(.bss));
 		LONG(SIZEOF(.bss));
-		LONG(ADDR(.bss_RAM2));
-		LONG(SIZEOF(.bss_RAM2));
 		__bss_section_table_end = .;
 		__section_table_end = . ;
 		/* End of Global Section Table */
@@ -78,17 +71,6 @@ SECTIONS
 
 	_etext = .;
 
-	/* DATA section for RamUsb2 */
-	.data_RAM2 : ALIGN(4)
-	{
-		FILL(0xff)
-		*(.ramfunc.$RAM2)
-		*(.ramfunc.$RamUsb2)
-		*(.data.$RAM2*)
-		*(.data.$RamUsb2*)
-		. = ALIGN(4);
-	} > RamUsb2 AT>MFlash32
-
 	/* MAIN DATA SECTION */
 	.uninit_RESERVED : ALIGN(4)
 	{
@@ -109,14 +91,6 @@ SECTIONS
 		_edata = .;
 	} > RamLoc4 AT>MFlash32
 
-	/* BSS section for RamUsb2 */
-	.bss_RAM2 : ALIGN(4)
-	{
-		*(.bss.$RAM2*)
-		*(.bss.$RamUsb2*)
-		. = ALIGN(4);
-	} > RamUsb2
-
 	/* MAIN BSS SECTION */
 	.bss : ALIGN(4)
 	{
@@ -127,14 +101,6 @@ SECTIONS
 		_ebss = .;
 		PROVIDE(end = .);
 	} > RamLoc4
-
-	/* NOINIT section for RamUsb2 */
-	.noinit_RAM2 (NOLOAD) : ALIGN(4)
-	{
-		*(.noinit.$RAM2*)
-		*(.noinit.$RamUsb2*)
-		. = ALIGN(4);
-	} > RamUsb2
 
 	/* DEFAULT NOINIT SECTION */
 	.noinit (NOLOAD): ALIGN(4)
