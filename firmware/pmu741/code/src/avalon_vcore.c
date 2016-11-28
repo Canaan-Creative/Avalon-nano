@@ -34,6 +34,40 @@
 static uint16_t g_voltage = 0;
 static uint16_t g_pg_state[PG_COUNT];
 
+static void vcore_disable(uint8_t num)
+{
+	switch (num) {
+	case 1:
+		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN1, 1);
+		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_HU_EN1, 0);
+		break;
+	case 2:
+		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN2, 1);
+		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_HU_EN2, 0);
+		break;
+	default:
+		break;
+	}
+}
+
+static void vcore_enable(uint8_t num)
+{
+	switch (num) {
+	case 1:
+		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN1, 0);
+		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_HU_EN1, 1);
+		g_pg_state[0] = PG_GOOD;
+		break;
+	case 2:
+		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN2, 0);
+		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_HU_EN2, 1);
+		g_pg_state[1] = PG_GOOD;
+		break;
+	default:
+		break;
+	}
+}
+
 void FLEX_INT1_IRQHandler(void)
 {
 	g_pg_state[0] = PG_BAD;
@@ -137,40 +171,6 @@ uint8_t set_voltage(uint16_t vol)
 uint16_t get_voltage(void)
 {
 	return g_voltage;
-}
-
-void vcore_disable(uint8_t num)
-{
-	switch (num) {
-	case 1:
-		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN1, 1);
-		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_HU_EN1, 0);
-		break;
-	case 2:
-		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN2, 1);
-		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_HU_EN2, 0);
-		break;
-	default:
-		break;
-	}
-}
-
-void vcore_enable(uint8_t num)
-{
-	switch (num) {
-	case 1:
-		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN1, 0);
-		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_HU_EN1, 1);
-		g_pg_state[0] = PG_GOOD;
-		break;
-	case 2:
-		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN2, 0);
-		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_HU_EN2, 1);
-		g_pg_state[1] = PG_GOOD;
-		break;
-	default:
-		break;
-	}
 }
 
 uint8_t get_pg_state(uint8_t pg_id)

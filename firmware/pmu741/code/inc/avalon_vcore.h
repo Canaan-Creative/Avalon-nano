@@ -22,8 +22,6 @@
 void vcore_init(void);
 uint8_t  set_voltage(uint16_t vol);
 uint16_t get_voltage(void);
-void vcore_disable(uint8_t num);
-void vcore_enable(uint8_t num);
 uint8_t get_pg_state(uint8_t pg_id);
 void FLEX_INT1_IRQHandler(void);
 void FLEX_INT2_IRQHandler(void);
