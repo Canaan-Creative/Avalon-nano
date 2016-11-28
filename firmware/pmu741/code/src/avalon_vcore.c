@@ -139,6 +139,9 @@ uint8_t set_voltage(uint16_t vol)
 {
 	uint8_t i;
 
+	g_voltage = vol;
+	vol = ((vol & 0xf0f) << 4) | ((vol & 0xf0f0) >> 4);
+
 	Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_STCP, 0);
 
 	/* MSB first */
@@ -161,8 +164,6 @@ uint8_t set_voltage(uint16_t vol)
 	else
 		vcore_disable(VCORE2);
 
-	g_voltage = vol;
-
 	delay(VOLTAGE_DELAY);
 
 	return 0;
@@ -176,7 +177,7 @@ uint16_t get_voltage(void)
 uint8_t get_pg_state(uint8_t pg_id)
 {
 	if (pg_id < PG_COUNT)
-		return g_pg_state[pg_id];
+		return g_pg_state[PG_COUNT - 1 - pg_id];
 
 	return 1;
 }

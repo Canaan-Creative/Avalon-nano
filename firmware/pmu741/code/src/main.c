@@ -124,6 +124,7 @@ static void update_adc(void)
 	adc_read(ADC_CHANNEL_NTC1, &g_adc_buf[0][adc_cnt]);
 	adc_read(ADC_CHANNEL_NTC2, &g_adc_buf[1][adc_cnt]);
 	adc_read(ADC_CHANNEL_V12V_1, &g_adc_buf[2][adc_cnt]);
+	adc_read(ADC_CHANNEL_V12V_2, &g_adc_buf[3][adc_cnt]);
 	adc_read(ADC_CHANNEL_VCORE1, &g_adc_buf[4][adc_cnt]);
 	adc_read(ADC_CHANNEL_VCORE2, &g_adc_buf[5][adc_cnt]);
 	adc_read(ADC_CHANNEL_VBASE, &g_adc_buf[6][adc_cnt]);

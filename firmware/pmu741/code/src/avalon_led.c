@@ -230,6 +230,8 @@ static void led_blink_off(unsigned int led)
 
 void set_led_state(uint16_t state)
 {
+	state = bswap_16(state);
+
 	led_state[0] = state & 0xff;
 	if (led_state[0] & LED_RED_BLINK)
 		led_blink_on(LED_12V_1F);
@@ -276,7 +278,7 @@ void set_led_state(uint16_t state)
 uint16_t get_led_state(uint8_t led_id)
 {
 	if (led_id < LED_COUNT)
-		return led_state[led_id];
+		return led_state[LED_COUNT - 1 - led_id];
 
 	return 0;
 }
