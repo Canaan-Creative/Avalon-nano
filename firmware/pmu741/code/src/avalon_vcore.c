@@ -38,30 +38,55 @@ static void vcore_disable(uint8_t num)
 {
 	switch (num) {
 	case 1:
-		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN1, 1);
 		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_HU_EN1, 0);
+		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN1, 1);
 		break;
 	case 2:
-		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN2, 1);
 		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_HU_EN2, 0);
+		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN2, 1);
 		break;
 	default:
 		break;
 	}
 }
 
+/* NOTE: the V12 of HU is enabled when detect PG is good */
 static void vcore_enable(uint8_t num)
 {
+	uint32_t i;
+
 	switch (num) {
 	case 1:
 		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN1, 0);
-		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_HU_EN1, 1);
-		g_pg_state[0] = PG_GOOD;
+		for (i = 0; i < 1000; i++) {
+			if (Chip_GPIO_GetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_IN1)) {
+				Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_HU_EN1, 1);
+				g_pg_state[0] = PG_GOOD;
+
+				return;
+			}
+			delay(1);
+		}
+
+		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_HU_EN1, 0);
+		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN1, 1);
+		g_pg_state[0] = PG_BAD;
 		break;
 	case 2:
 		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN2, 0);
-		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_HU_EN2, 1);
-		g_pg_state[1] = PG_GOOD;
+		for (i = 0; i < 1000; i++) {
+			if (Chip_GPIO_GetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_IN2)) {
+				Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_HU_EN2, 1);
+				g_pg_state[1] = PG_GOOD;
+
+				return;
+			}
+			delay(1);
+		}
+
+		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_HU_EN2, 0);
+		Chip_GPIO_SetPinState(LPC_GPIO, VCORE_PORT, VCORE_PIN_EN2, 1);
+		g_pg_state[1] = PG_BAD;
 		break;
 	default:
 		break;
